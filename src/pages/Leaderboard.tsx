@@ -52,7 +52,6 @@ export default function Leaderboard() {
               <SelectItem value="claude">Claude</SelectItem>
               <SelectItem value="codex">Codex</SelectItem>
               <SelectItem value="gemini">Gemini</SelectItem>
-              <SelectItem value="gemini">Gemini</SelectItem>
             </SelectContent>
           </Select>
         </div>

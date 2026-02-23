@@ -93,6 +93,7 @@ export default function Landing() {
             >
               {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
             </button>
+            <Link to="/docs" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Docs</Link>
             <Link to="/feed" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Log in</Link>
             <Button asChild size="sm">
               <Link to="/onboarding">Get Started</Link>
@@ -119,6 +120,7 @@ export default function Landing() {
         {/* Mobile dropdown */}
         {mobileMenu && (
           <div className="sm:hidden border-t border-border bg-background px-4 py-3 space-y-2 animate-fade-in">
+            <Link to="/docs" className="block text-sm text-muted-foreground hover:text-foreground py-1" onClick={() => setMobileMenu(false)}>Docs</Link>
             <Link to="/feed" className="block text-sm text-muted-foreground hover:text-foreground py-1" onClick={() => setMobileMenu(false)}>Log in</Link>
             <Button asChild size="sm" className="w-full">
               <Link to="/onboarding" onClick={() => setMobileMenu(false)}>Get Started</Link>
