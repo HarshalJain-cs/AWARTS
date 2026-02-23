@@ -79,7 +79,7 @@ export default function Settings() {
             <div className="rounded-lg border-2 border-dashed border-border bg-muted/20 p-12 text-center">
               <Upload className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
               <p className="font-medium text-foreground">Drop your session data here</p>
-              <p className="text-sm text-muted-foreground mt-1">JSON files from straude CLI export</p>
+              <p className="text-sm text-muted-foreground mt-1">JSON files from AWARTS CLI export</p>
               <Button variant="outline" size="sm" className="mt-4">Browse Files</Button>
             </div>
           </TabsContent>

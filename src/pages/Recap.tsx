@@ -29,7 +29,7 @@ export default function Recap() {
         <div className="rounded-xl bg-gradient-to-br from-[hsl(224,25%,8%)] to-[hsl(224,25%,14%)] border border-border p-8 space-y-6">
           <div className="flex items-center gap-3">
             <div className="h-6 w-4 bg-primary" style={{ clipPath: 'polygon(15% 0%, 100% 0%, 85% 100%, 0% 100%)' }} />
-            <span className="font-mono text-sm font-bold text-foreground">STRAUDE RECAP</span>
+            <span className="font-mono text-sm font-bold text-foreground">AWARTS RECAP</span>
           </div>
 
           <div className="flex items-center gap-3">

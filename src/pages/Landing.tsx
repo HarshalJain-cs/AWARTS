@@ -8,13 +8,28 @@ import { ArrowRight, Terminal, Share2, Trophy, Flame, BarChart3, Copy } from 'lu
 import { PROVIDERS } from '@/lib/constants';
 import { motion } from 'framer-motion';
 import { useState } from 'react';
+import { Sun, Moon } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
 
 export default function Landing() {
   const [copied, setCopied] = useState(false);
+  const [isDark, setIsDark] = useState(() => {
+    const saved = localStorage.getItem('theme');
+    if (saved) return saved === 'dark';
+    return document.documentElement.classList.contains('dark');
+  });
+
+  const toggleTheme = () => {
+    const next = !isDark;
+    setIsDark(next);
+    document.documentElement.classList.toggle('dark', next);
+    localStorage.setItem('theme', next ? 'dark' : 'light');
+  };
 
   const copyCommand = () => {
-    navigator.clipboard.writeText('npx straude@latest');
+    navigator.clipboard.writeText('npx awarts@latest');
     setCopied(true);
+    toast({ title: 'Copied!', description: 'CLI command copied to clipboard.' });
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -28,6 +43,13 @@ export default function Landing() {
             <span className="font-mono text-lg font-bold text-foreground">AWARTS</span>
           </Link>
           <div className="flex items-center gap-3">
+            <button
+              onClick={toggleTheme}
+              className="rounded-md p-2 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+              aria-label="Toggle theme"
+            >
+              {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+            </button>
             <Link to="/feed" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Log in</Link>
             <Button asChild size="sm">
               <Link to="/onboarding">Get Started</Link>
@@ -76,7 +98,7 @@ export default function Landing() {
             onClick={copyCommand}
             className="flex items-center gap-2 rounded-full border border-border bg-muted/50 px-4 py-2.5 font-mono text-sm text-muted-foreground hover:bg-muted transition-colors"
           >
-            <span>npx straude@latest</span>
+            <span>npx awarts@latest</span>
             <Copy className="h-3.5 w-3.5" />
             {copied && <span className="text-xs text-primary">Copied!</span>}
           </button>

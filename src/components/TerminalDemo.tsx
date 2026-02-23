@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 
 const lines = [
-  { text: '$ bunx straude', delay: 0 },
+  { text: '$ bunx awarts', delay: 0 },
   { text: '', delay: 800 },
   { text: '  Scanning session data...', delay: 1200 },
   { text: '  Found 3 sessions across 2 providers', delay: 2000 },
@@ -16,7 +16,7 @@ const lines = [
   { text: '  │ Total       $16.60    334K      3     │', delay: 3500 },
   { text: '  └──────────────────────────────────────┘', delay: 3600 },
   { text: '', delay: 3800 },
-  { text: '  ✓ POSTED to straude.com/u/alexdev', delay: 4000 },
+  { text: '  ✓ POSTED to awarts.com/u/alexdev', delay: 4000 },
 ];
 
 export function TerminalDemo() {
@@ -33,8 +33,8 @@ export function TerminalDemo() {
     <div className="rounded-lg border border-border bg-[hsl(224,25%,6%)] p-4 font-mono text-sm overflow-hidden">
       <div className="flex items-center gap-1.5 mb-3">
         <div className="h-3 w-3 rounded-full bg-destructive/60" />
-        <div className="h-3 w-3 rounded-full bg-gold/60" />
-        <div className="h-3 w-3 rounded-full bg-codex/60" />
+        <div className="h-3 w-3 rounded-full" style={{ backgroundColor: 'hsl(45, 93%, 47%, 0.6)' }} />
+        <div className="h-3 w-3 rounded-full" style={{ backgroundColor: 'hsl(142, 71%, 45%, 0.6)' }} />
       </div>
       <div className="space-y-0.5">
         {lines.slice(0, visibleLines).map((line, i) => (
@@ -46,11 +46,11 @@ export function TerminalDemo() {
               i === 0
                 ? 'text-foreground'
                 : line.text.includes('✓')
-                ? 'text-codex'
+                ? 'text-[hsl(142,71%,45%)]'
                 : line.text.includes('Claude')
-                ? 'text-claude'
+                ? 'text-[hsl(24,95%,53%)]'
                 : line.text.includes('Codex')
-                ? 'text-codex'
+                ? 'text-[hsl(142,71%,45%)]'
                 : 'text-muted-foreground'
             }
           >
