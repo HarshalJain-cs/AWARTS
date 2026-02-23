@@ -55,7 +55,7 @@ export default function Onboarding() {
                   className="bg-muted/50"
                 />
                 {username.length > 0 && (
-                  <p className={`text-xs ${usernameAvailable ? 'text-codex' : 'text-destructive'}`}>
+                  <p className={`text-xs ${usernameAvailable ? 'text-primary' : 'text-destructive'}`}>
                     {usernameAvailable ? '✓ Available' : username.length < 3 ? 'At least 3 characters' : 'Username taken'}
                   </p>
                 )}
@@ -111,7 +111,7 @@ export default function Onboarding() {
               <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/30 px-4 py-3 font-mono text-sm">
                 <code className="flex-1 text-foreground">npx awarts@latest</code>
                 <button onClick={copyCmd} className="text-muted-foreground hover:text-foreground transition-colors">
-                  {copied ? <Check className="h-4 w-4 text-codex" /> : <Copy className="h-4 w-4" />}
+                  {copied ? <Check className="h-4 w-4 text-primary" /> : <Copy className="h-4 w-4" />}
                 </button>
               </div>
               <div className="flex gap-3">

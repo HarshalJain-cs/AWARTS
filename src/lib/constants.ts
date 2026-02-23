@@ -49,10 +49,9 @@ export const ACHIEVEMENTS: Achievement[] = [
   { id: '100m-output', name: '100M Output', emoji: '🏛️', description: '100M total output tokens', earned: false },
   { id: 'big-spender', name: 'Big Spender', emoji: '💸', description: 'Spend $100 in a single session', earned: false },
   { id: 'elite', name: 'Elite', emoji: '👑', description: 'Top 10 on the leaderboard', earned: false },
-  { id: 'polyglot', name: 'Polyglot Coder', emoji: '🌐', description: 'Use 3+ providers', earned: false },
-  { id: 'full-stack-ai', name: 'Full Stack AI', emoji: '🤖', description: 'Use all 4 providers', earned: false },
+  { id: 'polyglot', name: 'Polyglot Coder', emoji: '🌐', description: 'Use 2+ providers', earned: false },
+  { id: 'full-stack-ai', name: 'Full Stack AI', emoji: '🤖', description: 'Use all 3 providers', earned: false },
   { id: 'codex-pioneer', name: 'Codex Pioneer', emoji: '🟢', description: 'First Codex session', earned: false },
-  { id: 'gemini-explorer', name: 'Gemini Explorer', emoji: '🔵', description: 'First Gemini session', earned: false },
   { id: 'gemini-explorer', name: 'Gemini Explorer', emoji: '🔵', description: 'First Gemini session', earned: false },
 ];
 

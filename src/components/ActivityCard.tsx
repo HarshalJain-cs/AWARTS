@@ -9,6 +9,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { formatCost, formatTokens } from '@/lib/format';
 import { PROVIDERS } from '@/lib/constants';
 import { motion } from 'framer-motion';
+import { toast } from '@/hooks/use-toast';
 
 interface ActivityCardProps {
   post: Post;
@@ -19,7 +20,8 @@ export function ActivityCard({ post, index = 0 }: ActivityCardProps) {
   return (
     <motion.article
       initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '-50px' }}
       transition={{ duration: 0.35, delay: index * 0.08 }}
       className="rounded-lg border border-border bg-card p-5 space-y-3.5"
     >
@@ -91,13 +93,14 @@ export function ActivityCard({ post, index = 0 }: ActivityCardProps) {
           <MessageCircle className="h-4 w-4" />
           {post.commentCount}
         </Link>
-      <button
-          onClick={() => {
+        <button
+          onClick={async () => {
             const url = `${window.location.origin}/post/${post.id}`;
             if (navigator.share) {
-              navigator.share({ title: post.title, url });
+              await navigator.share({ title: post.title, url });
             } else {
-              navigator.clipboard.writeText(url);
+              await navigator.clipboard.writeText(url);
+              toast({ title: 'Link copied!', description: 'Post link copied to clipboard.' });
             }
           }}
           className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors ml-auto"
