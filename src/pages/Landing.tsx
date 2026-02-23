@@ -4,20 +4,55 @@ import { TestimonialCard } from '@/components/TestimonialCard';
 import { ActivityCard } from '@/components/ActivityCard';
 import { mockPosts, mockTestimonials } from '@/lib/mock-data';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Terminal, Share2, Trophy, Flame, BarChart3, Copy } from 'lucide-react';
-import { PROVIDERS } from '@/lib/constants';
+import { ArrowRight, Terminal, Share2, Trophy, Copy, Menu, X } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Sun, Moon } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
+function useCounter(target: number, duration = 1500) {
+  const [count, setCount] = useState(0);
+  const [started, setStarted] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) { setStarted(true); observer.disconnect(); } },
+      { threshold: 0.5 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!started) return;
+    const start = performance.now();
+    const step = (now: number) => {
+      const progress = Math.min((now - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
+      setCount(Math.floor(eased * target));
+      if (progress < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }, [started, target, duration]);
+
+  return { count, ref };
+}
+
 export default function Landing() {
   const [copied, setCopied] = useState(false);
+  const [mobileMenu, setMobileMenu] = useState(false);
   const [isDark, setIsDark] = useState(() => {
     const saved = localStorage.getItem('theme');
     if (saved) return saved === 'dark';
     return document.documentElement.classList.contains('dark');
   });
+
+  const devs = useCounter(2847);
+  const tokens = useCounter(42); // 4.2B displayed as "4.2B" with counter for the integer part
+  const countries = useCounter(48);
 
   const toggleTheme = () => {
     const next = !isDark;
@@ -33,6 +68,13 @@ export default function Landing() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const formatCounter = (value: number, suffix: string) => {
+    if (suffix === 'B') {
+      return `${(value / 10).toFixed(1)}${suffix}`;
+    }
+    return value.toLocaleString();
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Nav */}
@@ -42,7 +84,8 @@ export default function Landing() {
             <div className="h-7 w-5 bg-primary" style={{ clipPath: 'polygon(15% 0%, 100% 0%, 85% 100%, 0% 100%)' }} />
             <span className="font-mono text-lg font-bold text-foreground">AWARTS</span>
           </Link>
-          <div className="flex items-center gap-3">
+          {/* Desktop nav */}
+          <div className="hidden sm:flex items-center gap-3">
             <button
               onClick={toggleTheme}
               className="rounded-md p-2 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
@@ -55,7 +98,33 @@ export default function Landing() {
               <Link to="/onboarding">Get Started</Link>
             </Button>
           </div>
+          {/* Mobile hamburger */}
+          <div className="flex sm:hidden items-center gap-2">
+            <button
+              onClick={toggleTheme}
+              className="rounded-md p-2 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+              aria-label="Toggle theme"
+            >
+              {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+            </button>
+            <button
+              onClick={() => setMobileMenu(!mobileMenu)}
+              className="rounded-md p-2 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+              aria-label="Toggle menu"
+            >
+              {mobileMenu ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </button>
+          </div>
         </div>
+        {/* Mobile dropdown */}
+        {mobileMenu && (
+          <div className="sm:hidden border-t border-border bg-background px-4 py-3 space-y-2 animate-fade-in">
+            <Link to="/feed" className="block text-sm text-muted-foreground hover:text-foreground py-1" onClick={() => setMobileMenu(false)}>Log in</Link>
+            <Button asChild size="sm" className="w-full">
+              <Link to="/onboarding" onClick={() => setMobileMenu(false)}>Get Started</Link>
+            </Button>
+          </div>
+        )}
       </header>
 
       {/* Hero */}
@@ -116,25 +185,21 @@ export default function Landing() {
         <TerminalDemo />
       </motion.section>
 
-      {/* Live Stats */}
+      {/* Live Stats with animated counters */}
       <section className="border-y border-border bg-muted/20 py-12">
         <div className="mx-auto max-w-4xl grid grid-cols-3 gap-8 text-center">
-          {[
-            { value: '2,847', label: 'developers logging daily' },
-            { value: '4.2B', label: 'tokens tracked' },
-            { value: '48', label: 'countries' },
-          ].map((s, i) => (
-            <motion.div
-              key={s.label}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: i * 0.15 }}
-            >
-              <p className="font-mono text-3xl font-bold text-foreground">{s.value}</p>
-              <p className="text-sm text-muted-foreground mt-1">{s.label}</p>
-            </motion.div>
-          ))}
+          <div ref={devs.ref}>
+            <p className="font-mono text-3xl font-bold text-foreground">{devs.count.toLocaleString()}</p>
+            <p className="text-sm text-muted-foreground mt-1">developers logging daily</p>
+          </div>
+          <div ref={tokens.ref}>
+            <p className="font-mono text-3xl font-bold text-foreground">{formatCounter(tokens.count, 'B')}</p>
+            <p className="text-sm text-muted-foreground mt-1">tokens tracked</p>
+          </div>
+          <div ref={countries.ref}>
+            <p className="font-mono text-3xl font-bold text-foreground">{countries.count}</p>
+            <p className="text-sm text-muted-foreground mt-1">countries</p>
+          </div>
         </div>
       </section>
 

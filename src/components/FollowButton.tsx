@@ -1,19 +1,23 @@
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { toast } from '@/hooks/use-toast';
 
 interface FollowButtonProps {
   isFollowing: boolean;
+  username?: string;
   onToggle?: () => void;
   size?: 'sm' | 'default';
 }
 
-export function FollowButton({ isFollowing: initial, onToggle, size = 'sm' }: FollowButtonProps) {
+export function FollowButton({ isFollowing: initial, username, onToggle, size = 'sm' }: FollowButtonProps) {
   const [following, setFollowing] = useState(initial);
   const [hovering, setHovering] = useState(false);
 
   const handleClick = () => {
-    setFollowing(!following);
+    const next = !following;
+    setFollowing(next);
+    toast({ title: next ? `Followed${username ? ` @${username}` : ''}` : `Unfollowed${username ? ` @${username}` : ''}` });
     onToggle?.();
   };
 

@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { AppShell } from '@/components/layout/AppShell';
 import { UserSearchCard } from '@/components/UserSearchCard';
 import { mockUsers } from '@/lib/mock-data';
@@ -6,7 +7,13 @@ import { Input } from '@/components/ui/input';
 import { Search as SearchIcon } from 'lucide-react';
 
 export default function Search() {
-  const [query, setQuery] = useState('');
+  const [searchParams] = useSearchParams();
+  const [query, setQuery] = useState(searchParams.get('q') || '');
+
+  useEffect(() => {
+    const q = searchParams.get('q');
+    if (q) setQuery(q);
+  }, [searchParams]);
 
   const results = useMemo(() => {
     if (!query.trim()) return [];

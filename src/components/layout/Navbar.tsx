@@ -1,5 +1,5 @@
-import { Link, useLocation } from 'react-router-dom';
-import { Search, Bell, Menu, Sun, Moon } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Search, Bell, Sun, Moon } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { currentUser, mockNotifications } from '@/lib/mock-data';
@@ -15,6 +15,7 @@ import {
 
 export function Navbar() {
   const [showNotifs, setShowNotifs] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const [isDark, setIsDark] = useState(() => {
     const saved = localStorage.getItem('theme');
     if (saved) return saved === 'dark';
@@ -22,6 +23,8 @@ export function Navbar() {
   });
   const unreadCount = mockNotifications.filter((n) => !n.read).length;
   const notifRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
+  const navigate = useNavigate();
 
   const toggleTheme = () => {
     const next = !isDark;
@@ -29,6 +32,18 @@ export function Navbar() {
     document.documentElement.classList.toggle('dark', next);
     localStorage.setItem('theme', next ? 'dark' : 'light');
   };
+
+  // "/" keyboard shortcut to focus search
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === '/' && !['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName)) {
+        e.preventDefault();
+        searchRef.current?.focus();
+      }
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, []);
 
   // Click-outside to close notifications
   useEffect(() => {
@@ -41,6 +56,13 @@ export function Navbar() {
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, [showNotifs]);
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && searchQuery.trim()) {
+      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+      searchRef.current?.blur();
+    }
+  };
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -56,7 +78,11 @@ export function Navbar() {
           <div className="relative w-full">
             <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Search users..."
+              ref={searchRef}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={handleSearchKeyDown}
+              placeholder="Search users...  press /"
               className="pl-9 bg-muted/50 border-none h-9"
             />
           </div>
