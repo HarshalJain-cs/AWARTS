@@ -23,7 +23,7 @@ export function Navbar() {
         {/* Logo */}
         <Link to="/feed" className="flex items-center gap-2 shrink-0">
           <div className="h-7 w-5 bg-primary" style={{ clipPath: 'polygon(15% 0%, 100% 0%, 85% 100%, 0% 100%)' }} />
-          <span className="font-mono text-lg font-bold tracking-tight text-foreground">AVARTS EVERYWHERE</span>
+          <span className="font-mono text-lg font-bold tracking-tight text-foreground">AWARTS</span>
         </Link>
 
         {/* Search (desktop) */}
