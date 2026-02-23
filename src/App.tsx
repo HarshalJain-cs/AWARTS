@@ -14,6 +14,7 @@ const PostDetail = lazy(() => import("./pages/PostDetail"));
 const Settings = lazy(() => import("./pages/Settings"));
 const Recap = lazy(() => import("./pages/Recap"));
 const Onboarding = lazy(() => import("./pages/Onboarding"));
+const Docs = lazy(() => import("./pages/Docs"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -42,6 +43,7 @@ const App = () => (
             <Route path="/settings" element={<Settings />} />
             <Route path="/recap" element={<Recap />} />
             <Route path="/onboarding" element={<Onboarding />} />
+            <Route path="/docs" element={<Docs />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>

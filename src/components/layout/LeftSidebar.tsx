@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Trophy, Search, User, Settings, Upload, BarChart3 } from 'lucide-react';
+import { Home, Trophy, Search, User, Settings, Upload, BarChart3, BookOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { currentUser } from '@/lib/mock-data';
 
@@ -11,6 +11,7 @@ const navItems = [
   { label: 'Settings', icon: Settings, href: '/settings' },
   { label: 'Import Data', icon: Upload, href: '/settings' },
   { label: 'My Recap', icon: BarChart3, href: '/recap' },
+  { label: 'Docs', icon: BookOpen, href: '/docs' },
 ];
 
 export function LeftSidebar() {
