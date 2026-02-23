@@ -106,9 +106,15 @@ export default function Landing() {
       </section>
 
       {/* Terminal Demo */}
-      <section className="mx-auto max-w-2xl px-4 pb-20">
+      <motion.section
+        initial={{ opacity: 0, y: 40 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: '-80px' }}
+        transition={{ duration: 0.6 }}
+        className="mx-auto max-w-2xl px-4 pb-20"
+      >
         <TerminalDemo />
-      </section>
+      </motion.section>
 
       {/* Live Stats */}
       <section className="border-y border-border bg-muted/20 py-12">
@@ -117,21 +123,34 @@ export default function Landing() {
             { value: '2,847', label: 'developers logging daily' },
             { value: '4.2B', label: 'tokens tracked' },
             { value: '48', label: 'countries' },
-          ].map((s) => (
-            <div key={s.label}>
+          ].map((s, i) => (
+            <motion.div
+              key={s.label}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: i * 0.15 }}
+            >
               <p className="font-mono text-3xl font-bold text-foreground">{s.value}</p>
               <p className="text-sm text-muted-foreground mt-1">{s.label}</p>
-            </div>
+            </motion.div>
           ))}
         </div>
       </section>
 
       {/* Sessions Visualized */}
       <section className="mx-auto max-w-6xl px-4 py-20">
-        <h2 className="text-3xl font-bold text-foreground text-center mb-4">Sessions visualized</h2>
-        <p className="text-muted-foreground text-center mb-10 max-w-lg mx-auto">
-          See your AI coding activity come to life with detailed session cards and real-time leaderboards.
-        </p>
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-60px' }}
+          transition={{ duration: 0.5 }}
+        >
+          <h2 className="text-3xl font-bold text-foreground text-center mb-4">Sessions visualized</h2>
+          <p className="text-muted-foreground text-center mb-10 max-w-lg mx-auto">
+            See your AI coding activity come to life with detailed session cards and real-time leaderboards.
+          </p>
+        </motion.div>
         <div className="grid lg:grid-cols-2 gap-6 max-w-4xl mx-auto">
           {mockPosts.slice(0, 2).map((post, i) => (
             <ActivityCard key={post.id} post={post} index={i} />
@@ -146,35 +165,64 @@ export default function Landing() {
             { icon: Terminal, title: 'Log your output', desc: 'One CLI command. All your sessions tracked across providers.' },
             { icon: Share2, title: 'Share your sessions', desc: 'Beautiful activity cards. Show the world what you shipped.' },
             { icon: Trophy, title: 'Chase the leaderboard', desc: 'Compete globally or by country. Maintain your streak.' },
-          ].map((f) => (
-            <div key={f.title} className="rounded-lg border border-border bg-card p-6 space-y-3">
+          ].map((f, i) => (
+            <motion.div
+              key={f.title}
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-40px' }}
+              transition={{ duration: 0.5, delay: i * 0.12 }}
+              className="rounded-lg border border-border bg-card p-6 space-y-3"
+            >
               <f.icon className="h-8 w-8 text-primary" />
               <h3 className="font-semibold text-foreground">{f.title}</h3>
               <p className="text-sm text-muted-foreground">{f.desc}</p>
-            </div>
+            </motion.div>
           ))}
         </div>
       </section>
 
       {/* Wall of Love */}
       <section className="mx-auto max-w-6xl px-4 py-16">
-        <h2 className="text-3xl font-bold text-foreground text-center mb-10">Wall of Love</h2>
+        <motion.h2
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+          className="text-3xl font-bold text-foreground text-center mb-10"
+        >
+          Wall of Love
+        </motion.h2>
         <div className="columns-1 sm:columns-2 lg:columns-3 gap-4 space-y-4">
-          {mockTestimonials.map((t) => (
-            <TestimonialCard key={t.id} author={t.author} handle={t.handle} content={t.content} provider={t.provider} />
+          {mockTestimonials.map((t, i) => (
+            <motion.div
+              key={t.id}
+              initial={{ opacity: 0, scale: 0.95 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.4, delay: i * 0.06 }}
+            >
+              <TestimonialCard author={t.author} handle={t.handle} content={t.content} provider={t.provider} />
+            </motion.div>
           ))}
         </div>
       </section>
 
       {/* CTA */}
-      <section className="mx-auto max-w-6xl px-4 py-20 text-center">
+      <motion.section
+        initial={{ opacity: 0, y: 30 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.6 }}
+        className="mx-auto max-w-6xl px-4 py-20 text-center"
+      >
         <h2 className="text-4xl sm:text-5xl font-extrabold text-foreground mb-6">Your move.</h2>
         <Button asChild size="lg" className="text-base px-10">
           <Link to="/onboarding">
             Get Started — Free <ArrowRight className="ml-2 h-4 w-4" />
           </Link>
         </Button>
-      </section>
+      </motion.section>
 
       {/* Footer */}
       <footer className="border-t border-border py-8">
