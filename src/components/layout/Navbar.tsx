@@ -1,9 +1,9 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Search, Bell, Menu } from 'lucide-react';
+import { Search, Bell, Menu, Sun, Moon } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { currentUser, mockNotifications } from '@/lib/mock-data';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { NotificationPanel } from '@/components/NotificationPanel';
 import {
   DropdownMenu,
@@ -15,7 +15,14 @@ import {
 
 export function Navbar() {
   const [showNotifs, setShowNotifs] = useState(false);
+  const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains('dark'));
   const unreadCount = mockNotifications.filter((n) => !n.read).length;
+
+  const toggleTheme = () => {
+    const next = !isDark;
+    setIsDark(next);
+    document.documentElement.classList.toggle('dark', next);
+  };
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -38,6 +45,15 @@ export function Navbar() {
         </div>
 
         <div className="flex items-center gap-2 ml-auto">
+          {/* Theme toggle */}
+          <button
+            onClick={toggleTheme}
+            className="rounded-md p-2 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+            aria-label="Toggle theme"
+          >
+            {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+          </button>
+
           {/* Notifications */}
           <div className="relative">
             <button
