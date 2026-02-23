@@ -1,4 +1,4 @@
-export type Provider = 'claude' | 'codex' | 'gemini' | 'antigravity';
+export type Provider = 'claude' | 'codex' | 'gemini';
 
 export interface User {
   id: string;

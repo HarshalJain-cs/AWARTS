@@ -38,15 +38,6 @@ export const PROVIDERS: Record<Provider, ProviderConfig> = {
     textClass: 'text-gemini',
     dotClass: 'bg-gemini',
   },
-  antigravity: {
-    id: 'antigravity',
-    name: 'Antigravity',
-    color: '#8B5CF6',
-    hslVar: 'var(--antigravity)',
-    bgClass: 'bg-antigravity/10',
-    textClass: 'text-antigravity',
-    dotClass: 'bg-antigravity',
-  },
 };
 
 export const ACHIEVEMENTS: Achievement[] = [
@@ -62,7 +53,7 @@ export const ACHIEVEMENTS: Achievement[] = [
   { id: 'full-stack-ai', name: 'Full Stack AI', emoji: '🤖', description: 'Use all 4 providers', earned: false },
   { id: 'codex-pioneer', name: 'Codex Pioneer', emoji: '🟢', description: 'First Codex session', earned: false },
   { id: 'gemini-explorer', name: 'Gemini Explorer', emoji: '🔵', description: 'First Gemini session', earned: false },
-  { id: 'ag-pilot', name: 'AG Pilot', emoji: '🟣', description: 'First Antigravity session', earned: false },
+  { id: 'gemini-explorer', name: 'Gemini Explorer', emoji: '🔵', description: 'First Gemini session', earned: false },
 ];
 
 export const COUNTRIES = [

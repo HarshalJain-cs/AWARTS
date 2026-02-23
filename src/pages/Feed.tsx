@@ -8,7 +8,7 @@ import { Provider } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
 const tabs = ['Following', 'Global'] as const;
-const providers: (Provider | 'all')[] = ['all', 'claude', 'codex', 'gemini', 'antigravity'];
+const providers: (Provider | 'all')[] = ['all', 'claude', 'codex', 'gemini'];
 
 export default function Feed() {
   const [activeTab, setActiveTab] = useState<typeof tabs[number]>('Global');

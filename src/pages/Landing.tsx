@@ -81,7 +81,7 @@ export default function Landing() {
           transition={{ delay: 0.2 }}
           className="mt-4 text-lg text-muted-foreground max-w-xl mx-auto"
         >
-          Track your AI coding sessions across Claude, Codex, Gemini & Antigravity. Compete with devs worldwide.
+          Track your AI coding sessions across Claude, Codex & Gemini. Compete with devs worldwide.
         </motion.p>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
