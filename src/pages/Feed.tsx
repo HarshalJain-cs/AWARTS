@@ -1,11 +1,11 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { AppShell } from '@/components/layout/AppShell';
 import { ActivityCard } from '@/components/ActivityCard';
 import { SkeletonCard } from '@/components/SkeletonCard';
-import { ProviderChip } from '@/components/ProviderChip';
 import { mockPosts } from '@/lib/mock-data';
 import { Provider } from '@/lib/types';
 import { cn } from '@/lib/utils';
+import { ArrowUp } from 'lucide-react';
 
 const tabs = ['Following', 'Global'] as const;
 const providers: (Provider | 'all')[] = ['all', 'claude', 'codex', 'gemini'];
@@ -14,10 +14,17 @@ export default function Feed() {
   const [activeTab, setActiveTab] = useState<typeof tabs[number]>('Global');
   const [providerFilter, setProviderFilter] = useState<Provider | 'all'>('all');
   const [loading, setLoading] = useState(true);
+  const [showTop, setShowTop] = useState(false);
 
   useEffect(() => {
     const t = setTimeout(() => setLoading(false), 800);
     return () => clearTimeout(t);
+  }, []);
+
+  useEffect(() => {
+    const handler = () => setShowTop(window.scrollY > 400);
+    window.addEventListener('scroll', handler, { passive: true });
+    return () => window.removeEventListener('scroll', handler);
   }, []);
 
   const filtered = mockPosts.filter((p) => {
@@ -80,6 +87,17 @@ export default function Feed() {
           )}
         </div>
       </div>
+
+      {/* Back to top */}
+      {showTop && (
+        <button
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          className="fixed bottom-6 right-6 z-40 rounded-full bg-primary p-3 text-primary-foreground shadow-lg hover:bg-primary/90 transition-colors animate-fade-in"
+          aria-label="Back to top"
+        >
+          <ArrowUp className="h-5 w-5" />
+        </button>
+      )}
     </AppShell>
   );
 }
