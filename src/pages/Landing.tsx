@@ -25,7 +25,7 @@ export default function Landing() {
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
           <Link to="/" className="flex items-center gap-2">
             <div className="h-7 w-5 bg-primary" style={{ clipPath: 'polygon(15% 0%, 100% 0%, 85% 100%, 0% 100%)' }} />
-            <span className="font-mono text-lg font-bold text-foreground">AVARTS EVERYWHERE</span>
+            <span className="font-mono text-lg font-bold text-foreground">AWARTS</span>
           </Link>
           <div className="flex items-center gap-3">
             <Link to="/feed" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Log in</Link>
@@ -159,9 +159,9 @@ export default function Landing() {
         <div className="mx-auto max-w-6xl px-4 flex items-center justify-between text-sm text-muted-foreground">
           <div className="flex items-center gap-2">
             <div className="h-5 w-3.5 bg-primary" style={{ clipPath: 'polygon(15% 0%, 100% 0%, 85% 100%, 0% 100%)' }} />
-            <span className="font-mono font-bold">AVARTS EVERYWHERE</span>
+            <span className="font-mono font-bold">AWARTS</span>
           </div>
-          <p>© 2026 STRAUDE. All rights reserved.</p>
+          <p>© 2026 AWARTS. All rights reserved.</p>
         </div>
       </footer>
     </div>

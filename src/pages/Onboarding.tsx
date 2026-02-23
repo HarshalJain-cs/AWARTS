@@ -31,7 +31,7 @@ export default function Onboarding() {
         {/* Logo */}
         <div className="flex items-center justify-center gap-2">
           <div className="h-8 w-6 bg-primary" style={{ clipPath: 'polygon(15% 0%, 100% 0%, 85% 100%, 0% 100%)' }} />
-          <span className="font-mono text-xl font-bold text-foreground">AVARTS EVERYWHERE</span>
+          <span className="font-mono text-xl font-bold text-foreground">AWARTS</span>
         </div>
 
         <Progress value={(step / 3) * 100} className="h-1" />
