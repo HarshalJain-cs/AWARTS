@@ -1,224 +1,301 @@
 
 
-# 🚀 STRAUDE Multi-Model — Implementation Plan
+# STRAUDE — Full Implementation Plan (Matching straude.com Reference)
 
-> "Strava for AI Coding Agents" — Built with React + Vite + TypeScript + Tailwind CSS + shadcn/ui
+## Design Reference
 
----
-
-## Overview
-
-A social platform where developers track, share, and compete based on their AI coding agent usage (Claude, Codex, Gemini, Antigravity). Features a social feed, leaderboards, user profiles with GitHub-style heatmaps, achievements, and shareable recap cards. All pages will use realistic mock data with the architecture ready for future Supabase integration.
-
----
-
-## Phase 1 — Design System & App Shell
-
-**Design System Setup**
-- Custom color tokens: burnt orange brand accent (#DF561F), provider colors (Claude orange, Codex green, Gemini blue, Antigravity purple), neutrals, rank badge colors
-- Typography: Inter for UI, JetBrains Mono for stats/code
-- Custom CSS variables for shadows, spacing, and radii
-
-**Provider Constants**
-- Provider config system with colors, labels, logos, and CSS classes for Claude, Codex, Gemini, and Antigravity
-- Reusable `ProviderChip` component (colored pill with dot + label)
-
-**App Shell — 3-Column Layout**
-- Top navbar: STRAUDE logo, search input, notification bell with badge, user avatar dropdown
-- Left sidebar (desktop): Feed, Leaderboard, Search, My Profile, Settings, Import Data, My Recap — with active route highlighting
-- Right sidebar (desktop): "Who to follow" suggestions, quick stats widget
-- Bottom navigation (mobile): Home, Leaderboard, Search, Profile icons
-- Responsive: collapses to single column + bottom nav on mobile
-
-**Utility Functions**
-- `formatCost()`, `formatTokens()`, `formatDate()` helpers for consistent display
-- Mock data generators for all entity types (users, posts, usage data, comments)
+Based on the live straude.com site, the design uses:
+- **Dark theme by default** — near-black background (#0D0D0D range), dark cards
+- **Burnt orange accent** (#DF561F / similar) for CTAs, the STRAUDE logo trapezoid, and highlights
+- **Monospace font** (JetBrains Mono) for terminal demos, stats, and code snippets
+- **Inter** for body/UI text
+- **Minimal, clean layout** — lots of whitespace, sharp contrast
+- **Orange trapezoid logo** icon next to "STRAUDE" wordmark
 
 ---
 
-## Phase 2 — Feed & Activity Cards
+## File Structure Overview
 
-**Feed Page**
-- Two tabs: "Following" and "Global" with animated sliding underline indicator
-- Infinite scroll loading with intersection observer
-- Skeleton loading cards while data loads
-
-**Activity Card (Core Component)**
-- Header: avatar, @username, verified badge, timestamp
-- Title + markdown-rendered description with @mention links
-- Provider chips showing which AI tools were used (colored pills)
-- Expandable "Provider Breakdown" section showing per-provider cost/tokens
-- Stats grid: Cost, Input Tokens, Output Tokens, Sessions — in a 4-column layout with monospace numbers
-- Image gallery: responsive grid (1-5 images) with fullscreen lightbox
-- Action bar: ⚡ Kudos button with count, 💬 Comment count link, Share button
-
----
-
-## Phase 3 — Social Layer
-
-**Kudos System (⚡)**
-- Toggle button with optimistic UI and spring animation on the bolt icon
-- Instant count update, reverts on error
-
-**Comments**
-- Flat comment thread on post detail page
-- Comment input with @mention autocomplete (dropdown user search as you type @)
-- Markdown-rendered comment content
-
-**Follow/Unfollow**
-- Follow button with optimistic state change
-- Hover state shows "Unfollow" when already following
-
-**Notifications**
-- Bell icon with unread count badge
-- Dropdown panel: kudos, comments, mentions, new followers
-- "Mark all read" action
-
----
-
-## Phase 4 — Leaderboard & Search
-
-**Leaderboard Page**
-- Three filter dropdowns: Time Period (Today/Week/Month/All Time), Region (Global + countries), Provider (All/Claude/Codex/Gemini/Antigravity)
-- Ranked table with columns: Rank, User (avatar + username + provider dots), Spend, Tokens, Streak
-- Gold/Silver/Bronze medal emojis for top 3
-- Current user's row highlighted with accent background and left border
-- Provider color dots next to each user showing which tools they use
-
-**Search Page**
-- Autofocused search input with 300ms debounce
-- User result cards: avatar, username, bio, follower count, provider badges
-- Empty and no-results states
+```text
+src/
+  lib/
+    types.ts          -- TypeScript types for all entities
+    constants.ts      -- Provider config, achievements, country list
+    format.ts         -- formatCost, formatTokens, formatDate helpers
+    mock-data.ts      -- Realistic mock data for all entities
+  components/
+    layout/
+      AppShell.tsx    -- 3-column responsive layout wrapper
+      Navbar.tsx      -- Top navigation bar
+      LeftSidebar.tsx -- Desktop left sidebar
+      RightSidebar.tsx-- Desktop right sidebar  
+      BottomNav.tsx   -- Mobile bottom navigation
+    ProviderChip.tsx  -- Colored provider pill component
+    ActivityCard.tsx  -- Feed post card (core reusable component)
+    KudosButton.tsx   -- Lightning bolt kudos toggle
+    FollowButton.tsx  -- Follow/Unfollow button
+    CommentThread.tsx -- Comment list + input
+    ContributionGraph.tsx -- GitHub-style heatmap
+    AchievementBadge.tsx  -- Achievement badge display
+    RecapCard.tsx     -- Shareable recap card generator
+    StatsGrid.tsx     -- 4-column stats display
+    SkeletonCard.tsx  -- Loading skeleton for cards
+    TerminalDemo.tsx  -- Animated CLI demo for landing page
+    TestimonialCard.tsx -- Tweet-style testimonial
+    LeaderboardTable.tsx -- Ranked user table
+    UserSearchCard.tsx   -- Search result card
+    NotificationPanel.tsx -- Notification dropdown
+  pages/
+    Landing.tsx       -- Public landing page (/)
+    Feed.tsx          -- Social feed (/feed)
+    Leaderboard.tsx   -- Leaderboard (/leaderboard)
+    Search.tsx        -- User search (/search)
+    Profile.tsx       -- User profile (/u/:username)
+    PostDetail.tsx    -- Single post detail (/post/:id)
+    Settings.tsx      -- Settings page (/settings)
+    Recap.tsx         -- Recap card generator (/recap)
+    Onboarding.tsx    -- Onboarding wizard (/onboarding)
+  App.tsx             -- Updated routing
+```
 
 ---
 
-## Phase 5 — User Profiles & Contribution Graph
+## Phase 1 — Foundation (Types, Constants, Utils, Mock Data)
 
-**Profile Header**
-- Large avatar, @username, bio, location, join date
-- Following/Followers counts
-- Follow button (for other users) or Edit Profile button (own profile)
-- Provider badges showing which AI tools the user has used
+### `src/lib/types.ts`
+- `Provider` enum: `claude | codex | gemini | antigravity`
+- `User`: id, username, displayName, avatar, bio, location, country, countryCode, joinDate, followers, following, isVerified, isFollowing, providers[], streak, totalSpend, totalTokens
+- `Post`: id, user, title, description, providers[], providerBreakdown[], stats (cost, inputTokens, outputTokens, sessions), images[], kudosCount, commentCount, hasKudosed, createdAt
+- `Comment`: id, user, content, createdAt
+- `Notification`: id, type (kudos|comment|mention|follow), actor, post?, read, createdAt
+- `Achievement`: id, name, emoji, description, earned, earnedAt?
+- `LeaderboardEntry`: rank, user, spend, tokens, streak, providers[]
+- `HeatmapDay`: date, spend, dominantProvider, intensity (0-4)
 
-**Stats Card**
-- Lifetime totals: total spend, total tokens, current streak
-- Per-provider breakdown table (collapsible)
+### `src/lib/constants.ts`
+- `PROVIDERS` config map: each provider has `id, name, color (hex), hslVar, bgClass, textClass, dotClass`
+- `ACHIEVEMENTS` array of 13 badge definitions
+- `COUNTRIES` list for leaderboard filter
 
-**Contribution Graph**
-- 52×7 GitHub-style heatmap grid
-- Cell colors based on dominant AI provider used that day
-- Tooltips showing date, spend, and providers used
-- Legend with intensity scale + "Color = dominant provider" label
+### `src/lib/format.ts`
+- `formatCost(cents: number)` -- "$1,420.50"
+- `formatTokens(count: number)` -- "312K", "1.2M"
+- `formatDate(date: string)` -- "2h ago", "Feb 18"
+- `formatNumber(n: number)` -- "1,234"
 
-**Streak Counter**
-- Fire emoji + day count with accent styling
-- Empty state encouraging first data push
-
-**Profile Posts**
-- Feed of user's activity cards (same component as main feed)
-
----
-
-## Phase 6 — Multi-Model Provider UI
-
-**Feed Provider Filter**
-- Collapsible filter bar above the feed
-- Filter chips for each provider + "All" option
-- Provider-colored active states
-
-**Provider Stats Breakdown on Profile**
-- Detailed per-provider lifetime stats table
-- Cost and token totals for each provider with provider-colored values
-
-**AI Provider Settings**
-- Radio selection for default caption generation AI
-- Provider cards with logo, name, and description
+### `src/lib/mock-data.ts`
+- 10+ mock users with realistic data, avatars (ui-avatars.com), varied providers
+- 15+ mock posts with varied stats, provider breakdowns
+- Mock comments, notifications, leaderboard entries
+- 365 days of heatmap data
+- `currentUser` representing the logged-in user
 
 ---
 
-## Phase 7 — Achievements & Recap Cards
+## Phase 2 — App Shell & Layout
 
-**Achievement System**
-- 13 badges: First Sync, Week Warrior, Power User, 100K Output, 1M Output, 100M Output, Big Spender, Elite, Polyglot Coder, Full Stack AI, Codex Pioneer, Gemini Explorer, AG Pilot
-- Badge display: emoji in rounded box with tooltip showing name + description
-- Unearned badges shown greyed out
-- Achievement unlock toast: spring animation from bottom with accent border
+### `Navbar.tsx`
+- Orange trapezoid icon + "STRAUDE" wordmark (left)
+- Search input with magnifying glass icon (center, desktop only)
+- Notification bell with red unread badge + user avatar dropdown (right)
+- Dark background matching the reference site
 
-**Recap Card Generator**
-- Shareable card rendered at 1200×630 (OG) and 1080×1080 (Instagram)
-- Content: username, period, total spend, total tokens, streak, provider breakdown
-- Dark gradient background
-- Download buttons for both formats
+### `LeftSidebar.tsx`
+- Navigation links: Feed, Leaderboard, Search, My Profile, Settings, Import Data, My Recap
+- Icons from lucide-react for each item
+- Active route highlighted with orange accent + background
+- Collapsed on mobile (hidden)
+
+### `RightSidebar.tsx`
+- "Who to follow" section: 3 suggested users with avatar, username, Follow button
+- Quick stats widget: your streak, this month spend, rank
+
+### `BottomNav.tsx`
+- Mobile only (lg:hidden): Home, Leaderboard, Search, Profile icons
+- Active state with orange fill
+
+### `AppShell.tsx`
+- 3-column grid on desktop: 240px left sidebar | flexible center | 300px right sidebar
+- Single column + bottom nav on mobile
+- Wraps page content as children
+- Framer Motion page transition wrapper
+
+### `App.tsx` routing
+- `/` -- Landing page (no AppShell)
+- `/feed` -- Feed (with AppShell)
+- `/leaderboard` -- Leaderboard (with AppShell)
+- `/search` -- Search (with AppShell)
+- `/u/:username` -- Profile (with AppShell)
+- `/post/:id` -- Post Detail (with AppShell)
+- `/settings` -- Settings (with AppShell)
+- `/recap` -- Recap (with AppShell)
+- `/onboarding` -- Onboarding (no AppShell)
 
 ---
 
-## Phase 8 — Landing Page
+## Phase 3 — Core Components
 
-**Hero Section**
-- Bold headline: "Track your AI coding. All of it."
-- Subtitle mentioning all 4 providers
-- CTA button: "Get Started — Free"
-- Provider logo strip showing all 4 provider icons
-- Animated CLI demo terminal showing multi-provider sync
+### `ProviderChip.tsx`
+- Small colored pill: colored dot + provider name
+- Props: provider id, size (sm/md)
+- Uses provider color from constants
 
-**Provider Showcase**
-- 4 provider cards with provider-colored borders and backgrounds
-- Each card: logo, provider name, CLI command description
+### `StatsGrid.tsx`
+- 4 stats in a row: Cost, Input Tokens, Output Tokens, Sessions
+- Monospace font for numbers
+- Muted labels above values
+- 2x2 grid on mobile, 4x1 on desktop
 
-**Features Grid**
-- Feature cards: Track spending, Share activity, Compete on leaderboards, Maintain streaks, Multi-model dashboard
+### `ActivityCard.tsx` (the core feed card)
+- Card with dark background matching reference
+- Header: avatar, @username, verified badge, relative timestamp
+- Title text
+- Provider chips row
+- Stats grid (Cost, Tokens, Models as shown on reference)
+- Action bar: Kudos button with count, Comment count, Share
+- Expandable provider breakdown (Collapsible)
+- Stagger animation on mount
 
-**How It Works**
-- 3-step flow: Install CLI → Push data → Compete & share
+### `KudosButton.tsx`
+- Lightning bolt icon toggle
+- Orange when active, muted when inactive
+- Count display
+- `animate-kudos-burst` on toggle via framer-motion spring
 
-**Wall of Love**
-- Masonry grid of static tweet-style testimonial cards
-- Slightly rotated cards for organic feel
-- Optional provider chip per testimonial
+### `FollowButton.tsx`
+- "Follow" (outline) / "Following" (filled) states
+- Hover on "Following" shows "Unfollow" in red
+- Optimistic state toggle
+
+### `SkeletonCard.tsx`
+- Matches ActivityCard layout with shimmer placeholders
 
 ---
 
-## Phase 9 — Settings & Onboarding
+## Phase 4 — Pages
 
-**Onboarding Flow**
-- 3-step wizard: Choose username → Set country → Install CLI/import instructions
-- Progress bar, smooth slide transitions
-- Username availability check
+### `Landing.tsx` (matches straude.com homepage exactly)
+- **Navbar**: STRAUDE logo left, "Log in" + "Get Started" button right
+- **Hero**: "STRAVA FOR CLAUDE CODE" monospace subtitle, "Every session counts." large heading, subtitle text, "Start Your Streak" orange CTA + `npx straude@latest` copy pill
+- **Terminal demo**: Animated typing effect showing `$ bunx straude`, scanning, results, "POSTED" line
+- **Live stats counter**: "X developers logging daily", "X M tokens tracked", "X countries"
+- **Sessions visualized section**: Mock feed cards + leaderboard preview side by side
+- **Features grid**: "Log your output", "Share your sessions", "Chase the leaderboard"
+- **Wall of Love**: Masonry grid of real tweet testimonials (from the reference data)
+- **CTA footer**: "Your move." + sign up button
+- Dark gradient background throughout, particle/wave effect via CSS
 
-**Settings Page**
-- Profile: avatar, display name, bio, timezone
+### `Feed.tsx`
+- Tab bar: "Following" | "Global" with sliding underline
+- Provider filter chips (All, Claude, Codex, Gemini, Antigravity)
+- List of ActivityCard components with staggered load animation
+- Skeleton loading state
+- Intersection observer for infinite scroll simulation
+
+### `Leaderboard.tsx`
+- Filter bar: Time period dropdown, Region dropdown, Provider dropdown
+- LeaderboardTable component
+- Rank column with gold/silver/bronze medals for top 3
+- User column: avatar + username + country flag + provider dots
+- Spend, Tokens, Streak columns
+- Current user row highlighted with orange left border
+- Responsive: simplified on mobile
+
+### `Search.tsx`
+- Autofocused search input with debounce
+- Results as UserSearchCard components
+- Empty state and no-results state
+
+### `Profile.tsx` (`/u/:username`)
+- Profile header: large avatar, username, bio, location, join date, follower/following counts
+- Follow/Edit button
+- Provider badges
+- Stats card with lifetime totals
+- Contribution graph (52x7 heatmap)
+- Streak counter with fire emoji
+- Achievement badges grid
+- User's posts feed
+
+### `PostDetail.tsx`
+- Full ActivityCard (expanded)
+- Comment thread below
+- Comment input with submit
+
+### `Settings.tsx`
+- Tabbed sections: Profile, Privacy, Notifications, AI Provider, Import Data, Account
+- Profile: avatar, name, bio, timezone inputs
 - Privacy: public/private toggle
-- Notifications: per-type toggles (kudos, comments, mentions, follows)
-- AI Provider: default caption AI selection
-- Import Data: drag-and-drop JSON import with provider selection and date picker
-- Account: email, delete account
+- Notifications: per-type toggles
+- Import: drag-and-drop zone with provider selection
+- Account: email display, delete account button
+
+### `Recap.tsx`
+- Preview of shareable recap card
+- Period selector (This Week, This Month, All Time)
+- Card shows: username, period, total spend, tokens, streak, provider breakdown
+- Dark gradient card design
+- Download buttons: "Download OG (1200x630)" and "Download Square (1080x1080)"
+
+### `Onboarding.tsx`
+- 3-step wizard with progress bar
+- Step 1: Choose username (with availability check simulation)
+- Step 2: Select country
+- Step 3: CLI install instructions
+- Smooth slide transitions between steps
 
 ---
 
-## Phase 10 — Animations & Polish
+## Phase 5 — Social Components
 
-**Motion**
-- Page transitions: fade + slide
-- Feed card stagger animation on load
-- Kudos bolt: scale + rotate burst
-- Provider chips: slide-in on mount
-- Contribution graph: wave fade-in
-- Achievement toast: spring from bottom
+### `CommentThread.tsx`
+- List of comments with avatar, username, timestamp, content
+- Comment input at bottom with "Post" button
+- @mention autocomplete dropdown
 
-**Responsive Adaptations**
-- Stats grid: 2×2 on mobile, 4×1 on desktop
-- Contribution graph: horizontally scrollable on mobile
-- Leaderboard: simplified columns on mobile
+### `NotificationPanel.tsx`
+- Dropdown from bell icon
+- Notification items: icon + actor + action + timestamp
+- Unread styling (bold/dot)
+- "Mark all read" button
 
-**Accessibility**
+### `ContributionGraph.tsx`
+- 52x7 grid of small squares
+- Color = dominant provider color, opacity = intensity
+- Tooltip on hover: date, spend, providers
+- Legend showing provider colors + intensity scale
+- Horizontally scrollable on mobile
+
+### `AchievementBadge.tsx`
+- Emoji in a rounded container
+- Tooltip with name + description
+- Greyed out if unearned
+- Grid layout for badge collection
+
+---
+
+## Phase 6 — Animations & Polish
+
+- Framer Motion `AnimatePresence` for page transitions
+- Staggered card entrance in feed (delay per index)
+- Kudos burst spring animation
+- Provider chips slide-in
+- Contribution graph wave fade-in
+- Skeleton shimmer animation
+- Reduced motion media query support
 - Focus-visible rings on all interactive elements
-- Provider chips always show text labels (not just color)
-- Aria labels on contribution graph cells
-- Semantic HTML: article, section, nav elements
-- Reduced motion support
+- Semantic HTML throughout (article, section, nav, main)
+- All provider indicators include text labels for accessibility
 
-**Loading & Error States**
-- Skeleton loaders for every data component
-- Error cards with retry buttons
-- Contextual empty states with CTAs
+---
+
+## Technical Notes
+
+- **Stack**: React 18 + Vite + TypeScript + Tailwind CSS + shadcn/ui (Radix)
+- **Routing**: React Router v6 with nested layouts
+- **Animation**: Framer Motion (already installed)
+- **Icons**: Lucide React (already installed)
+- **Charts**: Recharts for any chart needs
+- **State**: React useState/useReducer for local state, no global state needed with mock data
+- **Dark mode**: Default dark theme matching straude.com, with class-based toggle support
+- **No backend**: All data is mock/hardcoded, architecture ready for future Supabase integration
 
