@@ -8,20 +8,28 @@ interface ContributionGraphProps {
   data: HeatmapDay[];
 }
 
-function getColor(day: HeatmapDay): string {
-  if (day.intensity === 0 || !day.dominantProvider) return 'bg-muted/30';
-  const provider = day.dominantProvider;
-  const opacityMap: Record<number, string> = {
-    1: '/20',
-    2: '/40',
-    3: '/60',
-    4: '/80',
-  };
-  return `bg-${provider}${opacityMap[day.intensity]}`;
+const PROVIDER_HSL: Record<Provider, string> = {
+  claude: '24, 95%, 53%',
+  codex: '142, 71%, 45%',
+  gemini: '217, 91%, 60%',
+  antigravity: '262, 83%, 58%',
+};
+
+const INTENSITY_OPACITY: Record<number, number> = {
+  1: 0.2,
+  2: 0.4,
+  3: 0.6,
+  4: 0.8,
+};
+
+function getCellStyle(day: HeatmapDay): React.CSSProperties {
+  if (day.intensity === 0 || !day.dominantProvider) return {};
+  const hsl = PROVIDER_HSL[day.dominantProvider];
+  const opacity = INTENSITY_OPACITY[day.intensity] ?? 0;
+  return { backgroundColor: `hsl(${hsl} / ${opacity})` };
 }
 
 export function ContributionGraph({ data }: ContributionGraphProps) {
-  // Build 52 weeks × 7 days grid
   const weeks: HeatmapDay[][] = [];
   for (let i = 0; i < data.length; i += 7) {
     weeks.push(data.slice(i, i + 7));
@@ -39,12 +47,9 @@ export function ContributionGraph({ data }: ContributionGraphProps) {
                     <div
                       className={cn(
                         'h-3 w-3 rounded-[2px] transition-colors',
-                        day.intensity === 0 ? 'bg-muted/30' : '',
-                        day.intensity === 1 && day.dominantProvider ? `bg-${day.dominantProvider}/20` : '',
-                        day.intensity === 2 && day.dominantProvider ? `bg-${day.dominantProvider}/40` : '',
-                        day.intensity === 3 && day.dominantProvider ? `bg-${day.dominantProvider}/60` : '',
-                        day.intensity === 4 && day.dominantProvider ? `bg-${day.dominantProvider}/80` : '',
+                        day.intensity === 0 && 'bg-muted/30'
                       )}
+                      style={getCellStyle(day)}
                       aria-label={`${day.date}: ${day.spend ? formatCost(day.spend) : 'No activity'}`}
                     />
                   </TooltipTrigger>
@@ -69,7 +74,7 @@ export function ContributionGraph({ data }: ContributionGraphProps) {
       <div className="flex items-center gap-4 text-xs text-muted-foreground">
         <span>Less</span>
         {[1, 2, 3, 4].map((i) => (
-          <div key={i} className={cn('h-3 w-3 rounded-[2px] bg-primary', `opacity-${i * 20 + 10}`)} style={{ opacity: i * 0.2 + 0.1 }} />
+          <div key={i} className="h-3 w-3 rounded-[2px]" style={{ backgroundColor: `hsl(var(--primary) / ${i * 0.2 + 0.1})` }} />
         ))}
         <span>More</span>
         <span className="ml-4">Color = dominant provider</span>

@@ -91,7 +91,17 @@ export function ActivityCard({ post, index = 0 }: ActivityCardProps) {
           <MessageCircle className="h-4 w-4" />
           {post.commentCount}
         </Link>
-        <button className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors ml-auto">
+      <button
+          onClick={() => {
+            const url = `${window.location.origin}/post/${post.id}`;
+            if (navigator.share) {
+              navigator.share({ title: post.title, url });
+            } else {
+              navigator.clipboard.writeText(url);
+            }
+          }}
+          className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors ml-auto"
+        >
           <Share2 className="h-4 w-4" />
         </button>
       </div>

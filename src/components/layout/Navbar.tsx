@@ -3,7 +3,7 @@ import { Search, Bell, Menu, Sun, Moon } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { currentUser, mockNotifications } from '@/lib/mock-data';
-import { useState, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { NotificationPanel } from '@/components/NotificationPanel';
 import {
   DropdownMenu,
@@ -15,14 +15,32 @@ import {
 
 export function Navbar() {
   const [showNotifs, setShowNotifs] = useState(false);
-  const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains('dark'));
+  const [isDark, setIsDark] = useState(() => {
+    const saved = localStorage.getItem('theme');
+    if (saved) return saved === 'dark';
+    return document.documentElement.classList.contains('dark');
+  });
   const unreadCount = mockNotifications.filter((n) => !n.read).length;
+  const notifRef = useRef<HTMLDivElement>(null);
 
   const toggleTheme = () => {
     const next = !isDark;
     setIsDark(next);
     document.documentElement.classList.toggle('dark', next);
+    localStorage.setItem('theme', next ? 'dark' : 'light');
   };
+
+  // Click-outside to close notifications
+  useEffect(() => {
+    if (!showNotifs) return;
+    const handler = (e: MouseEvent) => {
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
+        setShowNotifs(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [showNotifs]);
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -55,7 +73,7 @@ export function Navbar() {
           </button>
 
           {/* Notifications */}
-          <div className="relative">
+          <div className="relative" ref={notifRef}>
             <button
               onClick={() => setShowNotifs(!showNotifs)}
               className="relative rounded-md p-2 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"

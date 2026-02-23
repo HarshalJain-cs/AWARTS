@@ -4,7 +4,7 @@ import { formatCost, formatTokens } from '@/lib/format';
 import { Link } from 'react-router-dom';
 import { currentUser } from '@/lib/mock-data';
 import { cn } from '@/lib/utils';
-import { COUNTRIES } from '@/lib/constants';
+import { COUNTRIES, PROVIDERS } from '@/lib/constants';
 
 interface LeaderboardTableProps {
   entries: LeaderboardEntry[];
@@ -51,7 +51,7 @@ export function LeaderboardTable({ entries }: LeaderboardTableProps) {
                         </div>
                         <div className="flex gap-1 mt-0.5">
                           {entry.providers.map((p) => (
-                            <span key={p} className={cn('h-1.5 w-1.5 rounded-full', `bg-${p}`)} />
+                            <span key={p} className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: PROVIDERS[p].color }} />
                           ))}
                         </div>
                       </div>

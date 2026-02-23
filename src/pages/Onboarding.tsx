@@ -20,7 +20,7 @@ export default function Onboarding() {
   const usernameAvailable = username.length >= 3 && username !== 'admin';
 
   const copyCmd = () => {
-    navigator.clipboard.writeText('npx straude@latest');
+    navigator.clipboard.writeText('npx awarts@latest');
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -109,7 +109,7 @@ export default function Onboarding() {
               <h2 className="text-2xl font-bold text-foreground text-center">Install the CLI</h2>
               <p className="text-sm text-muted-foreground text-center">Run this command to start tracking your sessions:</p>
               <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/30 px-4 py-3 font-mono text-sm">
-                <code className="flex-1 text-foreground">npx straude@latest</code>
+                <code className="flex-1 text-foreground">npx awarts@latest</code>
                 <button onClick={copyCmd} className="text-muted-foreground hover:text-foreground transition-colors">
                   {copied ? <Check className="h-4 w-4 text-codex" /> : <Copy className="h-4 w-4" />}
                 </button>
