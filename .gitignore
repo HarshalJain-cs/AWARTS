@@ -12,6 +12,17 @@ dist
 dist-ssr
 *.local
 
+# Environment files
+.env
+.env.local
+.env.production
+backend/.env
+cli/.env
+
+# Bun lockfiles
+bun.lockb
+*.lockb
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

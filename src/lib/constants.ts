@@ -38,6 +38,15 @@ export const PROVIDERS: Record<Provider, ProviderConfig> = {
     textClass: 'text-gemini',
     dotClass: 'bg-gemini',
   },
+  antigravity: {
+    id: 'antigravity',
+    name: 'Antigravity',
+    color: '#A855F7',
+    hslVar: 'var(--antigravity)',
+    bgClass: 'bg-antigravity/10',
+    textClass: 'text-antigravity',
+    dotClass: 'bg-antigravity',
+  },
 };
 
 export const ACHIEVEMENTS: Achievement[] = [

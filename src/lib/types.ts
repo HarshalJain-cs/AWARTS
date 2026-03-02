@@ -1,4 +1,4 @@
-export type Provider = 'claude' | 'codex' | 'gemini';
+export type Provider = 'claude' | 'codex' | 'gemini' | 'antigravity';
 
 export interface User {
   id: string;
@@ -59,7 +59,7 @@ export interface Comment {
 
 export interface Notification {
   id: string;
-  type: 'kudos' | 'comment' | 'mention' | 'follow';
+  type: 'kudos' | 'comment' | 'mention' | 'follow' | 'achievement';
   actor: User;
   post?: Post;
   read: boolean;
