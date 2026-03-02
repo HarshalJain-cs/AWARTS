@@ -1,390 +1,393 @@
-import { useQuery, useMutation, useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
-import { api } from '@/lib/api-client';
-import type { Provider } from '@/lib/types';
+import { useState } from "react";
+import { useQuery, useMutation, useAction } from "convex/react";
+import { api } from "../../convex/_generated/api";
+import type { Id } from "../../convex/_generated/dataModel";
 
 // ─── Feed ─────────────────────────────────────────────────────────────
-interface FeedPost {
-  id: string;
-  user_id: string;
-  usage_date: string;
-  title: string | null;
-  description: string | null;
-  images: string[];
-  providers: string[];
-  created_at: string;
-  user: { id: string; username: string; avatar_url: string | null; country: string | null };
-  daily_usage: Array<{
-    id: string;
-    provider: string;
-    cost_usd: number;
-    input_tokens: number;
-    output_tokens: number;
-    cache_creation_tokens: number;
-    cache_read_tokens: number;
-    total_tokens: number;
-    models: string[];
-    source: string;
-    is_verified: boolean;
-    date: string;
-  }>;
-  kudos_count: number;
-  comment_count: number;
-  user_has_kudosed: boolean;
-}
 
-interface FeedResponse {
-  posts: FeedPost[];
-  nextCursor: string | null;
-}
-
-export function useFeed(type: 'global' | 'following' = 'global', provider?: string) {
-  return useInfiniteQuery({
-    queryKey: ['feed', type, provider],
-    queryFn: ({ pageParam }) => {
-      const params: Record<string, string> = { type };
-      if (pageParam) params.cursor = pageParam;
-      if (provider) params.provider = provider;
-      return api.get<FeedResponse>('/feed', params);
-    },
-    initialPageParam: undefined as string | undefined,
-    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
-  });
+export function useFeed(type: "global" | "following" = "global", provider?: string) {
+  const result = useQuery(api.feed.getFeed, { type, provider });
+  return {
+    data: result ? { pages: [result] } : undefined,
+    isLoading: result === undefined,
+    error: null,
+    hasNextPage: result?.nextCursor != null,
+    fetchNextPage: () => {}, // TODO: implement cursor pagination with Convex
+    isFetchingNextPage: false,
+  };
 }
 
 // ─── Post Detail ──────────────────────────────────────────────────────
+
 export function usePost(id: string) {
-  return useQuery({
-    queryKey: ['post', id],
-    queryFn: () => api.get<FeedPost & { comments_count: number; is_published: boolean }>(`/posts/${id}`),
-    enabled: !!id,
-  });
+  const result = useQuery(api.posts.getPost, id ? { postId: id as Id<"posts"> } : "skip");
+  return {
+    data: result,
+    isLoading: result === undefined,
+    error: null,
+  };
 }
 
 // ─── Comments ─────────────────────────────────────────────────────────
-interface CommentResponse {
-  comments: Array<{
-    id: string;
-    post_id: string;
-    user_id: string;
-    content: string;
-    created_at: string;
-    user: { id: string; username: string; avatar_url: string | null } | null;
-  }>;
-  nextCursor: string | null;
-}
 
 export function useComments(postId: string) {
-  return useInfiniteQuery({
-    queryKey: ['comments', postId],
-    queryFn: ({ pageParam }) => {
-      const params: Record<string, string> = { postId };
-      if (pageParam) params.cursor = pageParam;
-      return api.get<CommentResponse>('/social/comments', params);
-    },
-    initialPageParam: undefined as string | undefined,
-    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
-    enabled: !!postId,
-  });
+  const result = useQuery(
+    api.social.getComments,
+    postId ? { postId: postId as Id<"posts"> } : "skip"
+  );
+  return {
+    data: result
+      ? { pages: [{ comments: result, nextCursor: null }] }
+      : undefined,
+    isLoading: result === undefined,
+    error: null,
+    hasNextPage: false,
+    fetchNextPage: () => {},
+    isFetchingNextPage: false,
+  };
 }
 
 export function useCreateComment() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (data: { postId: string; content: string }) =>
-      api.post('/social/comments', data),
-    onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['comments', variables.postId] });
-      queryClient.invalidateQueries({ queryKey: ['post', variables.postId] });
-      queryClient.invalidateQueries({ queryKey: ['feed'] });
+  const addComment = useMutation(api.social.addComment);
+  return {
+    mutate: (data: { postId: string; content: string }) => {
+      addComment({ postId: data.postId as Id<"posts">, content: data.content });
     },
-  });
+    mutateAsync: (data: { postId: string; content: string }) =>
+      addComment({ postId: data.postId as Id<"posts">, content: data.content }),
+    isPending: false,
+  };
 }
 
 // ─── Kudos ────────────────────────────────────────────────────────────
+
 export function useToggleKudos() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (data: { postId: string; hasKudosed: boolean }) =>
-      data.hasKudosed
-        ? api.delete('/social/kudos', { postId: data.postId })
-        : api.post('/social/kudos', { postId: data.postId }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['feed'] });
-      queryClient.invalidateQueries({ queryKey: ['post'] });
+  const give = useMutation(api.social.giveKudos);
+  const remove = useMutation(api.social.removeKudos);
+  return {
+    mutate: (data: { postId: string; hasKudosed: boolean }) => {
+      const postId = data.postId as Id<"posts">;
+      if (data.hasKudosed) {
+        remove({ postId });
+      } else {
+        give({ postId });
+      }
     },
-  });
+    isPending: false,
+  };
 }
 
 // ─── Follow ───────────────────────────────────────────────────────────
+
 export function useToggleFollow() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (data: { targetUserId: string; isFollowing: boolean }) =>
-      data.isFollowing
-        ? api.delete('/social/follow', { targetUserId: data.targetUserId })
-        : api.post('/social/follow', { targetUserId: data.targetUserId }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['profile'] });
-      queryClient.invalidateQueries({ queryKey: ['feed'] });
+  const follow = useMutation(api.social.follow);
+  const unfollow = useMutation(api.social.unfollow);
+  return {
+    mutate: (data: { targetUserId: string; isFollowing: boolean }) => {
+      const followingId = data.targetUserId as Id<"users">;
+      if (data.isFollowing) {
+        unfollow({ followingId });
+      } else {
+        follow({ followingId });
+      }
     },
-  });
+    isPending: false,
+  };
 }
 
 // ─── Notifications ────────────────────────────────────────────────────
-interface NotificationsResponse {
-  notifications: Array<{
-    id: string;
-    type: string;
-    is_read: boolean;
-    created_at: string;
-    sender: { id: string; username: string; avatar_url: string | null } | null;
-    post: { id: string; title: string | null; usage_date: string } | null;
-  }>;
-  nextCursor: string | null;
-  unread_count: number;
-}
 
 export function useNotifications() {
-  return useQuery({
-    queryKey: ['notifications'],
-    queryFn: () => api.get<NotificationsResponse>('/social/notifications'),
-    refetchInterval: 30000, // Poll every 30s
-  });
+  const result = useQuery(api.social.getNotifications);
+  const unreadCount = result?.filter((n) => !n.isRead).length ?? 0;
+  return {
+    data: result
+      ? { notifications: result, nextCursor: null, unread_count: unreadCount }
+      : undefined,
+    isLoading: result === undefined,
+    error: null,
+  };
 }
 
 export function useMarkNotificationsRead() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: () => api.patch('/social/notifications'),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notifications'] });
-    },
-  });
+  const markRead = useMutation(api.social.markNotificationsRead);
+  return {
+    mutate: () => markRead(),
+    mutateAsync: () => markRead(),
+    isPending: false,
+  };
 }
 
 // ─── Leaderboard ──────────────────────────────────────────────────────
-interface LeaderboardResponse {
-  entries: Array<{
-    user_id: string;
-    username: string;
-    avatar_url: string | null;
-    total_cost: number;
-    total_tokens: number;
-    current_streak: number;
-    region: string | null;
-  }>;
-  period: string;
-  provider: string | null;
-  region: string | null;
-}
 
-export function useLeaderboard(period = 'weekly', provider?: string, region?: string) {
-  return useQuery({
-    queryKey: ['leaderboard', period, provider, region],
-    queryFn: () => {
-      const params: Record<string, string> = { period };
-      if (provider) params.provider = provider;
-      if (region) params.region = region;
-      return api.get<LeaderboardResponse>('/leaderboard', params);
-    },
-  });
+export function useLeaderboard(period = "weekly", provider?: string, region?: string) {
+  const result = useQuery(api.leaderboard.getLeaderboard, { period, provider, region });
+  return {
+    data: result,
+    isLoading: result === undefined,
+    error: null,
+  };
 }
 
 // ─── Search ───────────────────────────────────────────────────────────
-interface SearchResponse {
-  users: Array<{
-    id: string;
-    username: string;
-    display_name: string | null;
-    avatar_url: string | null;
-    bio: string | null;
-    country: string | null;
-  }>;
-  query: string;
-}
 
 export function useSearch(query: string) {
-  return useQuery({
-    queryKey: ['search', query],
-    queryFn: () => api.get<SearchResponse>('/search', { q: query }),
-    enabled: query.length >= 2,
-  });
+  const result = useQuery(
+    api.search.searchUsers,
+    query.length >= 2 ? { q: query } : "skip"
+  );
+  return {
+    data: result ? { users: result, query } : undefined,
+    isLoading: result === undefined,
+    error: null,
+  };
 }
 
 // ─── User Profile ─────────────────────────────────────────────────────
-interface ProfileResponse {
-  id: string;
-  username: string;
-  display_name: string | null;
-  avatar_url: string | null;
-  bio: string | null;
-  country: string | null;
-  region: string | null;
-  timezone: string | null;
-  is_public: boolean;
-  default_ai_provider: string | null;
-  created_at: string;
-  stats: {
-    total_cost_usd: number;
-    total_days: number;
-    current_streak: number;
-    providers_used: string[];
-    provider_breakdown: Record<string, number>;
-  };
-  followers_count: number;
-  following_count: number;
-  is_following: boolean;
-  achievements: Array<{ slug: string; awarded_at: string }>;
-  heatmap: Record<string, number>;
-}
 
 export function useProfile(username: string) {
-  return useQuery({
-    queryKey: ['profile', username],
-    queryFn: () => api.get<ProfileResponse>(`/users/${username}`),
-    enabled: !!username,
-  });
+  const result = useQuery(
+    api.users.getByUsername,
+    username ? { username } : "skip"
+  );
+  return {
+    data: result,
+    isLoading: result === undefined,
+    error: null,
+  };
 }
 
 export function useCurrentUser() {
-  return useQuery({
-    queryKey: ['currentUser'],
-    queryFn: () => api.get<Record<string, unknown>>('/users/me'),
-  });
+  const result = useQuery(api.users.getMe);
+  return {
+    data: result,
+    isLoading: result === undefined,
+    error: null,
+  };
 }
 
 export function useUpdateProfile() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (data: Record<string, unknown>) => api.patch('/users/me', data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
-      queryClient.invalidateQueries({ queryKey: ['profile'] });
-    },
-  });
+  const updateMe = useMutation(api.users.updateMe);
+  return {
+    mutate: (data: Record<string, unknown>) => updateMe(data as any),
+    mutateAsync: (data: Record<string, unknown>) => updateMe(data as any),
+    isPending: false,
+  };
 }
 
 // ─── AI Caption ───────────────────────────────────────────────────────
+
 export function useGenerateCaption() {
-  return useMutation({
-    mutationFn: (data: {
-      stats: Record<string, unknown>;
-      imageUrls?: string[];
-      preferredProvider?: string;
-    }) => api.post<{ title: string; description: string; generated_by: string }>('/ai/generate-caption', data),
-  });
+  const generate = useAction(api.ai.generateCaption);
+  const [isPending, setIsPending] = useState(false);
+
+  const run = async (data: {
+    stats: Record<string, unknown>;
+    preferredProvider?: string;
+  }) => {
+    setIsPending(true);
+    try {
+      const result = await generate({
+        stats: {
+          totalCost: Number(data.stats.totalCost ?? 0),
+          totalTokens: Number(data.stats.totalTokens ?? 0),
+          providers: (data.stats.providers as string[]) ?? [],
+          models: (data.stats.models as string[]) ?? undefined,
+          date: String(data.stats.date ?? new Date().toISOString().slice(0, 10)),
+        },
+        preferredProvider: data.preferredProvider,
+      });
+      return result;
+    } finally {
+      setIsPending(false);
+    }
+  };
+
+  return {
+    mutate: (data: any) => { run(data); },
+    mutateAsync: run,
+    isPending,
+  };
 }
 
 // ─── Image Upload ─────────────────────────────────────────────────────
+
 export function useUploadImage() {
-  return useMutation({
-    mutationFn: (file: File) => api.upload('/upload', file),
-  });
+  const generateUploadUrl = useMutation(api.upload.generateUploadUrl);
+  const saveFile = useMutation(api.upload.saveFile);
+  const [isPending, setIsPending] = useState(false);
+
+  const uploadFile = async (file: File): Promise<{ url: string }> => {
+    setIsPending(true);
+    try {
+      // Step 1: Get a short-lived upload URL from Convex
+      const uploadUrl = await generateUploadUrl();
+
+      // Step 2: POST the file to that URL
+      const result = await fetch(uploadUrl, {
+        method: "POST",
+        headers: { "Content-Type": file.type },
+        body: file,
+      });
+      const { storageId } = await result.json();
+
+      // Step 3: Save the file reference and get the serving URL
+      const { url } = await saveFile({ storageId });
+      return { url };
+    } finally {
+      setIsPending(false);
+    }
+  };
+
+  return {
+    mutate: (file: File) => { uploadFile(file); },
+    mutateAsync: uploadFile,
+    isPending,
+  };
+}
+
+// ─── Avatar Upload (shortcut) ────────────────────────────────────────
+
+export function useUploadAvatar() {
+  const generateUploadUrl = useMutation(api.upload.generateUploadUrl);
+  const saveAvatar = useMutation(api.upload.saveAvatar);
+  const [isPending, setIsPending] = useState(false);
+
+  const upload = async (file: File): Promise<{ url: string }> => {
+    setIsPending(true);
+    try {
+      const uploadUrl = await generateUploadUrl();
+      const result = await fetch(uploadUrl, {
+        method: "POST",
+        headers: { "Content-Type": file.type },
+        body: file,
+      });
+      const { storageId } = await result.json();
+      const { url } = await saveAvatar({ storageId });
+      return { url };
+    } finally {
+      setIsPending(false);
+    }
+  };
+
+  return { upload, isPending };
 }
 
 // ─── Update Post ──────────────────────────────────────────────────────
+
 export function useUpdatePost() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (data: { id: string; title?: string; description?: string; images?: string[]; is_published?: boolean }) => {
-      const { id, ...body } = data;
-      return api.patch(`/posts/${id}`, body);
+  const updatePost = useMutation(api.posts.updatePost);
+  return {
+    mutate: (data: { id: string; title?: string; description?: string; images?: string[]; is_published?: boolean }) => {
+      const { id, is_published, ...rest } = data;
+      updatePost({
+        postId: id as Id<"posts">,
+        ...rest,
+        isPublished: is_published,
+      });
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['feed'] });
-      queryClient.invalidateQueries({ queryKey: ['post'] });
+    mutateAsync: async (data: { id: string; title?: string; description?: string; images?: string[]; is_published?: boolean }) => {
+      const { id, is_published, ...rest } = data;
+      return updatePost({
+        postId: id as Id<"posts">,
+        ...rest,
+        isPublished: is_published,
+      });
     },
-  });
+    isPending: false,
+  };
 }
 
 // ─── Delete Post ──────────────────────────────────────────────────────
+
 export function useDeletePost() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => api.delete(`/posts/${id}`),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['feed'] });
+  const deletePost = useMutation(api.posts.deletePost);
+  return {
+    mutate: (id: string) => {
+      deletePost({ postId: id as Id<"posts"> });
     },
-  });
+    mutateAsync: (id: string) =>
+      deletePost({ postId: id as Id<"posts"> }),
+    isPending: false,
+  };
 }
 
 // ─── User Posts ───────────────────────────────────────────────────────
-interface UserPostsResponse {
-  posts: FeedPost[];
-  nextCursor: string | null;
-}
 
 export function useUserPosts(username: string) {
-  return useInfiniteQuery({
-    queryKey: ['userPosts', username],
-    queryFn: ({ pageParam }) => {
-      const params: Record<string, string> = { username };
-      if (pageParam) params.cursor = pageParam;
-      return api.get<UserPostsResponse>('/feed', { ...params, type: 'user' });
-    },
-    initialPageParam: undefined as string | undefined,
-    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
-    enabled: !!username,
-  });
+  const result = useQuery(api.feed.getUserPosts, username ? { username } : "skip");
+  return {
+    data: result ? { pages: [result] } : undefined,
+    isLoading: result === undefined,
+    error: null,
+    hasNextPage: result?.nextCursor != null,
+    fetchNextPage: () => {},
+    isFetchingNextPage: false,
+  };
 }
 
 // ─── Followers / Following ────────────────────────────────────────────
-interface FollowListResponse {
-  users: Array<{
-    id: string;
-    username: string;
-    display_name: string | null;
-    avatar_url: string | null;
-    bio: string | null;
-    is_following: boolean;
-  }>;
-}
 
 export function useFollowers(username: string) {
-  return useQuery({
-    queryKey: ['followers', username],
-    queryFn: () => api.get<FollowListResponse>(`/users/${username}/followers`),
-    enabled: !!username,
-  });
+  const result = useQuery(
+    api.users.getFollowers,
+    username ? { username } : "skip"
+  );
+  return {
+    data: result ? { users: result } : undefined,
+    isLoading: result === undefined,
+    error: null,
+  };
 }
 
 export function useFollowing(username: string) {
-  return useQuery({
-    queryKey: ['following', username],
-    queryFn: () => api.get<FollowListResponse>(`/users/${username}/following`),
-    enabled: !!username,
-  });
+  const result = useQuery(
+    api.users.getFollowing,
+    username ? { username } : "skip"
+  );
+  return {
+    data: result ? { users: result } : undefined,
+    isLoading: result === undefined,
+    error: null,
+  };
 }
 
-// ─── Edit/Delete Comment ──────────────────────────────────────────────
+// ─── Delete Comment ──────────────────────────────────────────────────
+
 export function useEditComment() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (data: { commentId: string; content: string }) =>
-      api.patch(`/social/comments/${data.commentId}`, { content: data.content }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['comments'] });
+  const editComment = useMutation(api.social.editComment);
+  return {
+    mutate: (data: { commentId: string; content: string }) => {
+      editComment({ commentId: data.commentId as Id<"comments">, content: data.content });
     },
-  });
+    mutateAsync: (data: { commentId: string; content: string }) =>
+      editComment({ commentId: data.commentId as Id<"comments">, content: data.content }),
+    isPending: false,
+  };
 }
 
 export function useDeleteComment() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (commentId: string) => api.delete(`/social/comments/${commentId}`),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['comments'] });
-      queryClient.invalidateQueries({ queryKey: ['feed'] });
-      queryClient.invalidateQueries({ queryKey: ['post'] });
+  const deleteComment = useMutation(api.social.deleteComment);
+  return {
+    mutate: (commentId: string) => {
+      deleteComment({ commentId: commentId as Id<"comments"> });
     },
-  });
+    mutateAsync: (commentId: string) =>
+      deleteComment({ commentId: commentId as Id<"comments"> }),
+    isPending: false,
+  };
 }
 
 // ─── Username Availability ────────────────────────────────────────────
+
 export function useCheckUsername(username: string) {
-  return useQuery({
-    queryKey: ['checkUsername', username],
-    queryFn: () => api.get<{ available: boolean }>('/users/check-username', { username }),
-    enabled: username.length >= 3,
-  });
+  const result = useQuery(
+    api.users.checkUsername,
+    username.length >= 3 ? { username } : "skip"
+  );
+  return {
+    data: result,
+    isLoading: result === undefined,
+    error: null,
+  };
 }

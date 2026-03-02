@@ -1,46 +1,21 @@
-import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
-import { api } from '@/lib/api-client';
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/context/AuthContext";
 
+// With Clerk, auth callbacks are handled automatically.
+// This page just redirects signed-in users to /feed.
 export default function AuthCallback() {
+  const { isSignedIn, isLoaded, user } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    const handleCallback = async () => {
-      // Supabase detects the tokens in the URL hash automatically
-      const { data: { session }, error } = await supabase.auth.getSession();
-
-      if (error) {
-        console.error('Auth callback error:', error);
-        navigate('/login?error=auth_failed', { replace: true });
-        return;
-      }
-
-      if (session) {
-        // Check if user needs onboarding (no username set)
-        try {
-          const profile = await api.get<{ username: string | null }>('/users/me');
-          if (!profile.username) {
-            navigate('/onboarding', { replace: true });
-          } else {
-            navigate('/feed', { replace: true });
-          }
-        } catch {
-          // If profile fetch fails, send to feed (user row may not exist yet)
-          navigate('/feed', { replace: true });
-        }
-      } else {
-        // Token exchange may still be in progress, wait a moment
-        setTimeout(async () => {
-          const { data: { session: retrySession } } = await supabase.auth.getSession();
-          navigate(retrySession ? '/feed' : '/login', { replace: true });
-        }, 1000);
-      }
-    };
-
-    handleCallback();
-  }, [navigate]);
+    if (!isLoaded) return;
+    if (isSignedIn) {
+      navigate(user?.username ? "/feed" : "/onboarding", { replace: true });
+    } else {
+      navigate("/login", { replace: true });
+    }
+  }, [isLoaded, isSignedIn, user, navigate]);
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center">

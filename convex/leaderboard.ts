@@ -1,0 +1,90 @@
+import { v } from "convex/values";
+import { query } from "./_generated/server";
+import type { Id } from "./_generated/dataModel";
+
+export const getLeaderboard = query({
+  args: {
+    period: v.optional(v.string()), // daily, weekly, monthly, all_time
+    provider: v.optional(v.string()),
+    region: v.optional(v.string()),
+    limit: v.optional(v.number()),
+    offset: v.optional(v.number()),
+  },
+  handler: async (ctx, { period = "all_time", provider, region, limit = 50, offset = 0 }) => {
+    // Calculate date range based on period
+    const now = new Date();
+    let startDate: string | null = null;
+
+    if (period === "daily") {
+      startDate = now.toISOString().split("T")[0];
+    } else if (period === "weekly") {
+      const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      startDate = weekAgo.toISOString().split("T")[0];
+    } else if (period === "monthly") {
+      const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      startDate = monthAgo.toISOString().split("T")[0];
+    }
+
+    // Get all usage entries (filter by date range)
+    let usageEntries = await ctx.db.query("daily_usage").collect();
+
+    if (startDate) {
+      usageEntries = usageEntries.filter((e) => e.date >= startDate!);
+    }
+    if (provider) {
+      usageEntries = usageEntries.filter((e) => e.provider === provider);
+    }
+
+    // Aggregate by user
+    const userTotals = new Map<string, { costUsd: number; totalTokens: number; days: Set<string> }>();
+    for (const entry of usageEntries) {
+      const uid = entry.userId;
+      const existing = userTotals.get(uid) ?? { costUsd: 0, totalTokens: 0, days: new Set() };
+      existing.costUsd += entry.costUsd;
+      existing.totalTokens +=
+        entry.inputTokens + entry.outputTokens + entry.cacheCreationTokens + entry.cacheReadTokens;
+      existing.days.add(entry.date);
+      userTotals.set(uid, existing);
+    }
+
+    // Sort by cost descending
+    const sorted = [...userTotals.entries()]
+      .sort((a, b) => b[1].costUsd - a[1].costUsd);
+
+    // Hydrate with user info
+    const hydrated = await Promise.all(
+      sorted.map(async ([userId, totals], index) => {
+        const user = await ctx.db.get(userId as Id<"users">);
+        if (!user) return null;
+
+        // Filter by region if requested
+        if (region && user.region !== region) return null;
+
+        return {
+          rank: index + 1,
+          user: {
+            _id: user._id,
+            username: user.username,
+            displayName: user.displayName,
+            avatarUrl: user.avatarUrl,
+            country: user.country,
+            region: user.region,
+          },
+          costUsd: totals.costUsd,
+          totalTokens: totals.totalTokens,
+          activeDays: totals.days.size,
+        };
+      })
+    );
+
+    const filtered = hydrated.filter(Boolean);
+
+    // Re-rank after region filter
+    const reranked = filtered.map((entry, i) => ({ ...entry!, rank: i + 1 }));
+
+    return {
+      entries: reranked.slice(offset, offset + limit),
+      total: reranked.length,
+    };
+  },
+});

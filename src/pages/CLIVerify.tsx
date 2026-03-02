@@ -1,21 +1,23 @@
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
-import { api } from '@/lib/api-client';
+import { useMutation } from 'convex/react';
+import { api } from '../../convex/_generated/api';
 import { Button } from '@/components/ui/button';
 import { Check, Loader2, Terminal } from 'lucide-react';
 
 export default function CLIVerify() {
   const [searchParams] = useSearchParams();
   const code = searchParams.get('code') ?? '';
-  const { user } = useAuth();
+  const { user, isSignedIn } = useAuth();
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const verifyCLI = useMutation(api.cliAuth.verifyCLIAuth);
 
   const handleAuthorize = async () => {
-    if (!user) return;
+    if (!isSignedIn) return;
     setStatus('loading');
     try {
-      await api.post('/auth/cli/verify', { code });
+      await verifyCLI({ code });
       setStatus('success');
     } catch {
       setStatus('error');
@@ -43,7 +45,7 @@ export default function CLIVerify() {
             </div>
           )}
 
-          {!user ? (
+          {!isSignedIn ? (
             <div className="space-y-2">
               <p className="text-sm text-muted-foreground">You need to sign in first.</p>
               <Button asChild className="w-full">

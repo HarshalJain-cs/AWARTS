@@ -65,17 +65,20 @@ async function startDeviceAuth(): Promise<void> {
   }
 
   // ── Step 2: Show code & open browser ──────────────────────────────────
+  const FRONTEND_URL = process.env.AWARTS_FRONTEND_URL ?? 'http://localhost:5183';
+  const verifyUrl = `${FRONTEND_URL}/cli/verify?code=${initData.code}`;
+
   console.log();
   console.log(
     `  ${chalk.bold('Your verification code:')}  ${chalk.bgWhite.black.bold(` ${initData.code} `)}`,
   );
   console.log();
-  out.info(`Open this URL to verify:  ${chalk.cyan.underline(initData.verify_url)}`);
+  out.info(`Open this URL to verify:  ${chalk.cyan.underline(verifyUrl)}`);
   console.log();
 
   // Try to open the browser automatically
   try {
-    await open(initData.verify_url);
+    await open(verifyUrl);
     out.dim('Browser opened automatically. Waiting for verification...');
   } catch {
     out.dim('Could not open browser. Please visit the URL above manually.');

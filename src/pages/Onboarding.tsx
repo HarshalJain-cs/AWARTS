@@ -36,19 +36,14 @@ export default function Onboarding() {
       return;
     }
     setSaving(true);
-    updateProfile.mutate(
-      { username, country },
-      {
-        onSuccess: () => {
-          toast({ title: 'Welcome to AWARTS!' });
-          navigate('/feed', { replace: true });
-        },
-        onError: () => {
-          setSaving(false);
-          toast({ title: 'Failed to save profile', variant: 'destructive' });
-        },
-      }
-    );
+    try {
+      await updateProfile.mutateAsync({ username, country });
+      toast({ title: 'Welcome to AWARTS!' });
+      navigate('/feed', { replace: true });
+    } catch {
+      setSaving(false);
+      toast({ title: 'Failed to save profile', variant: 'destructive' });
+    }
   };
 
   return (

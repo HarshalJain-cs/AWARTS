@@ -1,108 +1,82 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
-import { supabase } from '@/lib/supabase';
-import type { User as SupabaseUser, Session } from '@supabase/supabase-js';
+import { createContext, useContext, useEffect, type ReactNode } from "react";
+import { useUser, useAuth as useClerkAuth } from "@clerk/clerk-react";
+import { useQuery, useMutation } from "convex/react";
+import { api } from "../../convex/_generated/api";
+import type { Id } from "../../convex/_generated/dataModel";
 
-interface AuthUser {
-  id: string;
-  email: string | null;
-  username?: string;
-  avatar_url?: string;
-  display_name?: string;
+interface AppUser {
+  _id: Id<"users">;
+  clerkId: string;
+  username: string;
+  displayName?: string;
+  bio?: string;
+  avatarUrl?: string;
+  email?: string;
+  country?: string;
+  region?: string;
+  timezone: string;
+  isPublic: boolean;
+  defaultAiProvider: string;
+  emailNotificationsEnabled: boolean;
 }
 
 interface AuthContextType {
-  user: AuthUser | null;
-  session: Session | null;
-  loading: boolean;
-  signInWithGithub: () => Promise<void>;
-  signInWithMagicLink: (email: string) => Promise<{ error: string | null }>;
-  signInWithPassword: (email: string, password: string) => Promise<{ error: string | null }>;
-  signUpWithPassword: (email: string, password: string) => Promise<{ error: string | null }>;
+  // Clerk auth state
+  isSignedIn: boolean;
+  isLoaded: boolean;
+  // Convex user profile (null if not yet created or not signed in)
+  user: AppUser | null;
   signOut: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
+export function ConvexAuthProvider({ children }: { children: ReactNode }) {
+  const { isSignedIn, isLoaded } = useClerkAuth();
+  const { user: clerkUser } = useUser();
 
+  // Get our app user profile from Convex
+  const convexUser = useQuery(
+    api.users.getMe,
+    isSignedIn ? {} : "skip"
+  );
+
+  // Mutation to create user on first sign-in
+  const getOrCreateUser = useMutation(api.users.getOrCreateUser);
+
+  // When Clerk is signed in but no Convex user profile exists, create one
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      if (session?.user) {
-        setUser(mapUser(session.user));
-      }
-      setLoading(false);
-    });
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setSession(session);
-        setUser(session?.user ? mapUser(session.user) : null);
-        setLoading(false);
-      }
-    );
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const signInWithGithub = async () => {
-    await supabase.auth.signInWithOAuth({
-      provider: 'github',
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-      },
-    });
-  };
-
-  const signInWithMagicLink = async (email: string) => {
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
-      },
-    });
-    return { error: error?.message ?? null };
-  };
-
-  const signInWithPassword = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    return { error: error?.message ?? null };
-  };
-
-  const signUpWithPassword = async (email: string, password: string) => {
-    // Use our backend's admin signup endpoint to create an auto-confirmed user
-    // This avoids the email confirmation link that goes through supabase.co (blocked on Jio)
-    try {
-      const res = await fetch('/api/auth/signup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        return { error: data.error ?? 'Signup failed' };
-      }
-      // Now sign in to get a session
-      const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
-      return { error: signInError?.message ?? null };
-    } catch (err) {
-      return { error: 'Network error. Please try again.' };
+    if (isSignedIn && convexUser === null) {
+      getOrCreateUser();
     }
-  };
+  }, [isSignedIn, convexUser, getOrCreateUser]);
+
+  const { signOut: clerkSignOut } = useClerkAuth();
 
   const signOut = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
-    setSession(null);
+    await clerkSignOut();
   };
 
+  const user: AppUser | null = convexUser
+    ? {
+        _id: convexUser._id,
+        clerkId: convexUser.clerkId,
+        username: convexUser.username,
+        displayName: convexUser.displayName ?? undefined,
+        bio: convexUser.bio ?? undefined,
+        avatarUrl: convexUser.avatarUrl ?? clerkUser?.imageUrl ?? undefined,
+        email: convexUser.email ?? clerkUser?.primaryEmailAddress?.emailAddress ?? undefined,
+        country: convexUser.country ?? undefined,
+        region: convexUser.region ?? undefined,
+        timezone: convexUser.timezone,
+        isPublic: convexUser.isPublic,
+        defaultAiProvider: convexUser.defaultAiProvider,
+        emailNotificationsEnabled: convexUser.emailNotificationsEnabled,
+      }
+    : null;
+
   return (
-    <AuthContext.Provider value={{ user, session, loading, signInWithGithub, signInWithMagicLink, signInWithPassword, signUpWithPassword, signOut }}>
+    <AuthContext.Provider value={{ isSignedIn: !!isSignedIn, isLoaded, user, signOut }}>
       {children}
     </AuthContext.Provider>
   );
@@ -110,17 +84,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 export function useAuth() {
   const context = useContext(AuthContext);
-  if (!context) throw new Error('useAuth must be used within an AuthProvider');
+  if (!context) throw new Error("useAuth must be used within ConvexAuthProvider");
   return context;
-}
-
-function mapUser(supabaseUser: SupabaseUser): AuthUser {
-  const meta = supabaseUser.user_metadata ?? {};
-  return {
-    id: supabaseUser.id,
-    email: supabaseUser.email ?? null,
-    username: meta.user_name ?? meta.preferred_username ?? undefined,
-    avatar_url: meta.avatar_url ?? undefined,
-    display_name: meta.full_name ?? meta.name ?? undefined,
-  };
 }
