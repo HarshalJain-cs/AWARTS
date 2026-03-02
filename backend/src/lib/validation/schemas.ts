@@ -58,8 +58,15 @@ export const PostUpdateSchema = z.object({
 
 // ─── Profile Update Schema ─────────────────────────────────────────────
 export const ProfileUpdateSchema = z.object({
+  username: z
+    .string()
+    .min(3, 'Username must be at least 3 characters')
+    .max(30, 'Username too long')
+    .regex(/^[a-z0-9_]+$/, 'Username can only contain lowercase letters, numbers, and underscores')
+    .optional(),
   display_name: z.string().max(50).nullable().optional(),
   bio: z.string().max(500).nullable().optional(),
+  avatar_url: z.string().url().nullable().optional(),
   country: z.string().max(100).nullable().optional(),
   timezone: z.string().max(50).optional(),
   is_public: z.boolean().optional(),

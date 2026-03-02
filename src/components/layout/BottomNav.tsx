@@ -1,17 +1,19 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Trophy, Search, User } from 'lucide-react';
+import { Home, Trophy, Search, User, PlusCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { currentUser } from '@/lib/mock-data';
-
-const items = [
-  { icon: Home, href: '/feed', label: 'Feed' },
-  { icon: Trophy, href: '/leaderboard', label: 'Board' },
-  { icon: Search, href: '/search', label: 'Search' },
-  { icon: User, href: `/u/${currentUser.username}`, label: 'Profile' },
-];
+import { useAuth } from '@/context/AuthContext';
 
 export function BottomNav() {
   const location = useLocation();
+  const { user } = useAuth();
+
+  const items = [
+    { icon: Home, href: '/feed', label: 'Feed' },
+    { icon: Trophy, href: '/leaderboard', label: 'Board' },
+    { icon: PlusCircle, href: '/post/new', label: 'Post' },
+    { icon: Search, href: '/search', label: 'Search' },
+    { icon: User, href: user ? `/u/${user.username}` : '/login', label: 'Profile' },
+  ];
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background/95 backdrop-blur lg:hidden">

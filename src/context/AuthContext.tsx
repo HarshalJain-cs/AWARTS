@@ -16,6 +16,8 @@ interface AuthContextType {
   loading: boolean;
   signInWithGithub: () => Promise<void>;
   signInWithMagicLink: (email: string) => Promise<{ error: string | null }>;
+  signInWithPassword: (email: string, password: string) => Promise<{ error: string | null }>;
+  signUpWithPassword: (email: string, password: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
 }
 
@@ -67,6 +69,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error: error?.message ?? null };
   };
 
+  const signInWithPassword = async (email: string, password: string) => {
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    return { error: error?.message ?? null };
+  };
+
+  const signUpWithPassword = async (email: string, password: string) => {
+    // Use our backend's admin signup endpoint to create an auto-confirmed user
+    // This avoids the email confirmation link that goes through supabase.co (blocked on Jio)
+    try {
+      const res = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        return { error: data.error ?? 'Signup failed' };
+      }
+      // Now sign in to get a session
+      const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+      return { error: signInError?.message ?? null };
+    } catch (err) {
+      return { error: 'Network error. Please try again.' };
+    }
+  };
+
   const signOut = async () => {
     await supabase.auth.signOut();
     setUser(null);
@@ -74,7 +102,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, signInWithGithub, signInWithMagicLink, signOut }}>
+    <AuthContext.Provider value={{ user, session, loading, signInWithGithub, signInWithMagicLink, signInWithPassword, signUpWithPassword, signOut }}>
       {children}
     </AuthContext.Provider>
   );

@@ -1,6 +1,46 @@
 -- AWARTS Leaderboard Views
--- Must be created AFTER 007_stored_procedures.sql since they reference calculate_user_streak
--- Note: Run 007 first, then this file, OR create them together
+-- The calculate_user_streak function is defined here so it exists before the views reference it.
+-- It is also defined in 007_stored_procedures.sql via CREATE OR REPLACE, so no conflict occurs.
+
+-- ─── CALCULATE USER STREAK (must exist before views) ────────────────────
+CREATE OR REPLACE FUNCTION calculate_user_streak(p_user_id UUID)
+RETURNS INTEGER AS $$
+DECLARE
+  v_streak INTEGER := 0;
+  v_check_date DATE := CURRENT_DATE;
+  v_has_data BOOLEAN;
+BEGIN
+  SELECT EXISTS(
+    SELECT 1 FROM daily_usage
+    WHERE user_id = p_user_id
+    AND date IN (CURRENT_DATE, CURRENT_DATE - 1)
+  ) INTO v_has_data;
+
+  IF NOT v_has_data THEN
+    RETURN 0;
+  END IF;
+
+  IF NOT EXISTS(SELECT 1 FROM daily_usage WHERE user_id = p_user_id AND date = CURRENT_DATE) THEN
+    v_check_date := CURRENT_DATE - 1;
+  END IF;
+
+  LOOP
+    IF EXISTS(
+      SELECT 1 FROM daily_usage
+      WHERE user_id = p_user_id AND date = v_check_date
+    ) THEN
+      v_streak := v_streak + 1;
+      v_check_date := v_check_date - 1;
+    ELSE
+      EXIT;
+    END IF;
+
+    IF v_streak >= 3650 THEN EXIT; END IF;
+  END LOOP;
+
+  RETURN v_streak;
+END;
+$$ LANGUAGE plpgsql STABLE;
 
 -- ─── LEADERBOARD DAILY ──────────────────────────────────────────────────
 CREATE OR REPLACE VIEW leaderboard_daily AS

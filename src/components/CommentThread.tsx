@@ -1,67 +1,148 @@
-import { Comment, User } from '@/lib/types';
+import { Comment } from '@/lib/types';
 import { formatDate } from '@/lib/format';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { currentUser } from '@/lib/mock-data';
+import { useAuth } from '@/context/AuthContext';
+import { useCreateComment, useEditComment, useDeleteComment } from '@/hooks/use-api';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { toast } from '@/hooks/use-toast';
+import { MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 interface CommentThreadProps {
+  postId: string;
   comments: Comment[];
 }
 
-export function CommentThread({ comments }: CommentThreadProps) {
+function CommentItem({ comment, postId }: { comment: Comment; postId: string }) {
+  const { user } = useAuth();
+  const editComment = useEditComment();
+  const deleteComment = useDeleteComment();
+  const [editing, setEditing] = useState(false);
+  const [editContent, setEditContent] = useState(comment.content);
+
+  const isOwn = user?.id === comment.user.id;
+
+  const handleSaveEdit = () => {
+    if (!editContent.trim()) return;
+    editComment.mutate(
+      { commentId: comment.id, content: editContent.trim() },
+      {
+        onSuccess: () => { setEditing(false); toast({ title: 'Comment updated' }); },
+        onError: () => toast({ title: 'Failed to update', variant: 'destructive' }),
+      }
+    );
+  };
+
+  const handleDelete = () => {
+    deleteComment.mutate(comment.id, {
+      onSuccess: () => toast({ title: 'Comment deleted' }),
+      onError: () => toast({ title: 'Failed to delete', variant: 'destructive' }),
+    });
+  };
+
+  return (
+    <div className="flex gap-3 group">
+      <Link to={`/u/${comment.user.username}`}>
+        <img src={comment.user.avatar} alt={comment.user.displayName} className="h-8 w-8 rounded-full" />
+      </Link>
+      <div className="flex-1">
+        <div className="flex items-center gap-2">
+          <Link to={`/u/${comment.user.username}`} className="text-sm font-semibold text-foreground hover:underline">
+            @{comment.user.username}
+          </Link>
+          <span className="text-xs text-muted-foreground">{formatDate(comment.createdAt)}</span>
+          {isOwn && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="opacity-0 group-hover:opacity-100 transition-opacity ml-auto p-1 rounded hover:bg-muted">
+                  <MoreHorizontal className="h-3.5 w-3.5 text-muted-foreground" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => { setEditing(true); setEditContent(comment.content); }}>
+                  <Pencil className="h-3.5 w-3.5 mr-2" /> Edit
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleDelete} className="text-destructive">
+                  <Trash2 className="h-3.5 w-3.5 mr-2" /> Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
+        {editing ? (
+          <div className="mt-1 space-y-2">
+            <Textarea
+              value={editContent}
+              onChange={(e) => setEditContent(e.target.value.slice(0, 500))}
+              className="min-h-[50px] resize-none bg-muted/50 text-sm"
+            />
+            <div className="flex gap-2 justify-end">
+              <Button size="sm" variant="ghost" onClick={() => setEditing(false)}>Cancel</Button>
+              <Button size="sm" onClick={handleSaveEdit} disabled={!editContent.trim() || editComment.isPending}>
+                {editComment.isPending ? 'Saving...' : 'Save'}
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <p className="text-sm text-foreground mt-0.5">{comment.content}</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export function CommentThread({ postId, comments }: CommentThreadProps) {
+  const { user } = useAuth();
+  const createComment = useCreateComment();
   const [input, setInput] = useState('');
-  const [localComments, setLocalComments] = useState(comments);
 
   const handleSubmit = () => {
-    if (!input.trim()) return;
-    const newComment: Comment = {
-      id: `c-${Date.now()}`,
-      user: currentUser,
-      content: input.trim(),
-      createdAt: new Date().toISOString(),
-    };
-    setLocalComments([...localComments, newComment]);
-    setInput('');
+    if (!user || !input.trim()) return;
+    createComment.mutate(
+      { postId, content: input.trim() },
+      {
+        onSuccess: () => setInput(''),
+        onError: () => toast({ title: 'Failed to post comment', variant: 'destructive' }),
+      }
+    );
   };
 
   return (
     <div className="space-y-4">
-      {localComments.map((c) => (
-        <div key={c.id} className="flex gap-3">
-          <Link to={`/u/${c.user.username}`}>
-            <img src={c.user.avatar} alt={c.user.displayName} className="h-8 w-8 rounded-full" />
-          </Link>
-          <div className="flex-1">
-            <div className="flex items-center gap-2">
-              <Link to={`/u/${c.user.username}`} className="text-sm font-semibold text-foreground hover:underline">
-                @{c.user.username}
-              </Link>
-              <span className="text-xs text-muted-foreground">{formatDate(c.createdAt)}</span>
-            </div>
-            <p className="text-sm text-foreground mt-0.5">{c.content}</p>
-          </div>
-        </div>
+      {comments.map((c) => (
+        <CommentItem key={c.id} comment={c} postId={postId} />
       ))}
 
-      {/* Input */}
-      <div className="flex gap-3 pt-2 border-t border-border">
-        <img src={currentUser.avatar} alt="You" className="h-8 w-8 rounded-full mt-1" />
-        <div className="flex-1 space-y-2">
-          <Textarea
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Write a comment..."
-            className="min-h-[60px] resize-none bg-muted/50"
-          />
-          <div className="flex justify-end">
-            <Button size="sm" onClick={handleSubmit} disabled={!input.trim()}>
-              Post
-            </Button>
+      {user ? (
+        <div className="flex gap-3 pt-2 border-t border-border">
+          <img src={user.avatar_url ?? ''} alt="You" className="h-8 w-8 rounded-full mt-1" />
+          <div className="flex-1 space-y-2">
+            <Textarea
+              value={input}
+              onChange={(e) => setInput(e.target.value.slice(0, 500))}
+              placeholder="Write a comment..."
+              className="min-h-[60px] resize-none bg-muted/50"
+            />
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-muted-foreground">{input.length}/500</span>
+              <Button size="sm" onClick={handleSubmit} disabled={!input.trim() || createComment.isPending}>
+                {createComment.isPending ? 'Posting...' : 'Post'}
+              </Button>
+            </div>
           </div>
         </div>
-      </div>
+      ) : (
+        <div className="pt-2 border-t border-border text-center">
+          <Link to="/login" className="text-sm text-primary hover:underline">Sign in to comment</Link>
+        </div>
+      )}
     </div>
   );
 }

@@ -4,7 +4,7 @@
   "description": "Track your AI coding across Claude, Codex, Gemini & Antigravity",
   "type": "module",
   "bin": {
-    "awarts": "./dist/index.js"
+    "awarts": "dist/index.js"
   },
   "files": ["dist"],
   "scripts": {

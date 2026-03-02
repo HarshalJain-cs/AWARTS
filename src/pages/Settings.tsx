@@ -1,22 +1,78 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AppShell } from '@/components/layout/AppShell';
-import { currentUser } from '@/lib/mock-data';
+import { AuthGate } from '@/components/AuthGate';
+import { useAuth } from '@/context/AuthContext';
+import { useCurrentUser, useUpdateProfile, useUploadImage } from '@/hooks/use-api';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Upload } from 'lucide-react';
+import { Upload, Loader2 } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
 
 export default function Settings() {
-  const [displayName, setDisplayName] = useState(currentUser.displayName);
-  const [bio, setBio] = useState(currentUser.bio);
+  return (
+    <AuthGate>
+      <SettingsContent />
+    </AuthGate>
+  );
+}
+
+function SettingsContent() {
+  const { user: authUser } = useAuth();
+  const { data: profile } = useCurrentUser();
+  const updateProfile = useUpdateProfile();
+  const uploadImage = useUploadImage();
+
+  const [displayName, setDisplayName] = useState('');
+  const [bio, setBio] = useState('');
+  const [externalLink, setExternalLink] = useState('');
+  const [githubUsername, setGithubUsername] = useState('');
   const [isPublic, setIsPublic] = useState(true);
+  const [emailNotifications, setEmailNotifications] = useState(true);
   const [notifKudos, setNotifKudos] = useState(true);
   const [notifComments, setNotifComments] = useState(true);
   const [notifMentions, setNotifMentions] = useState(true);
   const [notifFollows, setNotifFollows] = useState(true);
+
+  // Populate form when profile loads
+  useEffect(() => {
+    if (profile) {
+      setDisplayName((profile as any).display_name ?? '');
+      setBio((profile as any).bio ?? '');
+      setExternalLink((profile as any).external_link ?? '');
+      setGithubUsername((profile as any).github_username ?? '');
+      setIsPublic((profile as any).is_public ?? true);
+      setEmailNotifications((profile as any).email_notifications ?? true);
+    }
+  }, [profile]);
+
+  const handleSave = () => {
+    updateProfile.mutate(
+      { display_name: displayName, bio, external_link: externalLink || null, github_username: githubUsername || null },
+      {
+        onSuccess: () => toast({ title: 'Profile updated!' }),
+        onError: () => toast({ title: 'Failed to save', variant: 'destructive' }),
+      }
+    );
+  };
+
+  const handlePrivacyToggle = (checked: boolean) => {
+    setIsPublic(checked);
+    updateProfile.mutate(
+      { is_public: checked },
+      {
+        onError: () => {
+          setIsPublic(!checked);
+          toast({ title: 'Failed to update privacy', variant: 'destructive' });
+        },
+      }
+    );
+  };
+
+  const avatarUrl = authUser?.avatar_url ?? '';
 
   return (
     <AppShell>
@@ -34,8 +90,32 @@ export default function Settings() {
 
           <TabsContent value="profile" className="space-y-4 mt-6">
             <div className="flex items-center gap-4">
-              <img src={currentUser.avatar} alt="" className="h-16 w-16 rounded-full" />
-              <Button variant="outline" size="sm">Change Avatar</Button>
+              <img src={avatarUrl} alt="" className="h-16 w-16 rounded-full" />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const input = document.createElement('input');
+                  input.type = 'file';
+                  input.accept = 'image/*';
+                  input.onchange = () => {
+                    const file = input.files?.[0];
+                    if (!file) return;
+                    uploadImage.mutate(file, {
+                      onSuccess: (data: any) => {
+                        updateProfile.mutate({ avatar_url: data.url });
+                        toast({ title: 'Avatar updated!' });
+                      },
+                      onError: () => toast({ title: 'Upload failed', variant: 'destructive' }),
+                    });
+                  };
+                  input.click();
+                }}
+                disabled={uploadImage.isPending}
+              >
+                {uploadImage.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
+                Change Avatar
+              </Button>
             </div>
             <div className="space-y-2">
               <Label>Display Name</Label>
@@ -43,9 +123,20 @@ export default function Settings() {
             </div>
             <div className="space-y-2">
               <Label>Bio</Label>
-              <Textarea value={bio} onChange={(e) => setBio(e.target.value)} className="resize-none" />
+              <Textarea value={bio} onChange={(e) => setBio(e.target.value.slice(0, 160))} className="resize-none" />
+              <p className="text-xs text-muted-foreground text-right">{bio.length}/160</p>
             </div>
-            <Button>Save Changes</Button>
+            <div className="space-y-2">
+              <Label>External Link</Label>
+              <Input value={externalLink} onChange={(e) => setExternalLink(e.target.value)} placeholder="https://yoursite.com" />
+            </div>
+            <div className="space-y-2">
+              <Label>GitHub Username</Label>
+              <Input value={githubUsername} onChange={(e) => setGithubUsername(e.target.value)} placeholder="octocat" />
+            </div>
+            <Button onClick={handleSave} disabled={updateProfile.isPending}>
+              {updateProfile.isPending ? 'Saving...' : 'Save Changes'}
+            </Button>
           </TabsContent>
 
           <TabsContent value="privacy" className="space-y-4 mt-6">
@@ -54,11 +145,27 @@ export default function Settings() {
                 <p className="font-medium text-foreground">Public Profile</p>
                 <p className="text-sm text-muted-foreground">Anyone can see your sessions and stats</p>
               </div>
-              <Switch checked={isPublic} onCheckedChange={setIsPublic} />
+              <Switch checked={isPublic} onCheckedChange={handlePrivacyToggle} />
             </div>
           </TabsContent>
 
           <TabsContent value="notifications" className="space-y-3 mt-6">
+            <div className="flex items-center justify-between rounded-lg border border-border p-4">
+              <div>
+                <p className="font-medium text-foreground">Email Notifications</p>
+                <p className="text-sm text-muted-foreground">Receive email notifications for activity</p>
+              </div>
+              <Switch
+                checked={emailNotifications}
+                onCheckedChange={(checked) => {
+                  setEmailNotifications(checked);
+                  updateProfile.mutate(
+                    { email_notifications: checked },
+                    { onError: () => { setEmailNotifications(!checked); toast({ title: 'Failed to update', variant: 'destructive' }); } }
+                  );
+                }}
+              />
+            </div>
             {[
               { label: 'Kudos', desc: 'When someone gives you kudos', checked: notifKudos, set: setNotifKudos },
               { label: 'Comments', desc: 'When someone comments on your post', checked: notifComments, set: setNotifComments },
@@ -87,7 +194,7 @@ export default function Settings() {
           <TabsContent value="account" className="space-y-4 mt-6">
             <div className="space-y-2">
               <Label>Email</Label>
-              <Input value="alex@example.com" disabled />
+              <Input value={authUser?.email ?? ''} disabled />
             </div>
             <div className="pt-4 border-t border-border">
               <Button variant="destructive">Delete Account</Button>

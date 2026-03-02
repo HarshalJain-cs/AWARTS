@@ -1,21 +1,24 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Trophy, Search, User, Settings, Upload, BarChart3, BookOpen } from 'lucide-react';
+import { Home, Trophy, Search, User, Settings, Upload, BarChart3, BookOpen, Bell, PlusCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { currentUser } from '@/lib/mock-data';
-
-const navItems = [
-  { label: 'Feed', icon: Home, href: '/feed' },
-  { label: 'Leaderboard', icon: Trophy, href: '/leaderboard' },
-  { label: 'Search', icon: Search, href: '/search' },
-  { label: 'My Profile', icon: User, href: `/u/${currentUser.username}` },
-  { label: 'Settings', icon: Settings, href: '/settings' },
-  { label: 'Import Data', icon: Upload, href: '/settings' },
-  { label: 'My Recap', icon: BarChart3, href: '/recap' },
-  { label: 'Docs', icon: BookOpen, href: '/docs' },
-];
+import { useAuth } from '@/context/AuthContext';
 
 export function LeftSidebar() {
   const location = useLocation();
+  const { user } = useAuth();
+
+  const navItems = [
+    { label: 'Feed', icon: Home, href: '/feed' },
+    { label: 'Leaderboard', icon: Trophy, href: '/leaderboard' },
+    { label: 'Search', icon: Search, href: '/search' },
+    { label: 'Notifications', icon: Bell, href: '/notifications' },
+    { label: 'New Post', icon: PlusCircle, href: '/post/new' },
+    { label: 'My Profile', icon: User, href: user ? `/u/${user.username}` : '/login' },
+    { label: 'Settings', icon: Settings, href: '/settings' },
+    { label: 'Import Data', icon: Upload, href: '/settings' },
+    { label: 'My Recap', icon: BarChart3, href: '/recap' },
+    { label: 'Docs', icon: BookOpen, href: '/docs' },
+  ];
 
   return (
     <aside className="hidden lg:flex flex-col w-[220px] shrink-0 border-r border-border p-4 gap-1 sticky top-14 h-[calc(100vh-3.5rem)] overflow-y-auto">

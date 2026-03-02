@@ -11,16 +11,30 @@ const Feed = lazy(() => import("./pages/Feed"));
 const Leaderboard = lazy(() => import("./pages/Leaderboard"));
 const Search = lazy(() => import("./pages/Search"));
 const Profile = lazy(() => import("./pages/Profile"));
+const Follows = lazy(() => import("./pages/Follows"));
 const PostDetail = lazy(() => import("./pages/PostDetail"));
+const PostNew = lazy(() => import("./pages/PostNew"));
 const Settings = lazy(() => import("./pages/Settings"));
 const Recap = lazy(() => import("./pages/Recap"));
+const Notifications = lazy(() => import("./pages/Notifications"));
 const Onboarding = lazy(() => import("./pages/Onboarding"));
 const Docs = lazy(() => import("./pages/Docs"));
 const Login = lazy(() => import("./pages/Login"));
 const AuthCallback = lazy(() => import("./pages/AuthCallback"));
+const CLIVerify = lazy(() => import("./pages/CLIVerify"));
+const Privacy = lazy(() => import("./pages/Privacy"));
+const Terms = lazy(() => import("./pages/Terms"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 2,
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -43,13 +57,19 @@ const App = () => (
               <Route path="/leaderboard" element={<Leaderboard />} />
               <Route path="/search" element={<Search />} />
               <Route path="/u/:username" element={<Profile />} />
+              <Route path="/u/:username/follows" element={<Follows />} />
+              <Route path="/post/new" element={<PostNew />} />
               <Route path="/post/:id" element={<PostDetail />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/recap" element={<Recap />} />
+              <Route path="/notifications" element={<Notifications />} />
               <Route path="/onboarding" element={<Onboarding />} />
               <Route path="/docs" element={<Docs />} />
               <Route path="/login" element={<Login />} />
               <Route path="/auth/callback" element={<AuthCallback />} />
+              <Route path="/cli/verify" element={<CLIVerify />} />
+              <Route path="/privacy" element={<Privacy />} />
+              <Route path="/terms" element={<Terms />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>

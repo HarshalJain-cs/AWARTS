@@ -7,6 +7,177 @@ import { validateUsername } from '../lib/validation/sanitize.js';
 
 const users = new Hono();
 
+// ─── GET /me ───────────────────────────────────────────────────────────
+// Get current user's profile. Requires auth.
+// MUST be before /:username to avoid matching "me" as a username.
+users.get('/me', requireAuth, async (c) => {
+  const userId = c.get('userId');
+
+  const { data: user, error } = await serviceClient
+    .from('users')
+    .select('*')
+    .eq('id', userId)
+    .single();
+
+  if (error || !user) {
+    return c.json({ error: 'User not found' }, 404);
+  }
+
+  return c.json(user);
+});
+
+// ─── PATCH /me ─────────────────────────────────────────────────────────
+// Update own profile. Requires auth.
+users.patch('/me', requireAuth, async (c) => {
+  const userId = c.get('userId');
+
+  const body = await c.req.json().catch(() => null);
+  const parsed = ProfileUpdateSchema.safeParse(body);
+  if (!parsed.success) {
+    return c.json({ error: 'Validation failed', details: parsed.error.flatten() }, 400);
+  }
+
+  const updates: Record<string, unknown> = {};
+  const data = parsed.data;
+
+  if (data.username !== undefined) {
+    // Validate username is not taken
+    if (!validateUsername(data.username)) {
+      return c.json({ error: 'Invalid username format' }, 400);
+    }
+    const { data: existing } = await serviceClient
+      .from('users')
+      .select('id')
+      .eq('username', data.username)
+      .neq('id', userId)
+      .maybeSingle();
+    if (existing) {
+      return c.json({ error: 'Username already taken' }, 409);
+    }
+    updates.username = data.username;
+  }
+  if (data.display_name !== undefined) updates.display_name = data.display_name;
+  if (data.bio !== undefined) updates.bio = data.bio;
+  if (data.avatar_url !== undefined) updates.avatar_url = data.avatar_url;
+  if (data.country !== undefined) updates.country = data.country;
+  if (data.timezone !== undefined) updates.timezone = data.timezone;
+  if (data.is_public !== undefined) updates.is_public = data.is_public;
+  if (data.default_ai_provider !== undefined) updates.default_ai_provider = data.default_ai_provider;
+
+  if (Object.keys(updates).length === 0) {
+    return c.json({ error: 'No fields to update' }, 400);
+  }
+
+  const { data: updated, error } = await serviceClient
+    .from('users')
+    .update(updates)
+    .eq('id', userId)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('[users] update error:', error.message);
+    return c.json({ error: 'Failed to update profile' }, 500);
+  }
+
+  return c.json(updated);
+});
+
+// ─── GET /check-username ──────────────────────────────────────────────
+// Check if a username is available. Public endpoint.
+users.get('/check-username', async (c) => {
+  const username = c.req.query('username');
+  if (!username || username.length < 3) {
+    return c.json({ available: false, error: 'Username must be at least 3 characters' }, 400);
+  }
+  if (!/^[a-z0-9_]+$/.test(username)) {
+    return c.json({ available: false, error: 'Invalid username format' }, 400);
+  }
+
+  const { data: existing } = await serviceClient
+    .from('users')
+    .select('id')
+    .eq('username', username)
+    .maybeSingle();
+
+  return c.json({ available: !existing });
+});
+
+// ─── GET /:username/followers ─────────────────────────────────────────
+users.get('/:username/followers', optionalAuth, async (c) => {
+  const username = c.req.param('username');
+  const currentUserId = c.get('userId') as string | undefined;
+
+  const { data: targetUser } = await serviceClient
+    .from('users')
+    .select('id')
+    .eq('username', username)
+    .single();
+
+  if (!targetUser) {
+    return c.json({ error: 'User not found' }, 404);
+  }
+
+  const { data: follows } = await serviceClient
+    .from('follows')
+    .select(`
+      follower:users!follows_follower_id_fkey (
+        id,
+        username,
+        display_name,
+        avatar_url,
+        bio
+      )
+    `)
+    .eq('following_id', targetUser.id)
+    .order('created_at', { ascending: false })
+    .limit(100);
+
+  const users = (follows ?? []).map((f) => {
+    const u = Array.isArray(f.follower) ? f.follower[0] : f.follower;
+    return u ? { ...(u as any), is_following: false } : null;
+  }).filter(Boolean);
+
+  return c.json({ users });
+});
+
+// ─── GET /:username/following ─────────────────────────────────────────
+users.get('/:username/following', optionalAuth, async (c) => {
+  const username = c.req.param('username');
+
+  const { data: targetUser } = await serviceClient
+    .from('users')
+    .select('id')
+    .eq('username', username)
+    .single();
+
+  if (!targetUser) {
+    return c.json({ error: 'User not found' }, 404);
+  }
+
+  const { data: follows } = await serviceClient
+    .from('follows')
+    .select(`
+      following:users!follows_following_id_fkey (
+        id,
+        username,
+        display_name,
+        avatar_url,
+        bio
+      )
+    `)
+    .eq('follower_id', targetUser.id)
+    .order('created_at', { ascending: false })
+    .limit(100);
+
+  const users = (follows ?? []).map((f) => {
+    const u = Array.isArray(f.following) ? f.following[0] : f.following;
+    return u ? { ...(u as any), is_following: false } : null;
+  }).filter(Boolean);
+
+  return c.json({ users });
+});
+
 // ─── GET /:username ────────────────────────────────────────────────────
 // Public profile with stats, achievements, and contribution graph.
 users.get('/:username', optionalAuth, async (c) => {
@@ -154,64 +325,6 @@ users.get('/:username', optionalAuth, async (c) => {
     achievements: achievements ?? [],
     heatmap,
   });
-});
-
-// ─── PATCH /me ─────────────────────────────────────────────────────────
-// Update own profile. Requires auth.
-users.patch('/me', requireAuth, async (c) => {
-  const userId = c.get('userId');
-
-  const body = await c.req.json().catch(() => null);
-  const parsed = ProfileUpdateSchema.safeParse(body);
-  if (!parsed.success) {
-    return c.json({ error: 'Validation failed', details: parsed.error.flatten() }, 400);
-  }
-
-  const updates: Record<string, unknown> = {};
-  const data = parsed.data;
-
-  if (data.display_name !== undefined) updates.display_name = data.display_name;
-  if (data.bio !== undefined) updates.bio = data.bio;
-  if (data.country !== undefined) updates.country = data.country;
-  if (data.timezone !== undefined) updates.timezone = data.timezone;
-  if (data.is_public !== undefined) updates.is_public = data.is_public;
-  if (data.default_ai_provider !== undefined) updates.default_ai_provider = data.default_ai_provider;
-
-  if (Object.keys(updates).length === 0) {
-    return c.json({ error: 'No fields to update' }, 400);
-  }
-
-  const { data: updated, error } = await serviceClient
-    .from('users')
-    .update(updates)
-    .eq('id', userId)
-    .select()
-    .single();
-
-  if (error) {
-    console.error('[users] update error:', error.message);
-    return c.json({ error: 'Failed to update profile' }, 500);
-  }
-
-  return c.json(updated);
-});
-
-// ─── GET /me ───────────────────────────────────────────────────────────
-// Get current user's profile. Requires auth.
-users.get('/me', requireAuth, async (c) => {
-  const userId = c.get('userId');
-
-  const { data: user, error } = await serviceClient
-    .from('users')
-    .select('*')
-    .eq('id', userId)
-    .single();
-
-  if (error || !user) {
-    return c.json({ error: 'User not found' }, 404);
-  }
-
-  return c.json(user);
 });
 
 export default users;

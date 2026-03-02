@@ -10,6 +10,68 @@ import { CLIVerifySchema } from '../lib/validation/schemas.js';
 
 const auth = new Hono();
 
+// ─── POST /signup ─────────────────────────────────────────────────────
+// Creates a user with email + password, auto-confirmed via admin API.
+// This avoids the email confirmation link (which goes through supabase.co
+// and is blocked on some ISPs like Jio in India).
+auth.post('/signup', async (c) => {
+  const rateLimited = checkRateLimit(c, 'auth/signup');
+  if (rateLimited) return rateLimited;
+
+  const body = await c.req.json<{ email: string; password: string }>().catch(() => null);
+  if (!body?.email || !body?.password) {
+    return c.json({ error: 'Email and password are required' }, 400);
+  }
+
+  if (body.password.length < 6) {
+    return c.json({ error: 'Password must be at least 6 characters' }, 400);
+  }
+
+  // Use admin API to create a confirmed user (no confirmation email needed)
+  const { data, error } = await serviceClient.auth.admin.createUser({
+    email: body.email,
+    password: body.password,
+    email_confirm: true,
+  });
+
+  if (error) {
+    // Supabase returns "A user with this email address has already been registered"
+    if (error.message?.includes('already been registered')) {
+      return c.json({ error: 'An account with this email already exists. Try signing in.' }, 409);
+    }
+    console.error('[auth] signup error:', error.message);
+    return c.json({ error: error.message ?? 'Signup failed' }, 400);
+  }
+
+  const user = data.user;
+
+  // Create a profile row in our users table
+  const username = body.email.split('@')[0].replace(/[^a-z0-9_]/gi, '').toLowerCase() || `user_${nanoid(8)}`;
+
+  const { error: insertErr } = await serviceClient
+    .from('users')
+    .insert({
+      id: user.id,
+      username,
+      email: user.email,
+    });
+
+  if (insertErr) {
+    // Username collision — try with random suffix
+    if (insertErr.code === '23505' && insertErr.message.includes('username')) {
+      await serviceClient.from('users').insert({
+        id: user.id,
+        username: `${username}_${nanoid(4)}`,
+        email: user.email,
+      });
+    } else {
+      console.error('[auth] signup profile insert error:', insertErr.message);
+    }
+  }
+
+  return c.json({ success: true, user_id: user.id });
+});
+
 // ─── POST /cli/init ────────────────────────────────────────────────────
 // Creates a device auth code. Called by the CLI to start the auth flow.
 auth.post('/cli/init', async (c) => {

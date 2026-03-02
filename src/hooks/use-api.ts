@@ -307,3 +307,84 @@ export function useDeletePost() {
     },
   });
 }
+
+// ─── User Posts ───────────────────────────────────────────────────────
+interface UserPostsResponse {
+  posts: FeedPost[];
+  nextCursor: string | null;
+}
+
+export function useUserPosts(username: string) {
+  return useInfiniteQuery({
+    queryKey: ['userPosts', username],
+    queryFn: ({ pageParam }) => {
+      const params: Record<string, string> = { username };
+      if (pageParam) params.cursor = pageParam;
+      return api.get<UserPostsResponse>('/feed', { ...params, type: 'user' });
+    },
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+    enabled: !!username,
+  });
+}
+
+// ─── Followers / Following ────────────────────────────────────────────
+interface FollowListResponse {
+  users: Array<{
+    id: string;
+    username: string;
+    display_name: string | null;
+    avatar_url: string | null;
+    bio: string | null;
+    is_following: boolean;
+  }>;
+}
+
+export function useFollowers(username: string) {
+  return useQuery({
+    queryKey: ['followers', username],
+    queryFn: () => api.get<FollowListResponse>(`/users/${username}/followers`),
+    enabled: !!username,
+  });
+}
+
+export function useFollowing(username: string) {
+  return useQuery({
+    queryKey: ['following', username],
+    queryFn: () => api.get<FollowListResponse>(`/users/${username}/following`),
+    enabled: !!username,
+  });
+}
+
+// ─── Edit/Delete Comment ──────────────────────────────────────────────
+export function useEditComment() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { commentId: string; content: string }) =>
+      api.patch(`/social/comments/${data.commentId}`, { content: data.content }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['comments'] });
+    },
+  });
+}
+
+export function useDeleteComment() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (commentId: string) => api.delete(`/social/comments/${commentId}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['comments'] });
+      queryClient.invalidateQueries({ queryKey: ['feed'] });
+      queryClient.invalidateQueries({ queryKey: ['post'] });
+    },
+  });
+}
+
+// ─── Username Availability ────────────────────────────────────────────
+export function useCheckUsername(username: string) {
+  return useQuery({
+    queryKey: ['checkUsername', username],
+    queryFn: () => api.get<{ available: boolean }>('/users/check-username', { username }),
+    enabled: username.length >= 3,
+  });
+}

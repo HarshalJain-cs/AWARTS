@@ -1,14 +1,45 @@
 import { useState } from 'react';
 import { AppShell } from '@/components/layout/AppShell';
-import { currentUser } from '@/lib/mock-data';
+import { AuthGate } from '@/components/AuthGate';
+import { useAuth } from '@/context/AuthContext';
+import { useProfile } from '@/hooks/use-api';
 import { formatCost, formatTokens } from '@/lib/format';
 import { ProviderChip } from '@/components/ProviderChip';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Download } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import type { Provider } from '@/lib/types';
 
 export default function Recap() {
+  return (
+    <AuthGate>
+      <RecapContent />
+    </AuthGate>
+  );
+}
+
+function RecapContent() {
+  const { user } = useAuth();
+  const { data: profile, isLoading } = useProfile(user?.username ?? '');
   const [period, setPeriod] = useState('month');
+
+  if (isLoading || !profile) {
+    return (
+      <AppShell>
+        <div className="max-w-2xl mx-auto space-y-6">
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-64 w-full rounded-xl" />
+        </div>
+      </AppShell>
+    );
+  }
+
+  const username = profile.username ?? user?.username ?? '';
+  const avatarUrl = profile.avatar_url ?? user?.avatar_url ?? '';
+  const totalCost = profile.stats?.total_cost_usd ?? 0;
+  const streak = profile.stats?.current_streak ?? 0;
+  const providers = (profile.stats?.providers_used ?? []) as Provider[];
 
   return (
     <AppShell>
@@ -33,9 +64,9 @@ export default function Recap() {
           </div>
 
           <div className="flex items-center gap-3">
-            <img src={currentUser.avatar} alt="" className="h-12 w-12 rounded-full" />
+            <img src={avatarUrl} alt="" className="h-12 w-12 rounded-full" />
             <div>
-              <p className="font-semibold text-foreground">@{currentUser.username}</p>
+              <p className="font-semibold text-foreground">@{username}</p>
               <p className="text-xs text-muted-foreground capitalize">{period === 'all' ? 'All Time' : `This ${period}`}</p>
             </div>
           </div>
@@ -43,29 +74,31 @@ export default function Recap() {
           <div className="grid grid-cols-3 gap-4">
             <div>
               <p className="text-xs text-muted-foreground uppercase tracking-wider">Spend</p>
-              <p className="font-mono text-xl font-bold text-foreground">{formatCost(currentUser.totalSpend)}</p>
+              <p className="font-mono text-xl font-bold text-foreground">{formatCost(totalCost)}</p>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground uppercase tracking-wider">Tokens</p>
-              <p className="font-mono text-xl font-bold text-foreground">{formatTokens(currentUser.totalTokens)}</p>
+              <p className="text-xs text-muted-foreground uppercase tracking-wider">Days Active</p>
+              <p className="font-mono text-xl font-bold text-foreground">{profile.stats?.total_days ?? 0}</p>
             </div>
             <div>
               <p className="text-xs text-muted-foreground uppercase tracking-wider">Streak</p>
-              <p className="font-mono text-xl font-bold text-foreground">🔥 {currentUser.streak}d</p>
+              <p className="font-mono text-xl font-bold text-foreground">🔥 {streak}d</p>
             </div>
           </div>
 
-          <div className="flex gap-2">
-            {currentUser.providers.map((p) => <ProviderChip key={p} provider={p} size="md" />)}
-          </div>
+          {providers.length > 0 && (
+            <div className="flex gap-2">
+              {providers.map((p) => <ProviderChip key={p} provider={p} size="md" />)}
+            </div>
+          )}
         </div>
 
         <div className="flex gap-3">
           <Button variant="outline" className="flex-1">
-            <Download className="h-4 w-4 mr-2" /> OG (1200×630)
+            <Download className="h-4 w-4 mr-2" /> OG (1200x630)
           </Button>
           <Button variant="outline" className="flex-1">
-            <Download className="h-4 w-4 mr-2" /> Square (1080×1080)
+            <Download className="h-4 w-4 mr-2" /> Square (1080x1080)
           </Button>
         </div>
       </div>

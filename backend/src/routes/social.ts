@@ -316,7 +316,83 @@ social.get('/comments', async (c) => {
   return c.json({ comments: result, nextCursor });
 });
 
-// ─── DELETE /comments ──────────────────────────────────────────────────
+// ─── PATCH /comments/:id ───────────────────────────────────────────────
+// Edit own comment.
+social.patch('/comments/:id', requireAuth, async (c) => {
+  const userId = c.get('userId');
+  const commentId = c.req.param('id');
+
+  const body = await c.req.json().catch(() => null);
+  const content = body?.content?.trim();
+  if (!content || content.length === 0 || content.length > 500) {
+    return c.json({ error: 'Content must be 1-500 characters' }, 400);
+  }
+
+  // Verify ownership
+  const { data: comment } = await serviceClient
+    .from('comments')
+    .select('id, user_id')
+    .eq('id', commentId)
+    .single();
+
+  if (!comment) {
+    return c.json({ error: 'Comment not found' }, 404);
+  }
+
+  if (comment.user_id !== userId) {
+    return c.json({ error: 'Forbidden: you do not own this comment' }, 403);
+  }
+
+  const sanitized = stripHtml(content);
+  const { data: updated, error } = await serviceClient
+    .from('comments')
+    .update({ content: sanitized })
+    .eq('id', commentId)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('[social] edit comment error:', error.message);
+    return c.json({ error: 'Failed to edit comment' }, 500);
+  }
+
+  return c.json(updated);
+});
+
+// ─── DELETE /comments/:id ──────────────────────────────────────────────
+// Delete own comment by URL param.
+social.delete('/comments/:id', requireAuth, async (c) => {
+  const userId = c.get('userId');
+  const commentId = c.req.param('id');
+
+  const { data: comment } = await serviceClient
+    .from('comments')
+    .select('id, user_id')
+    .eq('id', commentId)
+    .single();
+
+  if (!comment) {
+    return c.json({ error: 'Comment not found' }, 404);
+  }
+
+  if (comment.user_id !== userId) {
+    return c.json({ error: 'Forbidden: you do not own this comment' }, 403);
+  }
+
+  const { error } = await serviceClient
+    .from('comments')
+    .delete()
+    .eq('id', commentId);
+
+  if (error) {
+    console.error('[social] delete comment error:', error.message);
+    return c.json({ error: 'Failed to delete comment' }, 500);
+  }
+
+  return c.json({ success: true });
+});
+
+// ─── DELETE /comments (legacy body-based) ─────────────────────────────
 social.delete('/comments', requireAuth, async (c) => {
   const rateLimited = checkRateLimit(c, 'social/comments');
   if (rateLimited) return rateLimited;

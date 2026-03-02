@@ -1,37 +1,65 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { AppShell } from '@/components/layout/AppShell';
 import { ActivityCard } from '@/components/ActivityCard';
 import { SkeletonCard } from '@/components/SkeletonCard';
-import { mockPosts } from '@/lib/mock-data';
+import { ErrorState } from '@/components/ErrorState';
+import { useFeed } from '@/hooks/use-api';
+import { transformFeedPost } from '@/lib/transformers';
+import { useAuth } from '@/context/AuthContext';
 import { Provider } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { ArrowUp } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const tabs = ['Following', 'Global'] as const;
-const providers: (Provider | 'all')[] = ['all', 'claude', 'codex', 'gemini'];
+const providers: (Provider | 'all')[] = ['all', 'claude', 'codex', 'gemini', 'antigravity'];
 
 export default function Feed() {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<typeof tabs[number]>('Global');
   const [providerFilter, setProviderFilter] = useState<Provider | 'all'>('all');
-  const [loading, setLoading] = useState(true);
   const [showTop, setShowTop] = useState(false);
 
-  useEffect(() => {
-    const t = setTimeout(() => setLoading(false), 800);
-    return () => clearTimeout(t);
-  }, []);
+  const feedType = activeTab === 'Following' ? 'following' : 'global';
+  const providerParam = providerFilter === 'all' ? undefined : providerFilter;
 
+  const {
+    data,
+    isLoading,
+    isError,
+    refetch,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useFeed(feedType, providerParam);
+
+  // Infinite scroll observer
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const handleIntersect = useCallback(
+    (entries: IntersectionObserverEntry[]) => {
+      if (entries[0]?.isIntersecting && hasNextPage && !isFetchingNextPage) {
+        fetchNextPage();
+      }
+    },
+    [hasNextPage, isFetchingNextPage, fetchNextPage]
+  );
+
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(handleIntersect, { rootMargin: '200px' });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [handleIntersect]);
+
+  // Back to top
   useEffect(() => {
     const handler = () => setShowTop(window.scrollY > 400);
     window.addEventListener('scroll', handler, { passive: true });
     return () => window.removeEventListener('scroll', handler);
   }, []);
 
-  const filtered = mockPosts.filter((p) => {
-    if (providerFilter !== 'all' && !p.providers.includes(providerFilter)) return false;
-    if (activeTab === 'Following') return p.user.isFollowing;
-    return true;
-  });
+  const posts = data?.pages.flatMap((page) => page.posts.map(transformFeedPost)) ?? [];
 
   return (
     <AppShell>
@@ -73,19 +101,43 @@ export default function Feed() {
           ))}
         </div>
 
+        {/* Auth prompt for Following tab */}
+        {activeTab === 'Following' && !user && (
+          <div className="text-center py-12 text-muted-foreground">
+            <p className="text-lg font-medium">Sign in to see your feed</p>
+            <p className="text-sm mt-1">Follow developers and see their sessions here.</p>
+            <Link to="/login" className="inline-block mt-4 text-sm text-primary hover:underline">
+              Sign in
+            </Link>
+          </div>
+        )}
+
         {/* Feed */}
-        <div className="space-y-4">
-          {loading
-            ? [...Array(3)].map((_, i) => <SkeletonCard key={i} />)
-            : filtered.map((post, i) => <ActivityCard key={post.id} post={post} index={i} />)
-          }
-          {!loading && filtered.length === 0 && (
-            <div className="text-center py-12 text-muted-foreground">
-              <p className="text-lg font-medium">No posts yet</p>
-              <p className="text-sm mt-1">Try changing your filters.</p>
-            </div>
-          )}
-        </div>
+        {(activeTab !== 'Following' || user) && (
+          <div className="space-y-4">
+            {isLoading
+              ? [...Array(3)].map((_, i) => <SkeletonCard key={i} />)
+              : isError
+                ? <ErrorState message="Failed to load feed." onRetry={() => refetch()} />
+                : posts.length === 0
+                  ? (
+                    <div className="text-center py-12 text-muted-foreground">
+                      <p className="text-lg font-medium">No posts yet</p>
+                      <p className="text-sm mt-1">
+                        {activeTab === 'Following'
+                          ? 'Follow some developers to see their sessions here.'
+                          : 'Try changing your filters or check back later.'}
+                      </p>
+                    </div>
+                  )
+                  : posts.map((post, i) => <ActivityCard key={post.id} post={post} index={i} />)
+            }
+
+            {/* Infinite scroll sentinel */}
+            <div ref={sentinelRef} />
+            {isFetchingNextPage && <SkeletonCard />}
+          </div>
+        )}
       </div>
 
       {/* Back to top */}

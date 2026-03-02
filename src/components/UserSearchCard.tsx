@@ -31,7 +31,7 @@ export function UserSearchCard({ user }: UserSearchCardProps) {
           </div>
         </div>
       </div>
-      <FollowButton isFollowing={user.isFollowing} />
+      <FollowButton targetUserId={user.id} isFollowing={user.isFollowing} username={user.username} />
     </div>
   );
 }

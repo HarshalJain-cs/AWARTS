@@ -298,7 +298,12 @@ export default function Landing() {
             <div className="h-5 w-3.5 bg-primary" style={{ clipPath: 'polygon(15% 0%, 100% 0%, 85% 100%, 0% 100%)' }} />
             <span className="font-mono font-bold">AWARTS</span>
           </div>
-          <p>© 2026 AWARTS. All rights reserved.</p>
+          <div className="flex items-center gap-4">
+            <Link to="/privacy" className="hover:text-foreground transition-colors">Privacy</Link>
+            <Link to="/terms" className="hover:text-foreground transition-colors">Terms</Link>
+            <Link to="/docs" className="hover:text-foreground transition-colors">Docs</Link>
+          </div>
+          <p>&copy; {new Date().getFullYear()} AWARTS</p>
         </div>
       </footer>
     </div>

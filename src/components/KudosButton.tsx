@@ -3,23 +3,45 @@ import { Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { toast } from '@/hooks/use-toast';
+import { useAuth } from '@/context/AuthContext';
+import { useToggleKudos } from '@/hooks/use-api';
+import { useNavigate } from 'react-router-dom';
 
 interface KudosButtonProps {
+  postId: string;
   count: number;
   hasKudosed: boolean;
   onToggle?: () => void;
 }
 
 export const KudosButton = forwardRef<HTMLButtonElement, KudosButtonProps>(
-  ({ count, hasKudosed, onToggle }, ref) => {
+  ({ postId, count, hasKudosed, onToggle }, ref) => {
+    const { user } = useAuth();
+    const navigate = useNavigate();
+    const toggleKudos = useToggleKudos();
     const [active, setActive] = useState(hasKudosed);
     const [localCount, setLocalCount] = useState(count);
 
     const handleClick = () => {
+      if (!user) {
+        navigate('/login');
+        return;
+      }
       const next = !active;
       setActive(next);
       setLocalCount(next ? localCount + 1 : localCount - 1);
-      toast({ title: next ? '⚡ Kudos sent!' : 'Kudos removed' });
+
+      toggleKudos.mutate(
+        { postId, hasKudosed: active },
+        {
+          onError: () => {
+            setActive(active);
+            setLocalCount(count);
+            toast({ title: 'Failed to toggle kudos', variant: 'destructive' });
+          },
+        }
+      );
+      toast({ title: next ? 'Kudos sent!' : 'Kudos removed' });
       onToggle?.();
     };
 

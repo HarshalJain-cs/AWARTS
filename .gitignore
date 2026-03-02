@@ -21,7 +21,11 @@ cli/.env
 
 # Bun lockfiles
 bun.lockb
+bun.lock
 *.lockb
+
+# npm auth tokens
+.npmrc
 
 # Editor directories and files
 .vscode/*

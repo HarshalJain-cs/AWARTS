@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/context/AuthContext';
+import { useUpdateProfile } from '@/hooks/use-api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,14 +10,17 @@ import { COUNTRIES } from '@/lib/constants';
 import { Check, Copy, ArrowRight, ArrowLeft } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { motion, AnimatePresence } from 'framer-motion';
-
+import { toast } from '@/hooks/use-toast';
 
 export default function Onboarding() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const updateProfile = useUpdateProfile();
   const [step, setStep] = useState(1);
   const [username, setUsername] = useState('');
   const [country, setCountry] = useState('');
   const [copied, setCopied] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const usernameAvailable = username.length >= 3 && username !== 'admin';
 
@@ -23,6 +28,27 @@ export default function Onboarding() {
     navigator.clipboard.writeText('npx awarts@latest');
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleFinish = async () => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    setSaving(true);
+    updateProfile.mutate(
+      { username, country },
+      {
+        onSuccess: () => {
+          toast({ title: 'Welcome to AWARTS!' });
+          navigate('/feed', { replace: true });
+        },
+        onError: () => {
+          setSaving(false);
+          toast({ title: 'Failed to save profile', variant: 'destructive' });
+        },
+      }
+    );
   };
 
   return (
@@ -56,7 +82,7 @@ export default function Onboarding() {
                 />
                 {username.length > 0 && (
                   <p className={`text-xs ${usernameAvailable ? 'text-primary' : 'text-destructive'}`}>
-                    {usernameAvailable ? '✓ Available' : username.length < 3 ? 'At least 3 characters' : 'Username taken'}
+                    {usernameAvailable ? 'Available' : username.length < 3 ? 'At least 3 characters' : 'Username taken'}
                   </p>
                 )}
               </div>
@@ -118,8 +144,8 @@ export default function Onboarding() {
                 <Button variant="outline" onClick={() => setStep(2)}>
                   <ArrowLeft className="mr-2 h-4 w-4" /> Back
                 </Button>
-                <Button className="flex-1" onClick={() => navigate('/feed')}>
-                  Start Tracking <ArrowRight className="ml-2 h-4 w-4" />
+                <Button className="flex-1" onClick={handleFinish} disabled={saving}>
+                  {saving ? 'Saving...' : 'Start Tracking'} {!saving && <ArrowRight className="ml-2 h-4 w-4" />}
                 </Button>
               </div>
             </motion.div>

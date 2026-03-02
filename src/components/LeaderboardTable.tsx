@@ -2,7 +2,7 @@ import { LeaderboardEntry } from '@/lib/types';
 import { ProviderChip } from './ProviderChip';
 import { formatCost, formatTokens } from '@/lib/format';
 import { Link } from 'react-router-dom';
-import { currentUser } from '@/lib/mock-data';
+import { useAuth } from '@/context/AuthContext';
 import { cn } from '@/lib/utils';
 import { COUNTRIES, PROVIDERS } from '@/lib/constants';
 
@@ -13,6 +13,7 @@ interface LeaderboardTableProps {
 const medals: Record<number, string> = { 1: '🥇', 2: '🥈', 3: '🥉' };
 
 export function LeaderboardTable({ entries }: LeaderboardTableProps) {
+  const { user } = useAuth();
   return (
     <div className="rounded-lg border border-border overflow-hidden">
       <div className="overflow-x-auto">
@@ -28,7 +29,7 @@ export function LeaderboardTable({ entries }: LeaderboardTableProps) {
           </thead>
           <tbody>
             {entries.map((entry) => {
-              const isMe = entry.user.id === currentUser.id;
+              const isMe = user ? entry.user.id === user.id : false;
               const flag = COUNTRIES.find((c) => c.code === entry.user.countryCode)?.flag;
               return (
                 <tr
