@@ -11,6 +11,8 @@ interface AppUser {
   displayName?: string;
   bio?: string;
   avatarUrl?: string;
+  githubUsername?: string;
+  externalLink?: string;
   email?: string;
   country?: string;
   region?: string;
@@ -65,6 +67,8 @@ export function ConvexAuthProvider({ children }: { children: ReactNode }) {
         displayName: convexUser.displayName ?? undefined,
         bio: convexUser.bio ?? undefined,
         avatarUrl: convexUser.avatarUrl ?? clerkUser?.imageUrl ?? undefined,
+        githubUsername: convexUser.githubUsername ?? undefined,
+        externalLink: convexUser.externalLink ?? undefined,
         email: convexUser.email ?? clerkUser?.primaryEmailAddress?.emailAddress ?? undefined,
         country: convexUser.country ?? undefined,
         region: convexUser.region ?? undefined,

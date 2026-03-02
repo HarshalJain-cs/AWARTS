@@ -47,12 +47,16 @@ export const getOrCreateUser = mutation({
 
     const finalUsername = taken ? `${username}_${Date.now().toString(36)}` : username;
 
+    // Clerk sets nickname to the GitHub username when signing in via GitHub OAuth
+    const githubUsername = identity.nickname ?? undefined;
+
     const userId = await ctx.db.insert("users", {
       clerkId: identity.subject,
       username: finalUsername,
       displayName: identity.name ?? undefined,
       avatarUrl: identity.pictureUrl ?? undefined,
       email: identity.email ?? undefined,
+      githubUsername,
       timezone: "UTC",
       isPublic: true,
       defaultAiProvider: "claude",
@@ -77,6 +81,8 @@ export const updateMe = mutation({
     displayName: v.optional(v.string()),
     bio: v.optional(v.string()),
     avatarUrl: v.optional(v.string()),
+    githubUsername: v.optional(v.string()),
+    externalLink: v.optional(v.string()),
     country: v.optional(v.string()),
     region: v.optional(v.string()),
     timezone: v.optional(v.string()),

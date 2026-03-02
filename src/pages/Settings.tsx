@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { AppShell } from '@/components/layout/AppShell';
 import { AuthGate } from '@/components/AuthGate';
 import { useAuth } from '@/context/AuthContext';
+import { useUser } from '@clerk/clerk-react';
 import { useCurrentUser, useUpdateProfile, useUploadImage } from '@/hooks/use-api';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -22,6 +23,7 @@ export default function Settings() {
 
 function SettingsContent() {
   const { user: authUser } = useAuth();
+  const { user: clerkUser } = useUser();
   const { data: profile } = useCurrentUser();
   const updateProfile = useUpdateProfile();
   const uploadImage = useUploadImage();
@@ -40,18 +42,28 @@ function SettingsContent() {
   // Populate form when profile loads
   useEffect(() => {
     if (profile) {
-      setDisplayName((profile as any).display_name ?? '');
+      setDisplayName((profile as any).displayName ?? '');
       setBio((profile as any).bio ?? '');
-      setExternalLink((profile as any).external_link ?? '');
-      setGithubUsername((profile as any).github_username ?? '');
-      setIsPublic((profile as any).is_public ?? true);
-      setEmailNotifications((profile as any).email_notifications ?? true);
+      setExternalLink((profile as any).externalLink ?? '');
+      setIsPublic((profile as any).isPublic ?? true);
+      setEmailNotifications((profile as any).emailNotificationsEnabled ?? true);
+
+      // Auto-fill GitHub username: prefer saved value, fall back to Clerk GitHub account
+      const saved = (profile as any).githubUsername ?? '';
+      if (saved) {
+        setGithubUsername(saved);
+      } else {
+        const ghAccount = clerkUser?.externalAccounts?.find(
+          (a) => a.provider === 'github'
+        );
+        setGithubUsername(ghAccount?.username ?? '');
+      }
     }
-  }, [profile]);
+  }, [profile, clerkUser]);
 
   const handleSave = () => {
     updateProfile.mutate(
-      { display_name: displayName, bio, external_link: externalLink || null, github_username: githubUsername || null },
+      { displayName, bio, externalLink: externalLink || undefined, githubUsername: githubUsername || undefined },
       {
         onSuccess: () => toast({ title: 'Profile updated!' }),
         onError: () => toast({ title: 'Failed to save', variant: 'destructive' }),
@@ -62,7 +74,7 @@ function SettingsContent() {
   const handlePrivacyToggle = (checked: boolean) => {
     setIsPublic(checked);
     updateProfile.mutate(
-      { is_public: checked },
+      { isPublic: checked },
       {
         onError: () => {
           setIsPublic(!checked);
@@ -72,7 +84,7 @@ function SettingsContent() {
     );
   };
 
-  const avatarUrl = authUser?.avatar_url ?? '';
+  const avatarUrl = authUser?.avatarUrl ?? '';
 
   return (
     <AppShell>
@@ -103,7 +115,7 @@ function SettingsContent() {
                     if (!file) return;
                     uploadImage.mutate(file, {
                       onSuccess: (data: any) => {
-                        updateProfile.mutate({ avatar_url: data.url });
+                        updateProfile.mutate({ avatarUrl: data.url });
                         toast({ title: 'Avatar updated!' });
                       },
                       onError: () => toast({ title: 'Upload failed', variant: 'destructive' }),
@@ -160,7 +172,7 @@ function SettingsContent() {
                 onCheckedChange={(checked) => {
                   setEmailNotifications(checked);
                   updateProfile.mutate(
-                    { email_notifications: checked },
+                    { emailNotificationsEnabled: checked },
                     { onError: () => { setEmailNotifications(!checked); toast({ title: 'Failed to update', variant: 'destructive' }); } }
                   );
                 }}
