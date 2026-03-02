@@ -8,6 +8,8 @@ export default defineSchema({
     displayName: v.optional(v.string()),
     bio: v.optional(v.string()),
     avatarUrl: v.optional(v.string()),
+    githubUsername: v.optional(v.string()),
+    externalLink: v.optional(v.string()),
     country: v.optional(v.string()),
     region: v.optional(v.string()),
     timezone: v.string(),
