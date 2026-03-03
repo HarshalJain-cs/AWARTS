@@ -25,6 +25,7 @@ const Login = lazy(() => import("./pages/Login"));
 const CLIVerify = lazy(() => import("./pages/CLIVerify"));
 const Privacy = lazy(() => import("./pages/Privacy"));
 const Terms = lazy(() => import("./pages/Terms"));
+const AuthCallback = lazy(() => import("./pages/AuthCallback"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 function ScrollToTop() {
@@ -60,6 +61,7 @@ const App = () => (
             <Route path="/cli/verify" element={<CLIVerify />} />
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/terms" element={<Terms />} />
+            <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>
