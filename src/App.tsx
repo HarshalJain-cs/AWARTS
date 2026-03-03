@@ -5,6 +5,7 @@ import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { lazy, Suspense, useEffect } from "react";
 import { HelmetProvider } from "react-helmet-async";
 import { ConvexAuthProvider } from "@/context/AuthContext";
+import { Analytics } from "@vercel/analytics/react";
 
 const Landing = lazy(() => import("./pages/Landing"));
 const Feed = lazy(() => import("./pages/Feed"));
@@ -62,6 +63,7 @@ const App = () => (
           </Routes>
         </Suspense>
       </BrowserRouter>
+      <Analytics />
     </TooltipProvider>
   </ConvexAuthProvider>
   </HelmetProvider>
