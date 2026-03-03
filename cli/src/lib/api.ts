@@ -12,7 +12,7 @@ import os from 'node:os';
 import { getToken } from './auth-store.js';
 
 // ── Resolve the API base URL ────────────────────────────────────────────
-const DEFAULT_API_URL = 'https://brilliant-corgi-819.convex.cloud';
+const DEFAULT_API_URL = 'https://honorable-bee-242.convex.site';
 
 async function readConfigUrl(): Promise<string | null> {
   try {

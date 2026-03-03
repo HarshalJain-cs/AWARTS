@@ -1,6 +1,6 @@
 {
   "name": "awarts",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Track your AI coding across Claude, Codex, Gemini & Antigravity",
   "type": "module",
   "bin": {

@@ -65,7 +65,7 @@ async function startDeviceAuth(): Promise<void> {
   }
 
   // ── Step 2: Show code & open browser ──────────────────────────────────
-  const FRONTEND_URL = process.env.AWARTS_FRONTEND_URL ?? 'http://localhost:5183';
+  const FRONTEND_URL = process.env.AWARTS_FRONTEND_URL ?? 'https://awarts.vercel.app';
   const verifyUrl = `${FRONTEND_URL}/cli/verify?code=${initData.code}`;
 
   console.log();
