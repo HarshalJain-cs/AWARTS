@@ -7,8 +7,7 @@ import { FollowButton } from '@/components/FollowButton';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ErrorState } from '@/components/ErrorState';
 import { cn } from '@/lib/utils';
-
-const tabs = ['Followers', 'Following'] as const;
+import { Users } from 'lucide-react';
 
 export default function Follows() {
   const { username } = useParams<{ username: string }>();
@@ -35,17 +34,20 @@ export default function Follows() {
 
         {/* Tabs */}
         <div className="flex gap-6 border-b border-border">
-          {tabs.map((tab) => (
+          {([
+            { label: 'Followers', count: followersData?.users.length ?? 0 },
+            { label: 'Following', count: followingData?.users.length ?? 0 },
+          ] as const).map((tab) => (
             <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
+              key={tab.label}
+              onClick={() => setActiveTab(tab.label as typeof activeTab)}
               className={cn(
                 'pb-3 text-sm font-medium transition-colors relative',
-                activeTab === tab ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'
+                activeTab === tab.label ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'
               )}
             >
-              {tab}
-              {activeTab === tab && (
+              {tab.label} {!loadingFollowers && !loadingFollowing && <span className="text-muted-foreground">({tab.count})</span>}
+              {activeTab === tab.label && (
                 <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full" />
               )}
             </button>
@@ -63,8 +65,14 @@ export default function Follows() {
           <ErrorState message={`Failed to load ${activeTab.toLowerCase()}.`} onRetry={() => window.location.reload()} />
         ) : users.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
+            <Users className="h-10 w-10 mx-auto mb-3 opacity-30" />
             <p className="text-lg font-medium">
-              {activeTab === 'Followers' ? 'No followers yet' : 'Not following anyone'}
+              {activeTab === 'Followers' ? 'No followers yet' : 'Not following anyone yet'}
+            </p>
+            <p className="text-sm mt-1">
+              {activeTab === 'Followers'
+                ? 'When people follow this profile, they\'ll appear here.'
+                : 'Profiles followed by this user will appear here.'}
             </p>
           </div>
         ) : (

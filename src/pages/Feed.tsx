@@ -136,6 +136,12 @@ export default function Feed() {
             {/* Infinite scroll sentinel */}
             <div ref={sentinelRef} />
             {isFetchingNextPage && <SkeletonCard />}
+            {!isLoading && !isFetchingNextPage && posts.length > 0 && !hasNextPage && (
+              <div className="text-center py-8 text-muted-foreground">
+                <p className="text-sm font-medium">You're all caught up!</p>
+                <p className="text-xs mt-1">Check back later for new sessions.</p>
+              </div>
+            )}
           </div>
         )}
       </div>

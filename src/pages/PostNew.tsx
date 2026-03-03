@@ -81,10 +81,16 @@ function PostNewContent() {
   };
 
   const handleGenerateCaption = async () => {
+    const selectedPost = posts.find((p) => p.id === selectedPostId);
     try {
       const result = await generateCaption.mutateAsync({
-        stats: {},
-        preferredProvider: undefined,
+        stats: {
+          totalCost: selectedPost?.stats.cost ?? 0,
+          totalTokens: (selectedPost?.stats.inputTokens ?? 0) + (selectedPost?.stats.outputTokens ?? 0),
+          providers: selectedPost?.providers ?? [],
+          date: selectedPost?.createdAt?.slice(0, 10) ?? new Date().toISOString().slice(0, 10),
+        },
+        preferredProvider: selectedPost?.providers?.[0],
       });
       if (result.title) setTitle(result.title);
       if (result.description) setDescription(result.description);

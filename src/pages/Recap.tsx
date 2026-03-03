@@ -7,7 +7,7 @@ import { formatCost, formatTokens } from '@/lib/format';
 import { ProviderChip } from '@/components/ProviderChip';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Download } from 'lucide-react';
+import { Download, BarChart3 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/hooks/use-toast';
 import type { Provider } from '@/lib/types';
@@ -37,10 +37,12 @@ function RecapContent() {
   }
 
   const username = profile.username ?? user?.username ?? '';
-  const avatarUrl = profile.avatarUrl ?? user?.avatarUrl ?? '';
+  const avatarUrl = profile.avatarUrl ?? user?.avatarUrl ?? '/placeholder.svg';
   const totalCost = profile.stats?.total_cost_usd ?? 0;
   const streak = profile.stats?.current_streak ?? 0;
+  const totalDays = profile.stats?.total_days ?? 0;
   const providers = (profile.providers_used ?? []) as Provider[];
+  const hasData = totalCost > 0 || totalDays > 0;
 
   return (
     <AppShell>
@@ -57,6 +59,15 @@ function RecapContent() {
           </Select>
         </div>
 
+        {!hasData && (
+          <div className="text-center py-8 text-muted-foreground rounded-lg border border-border bg-card p-6">
+            <BarChart3 className="h-10 w-10 mx-auto mb-3 opacity-30" />
+            <p className="text-lg font-medium">No session data yet</p>
+            <p className="text-sm mt-1">Push sessions with the CLI to generate your recap card.</p>
+            <code className="block mt-3 text-xs font-mono text-foreground bg-muted/50 rounded px-3 py-2 max-w-xs mx-auto">npx awarts@latest sync</code>
+          </div>
+        )}
+
         {/* Recap card preview */}
         <div className="rounded-xl bg-gradient-to-br from-[hsl(224,25%,8%)] to-[hsl(224,25%,14%)] border border-border p-8 space-y-6">
           <div className="flex items-center gap-3">
@@ -65,7 +76,7 @@ function RecapContent() {
           </div>
 
           <div className="flex items-center gap-3">
-            <img src={avatarUrl} alt="" className="h-12 w-12 rounded-full" />
+            <img src={avatarUrl} alt={username} className="h-12 w-12 rounded-full object-cover" />
             <div>
               <p className="font-semibold text-foreground">@{username}</p>
               <p className="text-xs text-muted-foreground capitalize">{period === 'all' ? 'All Time' : `This ${period}`}</p>

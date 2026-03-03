@@ -1,4 +1,4 @@
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { AppShell } from '@/components/layout/AppShell';
 import { ActivityCard } from '@/components/ActivityCard';
 import { CommentThread } from '@/components/CommentThread';
@@ -6,8 +6,11 @@ import { SkeletonCard } from '@/components/SkeletonCard';
 import { ErrorState } from '@/components/ErrorState';
 import { usePost, useComments } from '@/hooks/use-api';
 import { transformFeedPost, transformComment } from '@/lib/transformers';
+import { ArrowLeft } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export default function PostDetail() {
+  const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const { data: rawPost, isLoading, error } = usePost(id ?? '');
   const isError = !!error;
@@ -41,6 +44,9 @@ export default function PostDetail() {
   return (
     <AppShell>
       <div className="max-w-2xl mx-auto space-y-6">
+        <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="mb-2">
+          <ArrowLeft className="h-4 w-4 mr-1.5" /> Back
+        </Button>
         <ActivityCard post={post} />
         <div className="rounded-lg border border-border bg-card p-5">
           <h3 className="text-sm font-semibold text-foreground mb-4">

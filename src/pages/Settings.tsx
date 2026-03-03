@@ -82,7 +82,7 @@ function SettingsContent() {
     }
   };
 
-  const avatarUrl = authUser?.avatarUrl ?? '';
+  const avatarUrl = authUser?.avatarUrl || '/placeholder.svg';
 
   return (
     <AppShell>

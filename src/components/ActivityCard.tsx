@@ -140,7 +140,7 @@ export function ActivityCard({ post, index = 0, showInlineComments = false }: Ac
         {/* Header */}
         <div className="flex items-center gap-3">
           <Link to={`/u/${post.user.username}`}>
-            <img src={post.user.avatar} alt={post.user.displayName} className="h-10 w-10 rounded-full object-cover" />
+            <img src={post.user.avatar || '/placeholder.svg'} alt={post.user.displayName} className="h-10 w-10 rounded-full object-cover" />
           </Link>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5">

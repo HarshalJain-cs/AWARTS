@@ -123,7 +123,7 @@ export function CommentThread({ postId, comments }: CommentThreadProps) {
 
       {user ? (
         <div className="flex gap-3 pt-2 border-t border-border">
-          <img src={user.avatarUrl ?? ''} alt="You" className="h-8 w-8 rounded-full mt-1 object-cover" />
+          <img src={user.avatarUrl || '/placeholder.svg'} alt="You" className="h-8 w-8 rounded-full mt-1 object-cover" />
           <div className="flex-1 space-y-2">
             <Textarea
               value={input}

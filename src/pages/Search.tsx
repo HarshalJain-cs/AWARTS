@@ -7,7 +7,7 @@ import { useSearch } from '@/hooks/use-api';
 import { useDebounce } from '@/hooks/use-debounce';
 import { transformUser } from '@/lib/transformers';
 import { Input } from '@/components/ui/input';
-import { Search as SearchIcon, Loader2 } from 'lucide-react';
+import { Search as SearchIcon, Loader2, X } from 'lucide-react';
 
 export default function Search() {
   const [searchParams] = useSearchParams();
@@ -39,6 +39,15 @@ export default function Search() {
           {isLoading && debouncedQuery.length >= 2 && (
             <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground animate-spin" />
           )}
+          {!isLoading && query.length > 0 && (
+            <button
+              onClick={() => setQuery('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+              aria-label="Clear search"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
         </div>
 
         <div className="space-y-3">
@@ -62,7 +71,10 @@ export default function Search() {
               <p className="text-sm mt-1">Try a different search term.</p>
             </div>
           ) : (
-            results.map((user) => <UserSearchCard key={user.id} user={user} />)
+            <>
+              <p className="text-xs text-muted-foreground">{results.length} result{results.length !== 1 ? 's' : ''} for "{debouncedQuery}"</p>
+              {results.map((user) => <UserSearchCard key={user.id} user={user} />)}
+            </>
           )}
         </div>
       </div>

@@ -15,7 +15,13 @@ const corsHeaders = {
   "Referrer-Policy": "strict-origin-when-cross-origin",
   "Strict-Transport-Security": "max-age=63072000; includeSubDomains; preload",
   "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
+  "Content-Security-Policy": "default-src 'none'; frame-ancestors 'none'",
 };
+
+// Preflight OPTIONS handler for CORS
+const preflightHandler = httpAction(async () => {
+  return new Response(null, { status: 204, headers: corsHeaders });
+});
 
 function jsonResponse(data: unknown, status = 200) {
   return new Response(JSON.stringify(data), { status, headers: corsHeaders });
@@ -109,5 +115,10 @@ http.route({
     }
   }),
 });
+
+// ─── CORS Preflight ──────────────────────────────────────────────────
+http.route({ path: "/api/auth/cli/init", method: "OPTIONS", handler: preflightHandler });
+http.route({ path: "/api/auth/cli/poll", method: "OPTIONS", handler: preflightHandler });
+http.route({ path: "/api/usage/submit", method: "OPTIONS", handler: preflightHandler });
 
 export default http;

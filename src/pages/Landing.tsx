@@ -302,6 +302,7 @@ export default function Landing() {
             <Link to="/privacy" className="hover:text-foreground transition-colors">Privacy</Link>
             <Link to="/terms" className="hover:text-foreground transition-colors">Terms</Link>
             <Link to="/docs" className="hover:text-foreground transition-colors">Docs</Link>
+            <a href="https://github.com/HarshalJain-cs/AWARTS" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">GitHub</a>
           </div>
           <p>&copy; {new Date().getFullYear()} AWARTS</p>
         </div>
