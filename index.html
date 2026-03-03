@@ -165,10 +165,9 @@
     }
     </script>
 
-    <!-- Security Headers -->
-    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
-    <meta http-equiv="X-Frame-Options" content="DENY" />
+    <!-- Security -->
     <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <!-- X-Frame-Options and X-Content-Type-Options are set via HTTP headers in vercel.json -->
   </head>
 
   <body>

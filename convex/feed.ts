@@ -24,7 +24,7 @@ export const getFeed = query({
 
     // Filter out posts from private profiles (except own posts)
     const privateUserCache = new Map<string, boolean>();
-    const getIsPrivate = async (userId: any) => {
+    const getIsPrivate = async (userId: Id<"users">) => {
       const key = String(userId);
       if (!privateUserCache.has(key)) {
         const u = await ctx.db.get(userId);
