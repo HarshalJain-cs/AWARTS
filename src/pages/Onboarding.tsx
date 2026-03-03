@@ -11,6 +11,7 @@ import { Check, Copy, ArrowRight, ArrowLeft } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from '@/hooks/use-toast';
+import { SEO } from '@/components/SEO';
 
 export default function Onboarding() {
   const navigate = useNavigate();
@@ -51,6 +52,7 @@ export default function Onboarding() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center px-4">
+      <SEO title="Get Started" description="Set up your AWARTS profile and start tracking your AI coding sessions." noindex />
       <div className="w-full max-w-md space-y-8">
         {/* Logo */}
         <div className="flex items-center justify-center gap-2">

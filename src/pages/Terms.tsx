@@ -1,8 +1,10 @@
 import { Link } from 'react-router-dom';
+import { SEO } from '@/components/SEO';
 
 export default function Terms() {
   return (
     <div className="min-h-screen bg-background">
+      <SEO title="Terms of Service" description="AWARTS terms of service — rules, acceptable use, content ownership, and account policies." canonical="/terms" />
       <nav className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-sm">
         <div className="max-w-3xl mx-auto flex items-center justify-between px-4 h-14">
           <Link to="/" className="flex items-center gap-2">

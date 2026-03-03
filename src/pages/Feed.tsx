@@ -10,6 +10,7 @@ import { Provider } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { ArrowUp } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { SEO } from '@/components/SEO';
 
 const tabs = ['Following', 'Global'] as const;
 const providers: (Provider | 'all')[] = ['all', 'claude', 'codex', 'gemini', 'antigravity'];
@@ -63,6 +64,7 @@ export default function Feed() {
 
   return (
     <AppShell>
+      <SEO title="Feed — AI Coding Activity" description="See the latest AI coding sessions from developers worldwide. Filter by Claude, Codex, Gemini, and Antigravity providers." canonical="/feed" keywords="AI coding feed, developer activity, Claude sessions, Codex sessions, AI coding community" />
       <div className="max-w-2xl mx-auto space-y-6">
         {/* Tabs */}
         <div className="flex gap-6 border-b border-border">

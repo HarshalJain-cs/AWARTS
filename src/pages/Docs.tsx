@@ -9,6 +9,7 @@ import {
   TerminalSquare, Code2, Shield, HelpCircle, Keyboard, Bug,
   Search, ChevronUp
 } from 'lucide-react';
+import { SEO } from '@/components/SEO';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface DocSection {
@@ -611,6 +612,7 @@ export default function Docs() {
 
   return (
     <AppShell>
+      <SEO title="Documentation — Getting Started, CLI, API" description="Complete AWARTS documentation: installation, CLI reference, API docs, provider setup, achievements, keyboard shortcuts, and troubleshooting." canonical="/docs" keywords="AWARTS docs, CLI reference, API documentation, AI coding tracker setup" />
       <div className="max-w-5xl mx-auto flex gap-8">
         {/* Desktop TOC */}
         <aside className="hidden lg:block w-[200px] shrink-0">

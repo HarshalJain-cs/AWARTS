@@ -9,6 +9,7 @@ import { motion } from 'framer-motion';
 import { useState, useEffect, useRef } from 'react';
 import { Sun, Moon } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { SEO } from '@/components/SEO';
 
 function useCounter(target: number, duration = 1500) {
   const [count, setCount] = useState(0);
@@ -77,6 +78,10 @@ export default function Landing() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        canonical="/"
+        keywords="AI coding tracker, Strava for coding, Claude tracker, Codex tracker, Gemini tracker, AI session tracker, developer leaderboard, coding streak, AI usage tracker, Claude Code tracker, code Strava, Antigravity tracker, AI developer tools, coding competition, developer stats, token tracker, AI cost tracker"
+      />
       {/* Nav */}
       <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">

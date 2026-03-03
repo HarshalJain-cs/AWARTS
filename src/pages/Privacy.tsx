@@ -1,8 +1,10 @@
 import { Link } from 'react-router-dom';
+import { SEO } from '@/components/SEO';
 
 export default function Privacy() {
   return (
     <div className="min-h-screen bg-background">
+      <SEO title="Privacy Policy" description="AWARTS privacy policy — learn how we collect, use, and protect your data. No code or prompts are ever accessed." canonical="/privacy" />
       <nav className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-sm">
         <div className="max-w-3xl mx-auto flex items-center justify-between px-4 h-14">
           <Link to="/" className="flex items-center gap-2">

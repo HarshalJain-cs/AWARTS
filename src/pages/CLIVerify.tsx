@@ -5,6 +5,7 @@ import { useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { Button } from '@/components/ui/button';
 import { Check, Loader2, Terminal } from 'lucide-react';
+import { SEO } from '@/components/SEO';
 
 export default function CLIVerify() {
   const [searchParams] = useSearchParams();
@@ -26,6 +27,7 @@ export default function CLIVerify() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center px-4">
+      <SEO title="Authorize CLI" description="Authorize the AWARTS CLI to access your account." noindex />
       <div className="w-full max-w-sm space-y-8 text-center">
         <div className="flex items-center justify-center gap-2">
           <div className="h-8 w-6 bg-primary" style={{ clipPath: 'polygon(15% 0%, 100% 0%, 85% 100%, 0% 100%)' }} />

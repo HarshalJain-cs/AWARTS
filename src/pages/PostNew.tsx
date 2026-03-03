@@ -13,6 +13,7 @@ import { toast } from '@/hooks/use-toast';
 import { Upload, X, Sparkles, Loader2, Image as ImageIcon, Terminal, ChevronRight } from 'lucide-react';
 import { formatDate, formatCost } from '@/lib/format';
 import { Link } from 'react-router-dom';
+import { SEO } from '@/components/SEO';
 
 export default function PostNew() {
   return (
@@ -130,6 +131,7 @@ function PostNewContent() {
   if (!selectedPostId) {
     return (
       <AppShell>
+        <SEO title="Edit Post" description="Add a title, description, and screenshots to your AI coding session on AWARTS." noindex />
         <div className="max-w-2xl mx-auto space-y-6">
           <h1 className="text-2xl font-bold text-foreground">Edit a Session Post</h1>
           <p className="text-sm text-muted-foreground">

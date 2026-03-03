@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Upload, Loader2, Check, Copy } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { SEO } from '@/components/SEO';
 
 export default function Settings() {
   return (
@@ -86,6 +87,7 @@ function SettingsContent() {
 
   return (
     <AppShell>
+      <SEO title="Settings" description="Manage your AWARTS profile, privacy, notifications, and account settings." noindex />
       <div className="max-w-2xl mx-auto space-y-6">
         <h1 className="text-2xl font-bold text-foreground">Settings</h1>
 

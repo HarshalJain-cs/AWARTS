@@ -11,6 +11,7 @@ import { Download, BarChart3 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/hooks/use-toast';
 import type { Provider } from '@/lib/types';
+import { SEO } from '@/components/SEO';
 
 export default function Recap() {
   return (
@@ -46,6 +47,7 @@ function RecapContent() {
 
   return (
     <AppShell>
+      <SEO title="Your Recap" description="View your personal AI coding recap card — stats, streaks, providers, and more." noindex />
       <div className="max-w-2xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-foreground">Your Recap</h1>

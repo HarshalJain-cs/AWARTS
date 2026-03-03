@@ -3,6 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { lazy, Suspense, useEffect } from "react";
+import { HelmetProvider } from "react-helmet-async";
 import { ConvexAuthProvider } from "@/context/AuthContext";
 
 const Landing = lazy(() => import("./pages/Landing"));
@@ -31,6 +32,7 @@ function ScrollToTop() {
 }
 
 const App = () => (
+  <HelmetProvider>
   <ConvexAuthProvider>
     <TooltipProvider>
       <Toaster />
@@ -62,6 +64,7 @@ const App = () => (
       </BrowserRouter>
     </TooltipProvider>
   </ConvexAuthProvider>
+  </HelmetProvider>
 );
 
 export default App;

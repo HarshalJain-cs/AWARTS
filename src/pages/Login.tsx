@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { SignIn } from "@clerk/clerk-react";
 import { useAuth } from "@/context/AuthContext";
 import { useEffect } from "react";
+import { SEO } from '@/components/SEO';
 
 export default function Login() {
   const { isSignedIn, isLoaded } = useAuth();
@@ -15,6 +16,7 @@ export default function Login() {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <SEO title="Log In" description="Sign in to AWARTS to track your AI coding sessions, view your stats, and compete on leaderboards." canonical="/login" />
       <SignIn
         routing="hash"
         afterSignInUrl="/feed"

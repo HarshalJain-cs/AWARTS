@@ -7,6 +7,7 @@ import { transformLeaderboardEntry } from '@/lib/transformers';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { COUNTRIES } from '@/lib/constants';
 import { Skeleton } from '@/components/ui/skeleton';
+import { SEO } from '@/components/SEO';
 
 const periodMap: Record<string, string> = {
   today: 'daily',
@@ -31,6 +32,7 @@ export default function Leaderboard() {
 
   return (
     <AppShell>
+      <SEO title="Leaderboard — Top AI Coders" description="See who's writing the most AI-assisted code. Global leaderboard ranked by output tokens across Claude, Codex, Gemini, and Antigravity." canonical="/leaderboard" keywords="AI coding leaderboard, top developers, Claude leaderboard, Codex ranking, developer competition" />
       <div className="max-w-3xl mx-auto space-y-6">
         <h1 className="text-2xl font-bold text-foreground">Leaderboard</h1>
 

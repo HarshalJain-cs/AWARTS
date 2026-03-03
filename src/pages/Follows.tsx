@@ -8,6 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ErrorState } from '@/components/ErrorState';
 import { cn } from '@/lib/utils';
 import { Users } from 'lucide-react';
+import { SEO } from '@/components/SEO';
 
 export default function Follows() {
   const { username } = useParams<{ username: string }>();
@@ -25,6 +26,7 @@ export default function Follows() {
 
   return (
     <AppShell>
+      <SEO title={`@${username} — Followers & Following`} description={`See who @${username} follows and who follows them on AWARTS.`} canonical={`/u/${username}/follows`} noindex />
       <div className="max-w-2xl mx-auto space-y-6">
         <div className="flex items-center gap-3">
           <Link to={`/u/${username}`} className="text-lg font-bold text-foreground hover:underline">

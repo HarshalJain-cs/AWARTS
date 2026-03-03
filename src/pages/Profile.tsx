@@ -16,6 +16,7 @@ import { formatNumber } from '@/lib/format';
 import { MapPin, Calendar, BadgeCheck, Flame, Lock, Github, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
+import { SEO } from '@/components/SEO';
 
 export default function Profile() {
   const { username } = useParams<{ username: string }>();
@@ -67,6 +68,7 @@ export default function Profile() {
 
   return (
     <AppShell>
+      <SEO title={`@${user.username} — AI Coding Profile`} description={user.bio || `Check out @${user.username}'s AI coding stats, sessions, and achievements on AWARTS.`} canonical={`/u/${user.username}`} ogType="profile" />
       <div className="max-w-2xl mx-auto space-y-8">
         {/* Header */}
         <div className="flex flex-col sm:flex-row gap-6">

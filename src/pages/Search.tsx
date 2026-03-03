@@ -8,6 +8,7 @@ import { useDebounce } from '@/hooks/use-debounce';
 import { transformUser } from '@/lib/transformers';
 import { Input } from '@/components/ui/input';
 import { Search as SearchIcon, Loader2, X } from 'lucide-react';
+import { SEO } from '@/components/SEO';
 
 export default function Search() {
   const [searchParams] = useSearchParams();
@@ -26,6 +27,7 @@ export default function Search() {
 
   return (
     <AppShell>
+      <SEO title="Search Developers" description="Find AI-assisted developers by username on AWARTS. Discover coders using Claude, Codex, Gemini, and Antigravity." canonical="/search" keywords="search developers, find AI coders, AWARTS users" />
       <div className="max-w-2xl mx-auto space-y-6">
         <div className="relative">
           <SearchIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />

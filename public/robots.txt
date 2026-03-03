@@ -15,5 +15,9 @@ Allow: /
 Disallow: /settings
 Disallow: /cli/verify
 Disallow: /onboarding
+Disallow: /notifications
+Disallow: /post/new
+Disallow: /auth/callback
 
+Host: https://awarts.com
 Sitemap: https://awarts.com/sitemap.xml

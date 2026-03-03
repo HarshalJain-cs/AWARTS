@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { SEO } from '@/components/SEO';
 
 const iconMap: Record<string, typeof Zap> = {
   kudos: Zap,
@@ -42,6 +43,7 @@ function NotificationsContent() {
 
   return (
     <AppShell>
+      <SEO title="Notifications" description="Your latest notifications on AWARTS — kudos, comments, mentions, and follows." noindex />
       <div className="max-w-2xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
