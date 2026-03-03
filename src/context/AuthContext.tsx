@@ -66,7 +66,7 @@ export function ConvexAuthProvider({ children }: { children: ReactNode }) {
         username: convexUser.username,
         displayName: convexUser.displayName ?? undefined,
         bio: convexUser.bio ?? undefined,
-        avatarUrl: convexUser.avatarUrl ?? clerkUser?.imageUrl ?? undefined,
+        avatarUrl: convexUser.avatarUrl ?? clerkUser?.imageUrl ?? '/placeholder.svg',
         githubUsername: convexUser.githubUsername ?? undefined,
         externalLink: convexUser.externalLink ?? undefined,
         email: convexUser.email ?? clerkUser?.primaryEmailAddress?.emailAddress ?? undefined,

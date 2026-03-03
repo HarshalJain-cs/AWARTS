@@ -13,7 +13,7 @@ import { SkeletonProfile } from '@/components/SkeletonProfile';
 import { SkeletonCard } from '@/components/SkeletonCard';
 import { ErrorState } from '@/components/ErrorState';
 import { formatNumber } from '@/lib/format';
-import { MapPin, Calendar, BadgeCheck, Flame, Lock } from 'lucide-react';
+import { MapPin, Calendar, BadgeCheck, Flame, Lock, Github, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 
@@ -91,6 +91,33 @@ export default function Profile() {
                 </span>
               )}
             </div>
+            {/* GitHub + External Link */}
+            {(raw.githubUsername || raw.externalLink) && (
+              <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                {raw.githubUsername && (
+                  <a
+                    href={`https://github.com/${raw.githubUsername}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 hover:text-foreground transition-colors"
+                  >
+                    <Github className="h-3.5 w-3.5" />
+                    {raw.githubUsername}
+                  </a>
+                )}
+                {raw.externalLink && (
+                  <a
+                    href={raw.externalLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 hover:text-foreground transition-colors"
+                  >
+                    <ExternalLink className="h-3.5 w-3.5" />
+                    {(() => { try { return new URL(raw.externalLink).hostname; } catch { return 'Link'; } })()}
+                  </a>
+                )}
+              </div>
+            )}
             {/* Clickable followers/following + activities count */}
             <div className="flex gap-4 text-sm">
               <Link to={`/u/${user.username}/follows`} className="hover:underline">

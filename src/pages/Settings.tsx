@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Upload, Loader2 } from 'lucide-react';
+import { Upload, Loader2, Check, Copy } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
 export default function Settings() {
@@ -38,6 +38,8 @@ function SettingsContent() {
   const [notifComments, setNotifComments] = useState(true);
   const [notifMentions, setNotifMentions] = useState(true);
   const [notifFollows, setNotifFollows] = useState(true);
+  const [copiedSync, setCopiedSync] = useState(false);
+  const [copiedDaemon, setCopiedDaemon] = useState(false);
 
   // Populate form when profile loads
   useEffect(() => {
@@ -185,12 +187,12 @@ function SettingsContent() {
               { label: 'Mentions', desc: 'When someone mentions you', checked: notifMentions, set: setNotifMentions },
               { label: 'Follows', desc: 'When someone follows you', checked: notifFollows, set: setNotifFollows },
             ].map((n) => (
-              <div key={n.label} className="flex items-center justify-between rounded-lg border border-border p-4">
+              <div key={n.label} className="flex items-center justify-between rounded-lg border border-border p-4 opacity-60">
                 <div>
-                  <p className="font-medium text-foreground">{n.label}</p>
+                  <p className="font-medium text-foreground">{n.label} <span className="text-xs text-muted-foreground font-normal">(coming soon)</span></p>
                   <p className="text-sm text-muted-foreground">{n.desc}</p>
                 </div>
-                <Switch checked={n.checked} onCheckedChange={n.set} />
+                <Switch checked={n.checked} onCheckedChange={n.set} disabled />
               </div>
             ))}
           </TabsContent>
@@ -199,10 +201,38 @@ function SettingsContent() {
             <div className="rounded-lg border-2 border-dashed border-border bg-muted/20 p-12 text-center">
               <Upload className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
               <p className="font-medium text-foreground">Import session data</p>
-              <p className="text-sm text-muted-foreground mt-1">Use the CLI to sync your sessions automatically:</p>
-              <code className="block mt-3 text-xs font-mono text-foreground bg-muted/50 rounded px-3 py-2 max-w-xs mx-auto">
-                npx awarts@latest sync
-              </code>
+              <p className="text-sm text-muted-foreground mt-1">Use the CLI to sync your sessions manually:</p>
+              <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/30 px-4 py-3 font-mono text-sm max-w-sm mx-auto mt-3">
+                <span className="text-muted-foreground select-none">$</span>
+                <code className="flex-1 text-foreground text-left">npx awarts@latest sync</code>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText('npx awarts@latest sync');
+                    setCopiedSync(true);
+                    toast({ title: 'Copied to clipboard!' });
+                    setTimeout(() => setCopiedSync(false), 2000);
+                  }}
+                  className="text-muted-foreground hover:text-foreground transition-colors shrink-0"
+                >
+                  {copiedSync ? <Check className="h-4 w-4 text-primary" /> : <Copy className="h-4 w-4" />}
+                </button>
+              </div>
+              <p className="text-xs text-muted-foreground mt-4">Or start automatic background syncing:</p>
+              <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/30 px-4 py-3 font-mono text-sm max-w-sm mx-auto mt-2">
+                <span className="text-muted-foreground select-none">$</span>
+                <code className="flex-1 text-foreground text-left">npx awarts@latest daemon start</code>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText('npx awarts@latest daemon start');
+                    setCopiedDaemon(true);
+                    toast({ title: 'Copied to clipboard!' });
+                    setTimeout(() => setCopiedDaemon(false), 2000);
+                  }}
+                  className="text-muted-foreground hover:text-foreground transition-colors shrink-0"
+                >
+                  {copiedDaemon ? <Check className="h-4 w-4 text-primary" /> : <Copy className="h-4 w-4" />}
+                </button>
+              </div>
               <p className="text-xs text-muted-foreground mt-3">File import coming soon.</p>
             </div>
           </TabsContent>

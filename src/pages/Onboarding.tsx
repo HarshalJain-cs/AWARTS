@@ -20,6 +20,7 @@ export default function Onboarding() {
   const [username, setUsername] = useState('');
   const [country, setCountry] = useState('');
   const [copied, setCopied] = useState(false);
+  const [copiedDaemon, setCopiedDaemon] = useState(false);
   const [saving, setSaving] = useState(false);
 
   const { data: usernameCheck } = useCheckUsername(username);
@@ -39,6 +40,7 @@ export default function Onboarding() {
     setSaving(true);
     try {
       await updateProfile.mutateAsync({ username, country });
+      setSaving(false);
       toast({ title: 'Welcome to AWARTS!' });
       navigate('/feed', { replace: true });
     } catch {
@@ -137,9 +139,25 @@ export default function Onboarding() {
               <h2 className="text-2xl font-bold text-foreground text-center">Install the CLI</h2>
               <p className="text-sm text-muted-foreground text-center">Run this command to start tracking your sessions:</p>
               <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/30 px-4 py-3 font-mono text-sm">
+                <span className="text-muted-foreground select-none">$</span>
                 <code className="flex-1 text-foreground">npx awarts@latest</code>
                 <button onClick={copyCmd} className="text-muted-foreground hover:text-foreground transition-colors">
                   {copied ? <Check className="h-4 w-4 text-primary" /> : <Copy className="h-4 w-4" />}
+                </button>
+              </div>
+              <p className="text-xs text-muted-foreground text-center">Then enable automatic syncing:</p>
+              <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/30 px-4 py-3 font-mono text-sm">
+                <span className="text-muted-foreground select-none">$</span>
+                <code className="flex-1 text-foreground">npx awarts@latest daemon start</code>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText('npx awarts@latest daemon start');
+                    setCopiedDaemon(true);
+                    setTimeout(() => setCopiedDaemon(false), 2000);
+                  }}
+                  className="text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  {copiedDaemon ? <Check className="h-4 w-4 text-primary" /> : <Copy className="h-4 w-4" />}
                 </button>
               </div>
               <div className="flex gap-3">

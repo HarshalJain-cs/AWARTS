@@ -100,7 +100,7 @@ function NotificationsContent() {
                     <Icon className="h-4 w-4 text-primary" />
                   </div>
                   <img
-                    src={n.actor.avatar}
+                    src={n.actor.avatar || '/placeholder.svg'}
                     alt={n.actor.username}
                     className="h-10 w-10 rounded-full shrink-0"
                   />

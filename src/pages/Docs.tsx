@@ -73,7 +73,7 @@ const sections: DocSection[] = [
       <>
         <Heading3>What is AWARTS?</Heading3>
         <Para>
-          AWARTS (AI Workflow Activity & Runtime Tracking System) is the social fitness tracker for AI-assisted coding. Think Strava, but for your Claude, Codex, and Gemini sessions. Track tokens, costs, streaks, and compete with developers worldwide.
+          AWARTS (AI Workflow Activity & Runtime Tracking System) is the social fitness tracker for AI-assisted coding. Think Strava, but for your Claude, Codex, Gemini, and Antigravity sessions. Track tokens, costs, streaks, and compete with developers worldwide.
         </Para>
 
         <Heading3>Quick Start (3 Steps)</Heading3>
@@ -138,7 +138,7 @@ const sections: DocSection[] = [
     icon: Cpu,
     content: (
       <>
-        <Para>AWARTS supports three AI coding providers. Each tracks sessions, tokens, and cost independently.</Para>
+        <Para>AWARTS supports four AI coding providers. Each tracks sessions, tokens, and cost independently.</Para>
 
         {Object.values(PROVIDERS).map((p) => (
           <div key={p.id} className="my-4">
@@ -165,7 +165,7 @@ const sections: DocSection[] = [
           If you switch between providers during a single work period, AWARTS tracks each provider segment separately but groups them under one "work session" on your profile. Your contribution graph shows the dominant provider per day by color.
         </Para>
         <InfoBox>
-          🌐 <strong>Polyglot Coder:</strong> Use 2+ providers to unlock the Polyglot achievement. Use all 3 for Full Stack AI!
+          🌐 <strong>Polyglot Coder:</strong> Use 2+ providers to unlock the Polyglot achievement. Use all 4 for Full Stack AI!
         </InfoBox>
       </>
     ),
@@ -181,7 +181,7 @@ const sections: DocSection[] = [
           A session is a single continuous interaction with an AI provider. It starts when you send your first message and ends after 5 minutes of inactivity or when you explicitly close the conversation. Each session records:
         </Para>
         <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1 mb-3 ml-2">
-          <li>Provider (Claude, Codex, or Gemini)</li>
+          <li>Provider (Claude, Codex, Gemini, or Antigravity)</li>
           <li>Start and end timestamps</li>
           <li>Input and output token counts</li>
           <li>Estimated cost based on the model's pricing</li>
@@ -206,6 +206,7 @@ const sections: DocSection[] = [
             ['Claude 4 Sonnet', '$3.00', '$15.00', '~$0.45 for 10K in / 25K out'],
             ['Codex', '$2.00', '$8.00', '~$0.28 for 15K in / 30K out'],
             ['Gemini 2.5 Pro', '$1.25', '$10.00', '~$0.35 for 20K in / 30K out'],
+            ['Antigravity', '$2.50', '$12.00', '~$0.40 for 15K in / 25K out'],
           ]}
         />
 
@@ -243,7 +244,7 @@ const sections: DocSection[] = [
         <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1 mb-3 ml-2">
           <li><strong>Time period:</strong> Today, This Week, This Month, All Time</li>
           <li><strong>Region:</strong> Global or by country</li>
-          <li><strong>Provider:</strong> All, Claude, Codex, or Gemini</li>
+          <li><strong>Provider:</strong> All, Claude, Codex, Gemini, or Antigravity</li>
         </ul>
 
         <Heading3>Profile</Heading3>
@@ -307,6 +308,10 @@ const sections: DocSection[] = [
             ['awarts config', 'View or edit configuration', 'awarts config set autoSync true'],
             ['awarts whoami', 'Show current logged-in user', 'awarts whoami'],
             ['awarts logout', 'Clear stored credentials', 'awarts logout'],
+            ['awarts daemon start', 'Start background auto-sync daemon', 'awarts daemon start --interval 10'],
+            ['awarts daemon stop', 'Stop the background daemon', 'awarts daemon stop'],
+            ['awarts daemon status', 'Check if daemon is running', 'awarts daemon status'],
+            ['awarts daemon logs', 'View recent daemon log output', 'awarts daemon logs -n 100'],
           ]}
         />
 
@@ -314,12 +319,13 @@ const sections: DocSection[] = [
         <TableWrapper
           headers={['Flag', 'Description', 'Default']}
           rows={[
-            ['--provider, -p', 'Filter by provider (claude, codex, gemini)', 'all'],
+            ['--provider, -p', 'Filter by provider (claude, codex, gemini, antigravity)', 'all'],
             ['--format, -f', 'Output format for export (json, csv)', 'json'],
             ['--since', 'Only sync sessions after this date', '(last sync)'],
             ['--dry-run', 'Preview what would be synced without posting', 'false'],
             ['--verbose, -v', 'Show detailed output', 'false'],
             ['--quiet, -q', 'Suppress all output', 'false'],
+            ['--interval', 'Sync interval in minutes (daemon start)', '5'],
           ]}
         />
 

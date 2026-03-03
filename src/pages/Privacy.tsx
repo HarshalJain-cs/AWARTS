@@ -39,18 +39,19 @@ export default function Privacy() {
           </ul>
 
           <h2>Data Storage</h2>
-          <p>Data is stored in Supabase (PostgreSQL) with Row Level Security enabled. We use only essential cookies for authentication — no tracking cookies.</p>
+          <p>Data is stored in Convex with encryption at rest. Authentication is handled by Clerk. We use only essential cookies for authentication — no tracking cookies.</p>
 
           <h2>Third Parties</h2>
           <ul className="list-disc pl-6 space-y-1">
-            <li><strong>Supabase:</strong> Database and authentication.</li>
+            <li><strong>Convex:</strong> Backend and database.</li>
+            <li><strong>Clerk:</strong> Authentication and identity.</li>
             <li><strong>Vercel:</strong> Hosting and analytics.</li>
             <li><strong>Resend:</strong> Transactional emails.</li>
           </ul>
           <p>We do not sell or share your personal data with advertisers.</p>
 
           <h2>Contact</h2>
-          <p>Questions? Open an issue on <a href="https://github.com" className="text-primary hover:underline">GitHub</a> or email us.</p>
+          <p>Questions? Open an issue on <a href="https://github.com/HarshalJain-cs/AWARTS" className="text-primary hover:underline">GitHub</a> or email us.</p>
         </div>
       </main>
 

@@ -49,7 +49,7 @@ export default function Terms() {
           <p>We may update these terms. Continued use after changes constitutes acceptance.</p>
 
           <h2>9. Contact</h2>
-          <p>Questions about these terms? Open an issue on <a href="https://github.com" className="text-primary hover:underline">GitHub</a>.</p>
+          <p>Questions about these terms? Open an issue on <a href="https://github.com/HarshalJain-cs/AWARTS" className="text-primary hover:underline">GitHub</a>.</p>
         </div>
       </main>
 

@@ -121,7 +121,7 @@ export default function Landing() {
         {mobileMenu && (
           <div className="sm:hidden border-t border-border bg-background px-4 py-3 space-y-2 animate-fade-in">
             <Link to="/docs" className="block text-sm text-muted-foreground hover:text-foreground py-1" onClick={() => setMobileMenu(false)}>Docs</Link>
-            <Link to="/feed" className="block text-sm text-muted-foreground hover:text-foreground py-1" onClick={() => setMobileMenu(false)}>Log in</Link>
+            <Link to="/login" className="block text-sm text-muted-foreground hover:text-foreground py-1" onClick={() => setMobileMenu(false)}>Log in</Link>
             <Button asChild size="sm" className="w-full">
               <Link to="/onboarding" onClick={() => setMobileMenu(false)}>Get Started</Link>
             </Button>

@@ -9,6 +9,10 @@
  *   npx awarts sync             Auto-detect providers and push everything
  *   npx awarts status           Show auth status and detected providers
  *   npx awarts logout           Clear stored credentials
+ *   npx awarts daemon start     Start background auto-sync
+ *   npx awarts daemon stop      Stop the daemon
+ *   npx awarts daemon status    Check daemon health
+ *   npx awarts daemon logs      View daemon output
  */
 
 import { Command } from 'commander';
@@ -16,7 +20,15 @@ import { loginCommand, loginForceCommand } from './commands/login.js';
 import { pushCommand } from './commands/push.js';
 import { statusCommand } from './commands/status.js';
 import { syncCommand } from './commands/sync.js';
+import {
+  daemonStartCommand,
+  daemonStopCommand,
+  daemonStatusCommand,
+  daemonLogsCommand,
+  daemonRunLoop,
+} from './commands/daemon.js';
 import { clearAuth } from './lib/auth-store.js';
+import { DEFAULT_INTERVAL_MS } from './lib/daemon.js';
 import * as out from './lib/output.js';
 
 const program = new Command();
@@ -97,6 +109,76 @@ program
       console.log();
     } catch (err) {
       out.error(err instanceof Error ? err.message : String(err));
+      process.exit(1);
+    }
+  });
+
+// ─── daemon ──────────────────────────────────────────────────────────────
+const daemon = program
+  .command('daemon')
+  .description('Manage the background auto-sync daemon');
+
+daemon
+  .command('start')
+  .description('Start the background sync daemon')
+  .option('--interval <minutes>', 'Sync interval in minutes', '5')
+  .action(async (opts: { interval: string }) => {
+    try {
+      const minutes = Number(opts.interval);
+      const intervalMs = (isNaN(minutes) || minutes < 1) ? DEFAULT_INTERVAL_MS : minutes * 60 * 1000;
+      await daemonStartCommand(intervalMs);
+    } catch (err) {
+      out.error(err instanceof Error ? err.message : String(err));
+      process.exit(1);
+    }
+  });
+
+daemon
+  .command('stop')
+  .description('Stop the running daemon')
+  .action(async () => {
+    try {
+      await daemonStopCommand();
+    } catch (err) {
+      out.error(err instanceof Error ? err.message : String(err));
+      process.exit(1);
+    }
+  });
+
+daemon
+  .command('status')
+  .description('Check if the daemon is running')
+  .action(async () => {
+    try {
+      await daemonStatusCommand();
+    } catch (err) {
+      out.error(err instanceof Error ? err.message : String(err));
+      process.exit(1);
+    }
+  });
+
+daemon
+  .command('logs')
+  .description('Show recent daemon log output')
+  .option('-n, --lines <count>', 'Number of lines to show', '50')
+  .action(async (opts: { lines: string }) => {
+    try {
+      await daemonLogsCommand(Number(opts.lines) || 50);
+    } catch (err) {
+      out.error(err instanceof Error ? err.message : String(err));
+      process.exit(1);
+    }
+  });
+
+// Hidden internal command -- the actual polling loop run by the daemon process
+daemon
+  .command('__run', { hidden: true })
+  .option('--interval <ms>', 'Interval in milliseconds')
+  .action(async (opts: { interval: string }) => {
+    try {
+      await daemonRunLoop(Number(opts.interval) || DEFAULT_INTERVAL_MS);
+    } catch (err) {
+      console.error(`Daemon error: ${err instanceof Error ? err.message : String(err)}`);
       process.exit(1);
     }
   });

@@ -72,7 +72,7 @@ export default function Follows() {
             {users.map((user) => (
               <div key={user.id} className="flex items-center gap-3 py-3">
                 <Link to={`/u/${user.username}`}>
-                  <img src={user.avatar} alt={user.username} className="h-10 w-10 rounded-full" />
+                  <img src={user.avatar || '/placeholder.svg'} alt={user.username} className="h-10 w-10 rounded-full" />
                 </Link>
                 <div className="flex-1 min-w-0">
                   <Link to={`/u/${user.username}`} className="text-sm font-semibold text-foreground hover:underline">
