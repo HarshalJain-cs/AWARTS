@@ -19,5 +19,5 @@ Disallow: /notifications
 Disallow: /post/new
 Disallow: /auth/callback
 
-Host: https://awarts.com
-Sitemap: https://awarts.com/sitemap.xml
+Host: https://awarts.vercel.app
+Sitemap: https://awarts.vercel.app/sitemap.xml
