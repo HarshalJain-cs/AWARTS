@@ -14,14 +14,13 @@ export default function Follows() {
   const { username } = useParams<{ username: string }>();
   const [activeTab, setActiveTab] = useState<typeof tabs[number]>('Followers');
 
-  const { data: followersData, isLoading: loadingFollowers, isError: errorFollowers, refetch: refetchFollowers } =
+  const { data: followersData, isLoading: loadingFollowers, error: followersError } =
     useFollowers(username ?? '');
-  const { data: followingData, isLoading: loadingFollowing, isError: errorFollowing, refetch: refetchFollowing } =
+  const { data: followingData, isLoading: loadingFollowing, error: followingError } =
     useFollowing(username ?? '');
 
   const isLoading = activeTab === 'Followers' ? loadingFollowers : loadingFollowing;
-  const isError = activeTab === 'Followers' ? errorFollowers : errorFollowing;
-  const refetch = activeTab === 'Followers' ? refetchFollowers : refetchFollowing;
+  const isError = activeTab === 'Followers' ? !!followersError : !!followingError;
   const rawUsers = activeTab === 'Followers' ? (followersData?.users ?? []) : (followingData?.users ?? []);
   const users = rawUsers.map(transformUser);
 
@@ -61,7 +60,7 @@ export default function Follows() {
             ))}
           </div>
         ) : isError ? (
-          <ErrorState message={`Failed to load ${activeTab.toLowerCase()}.`} onRetry={() => refetch()} />
+          <ErrorState message={`Failed to load ${activeTab.toLowerCase()}.`} onRetry={() => window.location.reload()} />
         ) : users.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
             <p className="text-lg font-medium">

@@ -1,8 +1,7 @@
-export function formatCost(cents: number): string {
-  const dollars = cents / 100;
-  return dollars >= 1
-    ? `$${dollars.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-    : `$${dollars.toFixed(2)}`;
+export function formatCost(usd: number): string {
+  return usd >= 1
+    ? `$${usd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+    : `$${usd.toFixed(2)}`;
 }
 
 export function formatTokens(count: number): string {

@@ -24,7 +24,8 @@ export default function Leaderboard() {
   const apiProvider = provider === 'all' ? undefined : provider;
   const apiRegion = region === 'global' ? undefined : region;
 
-  const { data, isLoading, isError, refetch } = useLeaderboard(apiPeriod, apiProvider, apiRegion);
+  const { data, isLoading, error } = useLeaderboard(apiPeriod, apiProvider, apiRegion);
+  const isError = !!error;
 
   const entries = data?.entries.map((e, i) => transformLeaderboardEntry(e, i + 1)) ?? [];
 
@@ -79,7 +80,7 @@ export default function Leaderboard() {
             ))}
           </div>
         ) : isError ? (
-          <ErrorState message="Failed to load leaderboard." onRetry={() => refetch()} />
+          <ErrorState message="Failed to load leaderboard." onRetry={() => window.location.reload()} />
         ) : entries.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
             <p className="text-lg font-medium">No entries yet</p>

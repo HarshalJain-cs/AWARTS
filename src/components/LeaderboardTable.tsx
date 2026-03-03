@@ -29,7 +29,7 @@ export function LeaderboardTable({ entries }: LeaderboardTableProps) {
           </thead>
           <tbody>
             {entries.map((entry) => {
-              const isMe = user ? entry.user.id === user.id : false;
+              const isMe = user ? entry.user.id === (user as any)._id : false;
               const flag = COUNTRIES.find((c) => c.code === entry.user.countryCode)?.flag;
               return (
                 <tr

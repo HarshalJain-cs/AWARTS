@@ -198,9 +198,12 @@ function SettingsContent() {
           <TabsContent value="import" className="space-y-4 mt-6">
             <div className="rounded-lg border-2 border-dashed border-border bg-muted/20 p-12 text-center">
               <Upload className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
-              <p className="font-medium text-foreground">Drop your session data here</p>
-              <p className="text-sm text-muted-foreground mt-1">JSON files from AWARTS CLI export</p>
-              <Button variant="outline" size="sm" className="mt-4">Browse Files</Button>
+              <p className="font-medium text-foreground">Import session data</p>
+              <p className="text-sm text-muted-foreground mt-1">Use the CLI to sync your sessions automatically:</p>
+              <code className="block mt-3 text-xs font-mono text-foreground bg-muted/50 rounded px-3 py-2 max-w-xs mx-auto">
+                npx awarts@latest sync
+              </code>
+              <p className="text-xs text-muted-foreground mt-3">File import coming soon.</p>
             </div>
           </TabsContent>
 
@@ -210,7 +213,17 @@ function SettingsContent() {
               <Input value={authUser?.email ?? ''} disabled />
             </div>
             <div className="pt-4 border-t border-border">
-              <Button variant="destructive">Delete Account</Button>
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  toast({
+                    title: 'Account deletion',
+                    description: 'Please contact support@awarts.com to delete your account.',
+                  });
+                }}
+              >
+                Delete Account
+              </Button>
             </div>
           </TabsContent>
         </Tabs>

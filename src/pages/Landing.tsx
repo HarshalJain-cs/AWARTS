@@ -94,7 +94,7 @@ export default function Landing() {
               {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
             </button>
             <Link to="/docs" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Docs</Link>
-            <Link to="/feed" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Log in</Link>
+            <Link to="/login" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Log in</Link>
             <Button asChild size="sm">
               <Link to="/onboarding">Get Started</Link>
             </Button>

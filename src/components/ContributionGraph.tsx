@@ -12,6 +12,7 @@ const PROVIDER_HSL: Record<Provider, string> = {
   claude: '24, 95%, 53%',
   codex: '142, 71%, 45%',
   gemini: '217, 91%, 60%',
+  antigravity: '270, 91%, 65%',
 };
 
 const INTENSITY_OPACITY: Record<number, number> = {

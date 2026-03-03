@@ -9,7 +9,8 @@ import { transformFeedPost, transformComment } from '@/lib/transformers';
 
 export default function PostDetail() {
   const { id } = useParams<{ id: string }>();
-  const { data: rawPost, isLoading, isError, refetch } = usePost(id ?? '');
+  const { data: rawPost, isLoading, error } = usePost(id ?? '');
+  const isError = !!error;
   const { data: commentsData } = useComments(id ?? '');
 
   const post = rawPost ? transformFeedPost(rawPost) : null;
@@ -31,7 +32,7 @@ export default function PostDetail() {
     return (
       <AppShell>
         <div className="max-w-2xl mx-auto">
-          <ErrorState message="Post not found." onRetry={() => refetch()} />
+          <ErrorState message="Post not found." onRetry={() => window.location.reload()} />
         </div>
       </AppShell>
     );

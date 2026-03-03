@@ -19,7 +19,8 @@ export default function Search() {
     if (q) setQuery(q);
   }, [searchParams]);
 
-  const { data, isLoading, isError, refetch } = useSearch(debouncedQuery);
+  const { data, isLoading, error } = useSearch(debouncedQuery);
+  const isError = !!error;
 
   const results = data?.users.map(transformUser) ?? [];
 
@@ -48,7 +49,7 @@ export default function Search() {
               <p className="text-sm mt-1">Find people by username (at least 2 characters).</p>
             </div>
           ) : isError ? (
-            <ErrorState message="Search failed." onRetry={() => refetch()} />
+            <ErrorState message="Search failed." onRetry={() => window.location.reload()} />
           ) : isLoading ? (
             <div className="space-y-3">
               {[...Array(3)].map((_, i) => (

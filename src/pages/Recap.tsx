@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Download } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { toast } from '@/hooks/use-toast';
 import type { Provider } from '@/lib/types';
 
 export default function Recap() {
@@ -94,10 +95,18 @@ function RecapContent() {
         </div>
 
         <div className="flex gap-3">
-          <Button variant="outline" className="flex-1">
+          <Button
+            variant="outline"
+            className="flex-1"
+            onClick={() => toast({ title: 'Coming soon', description: 'Image export will be available in a future update.' })}
+          >
             <Download className="h-4 w-4 mr-2" /> OG (1200x630)
           </Button>
-          <Button variant="outline" className="flex-1">
+          <Button
+            variant="outline"
+            className="flex-1"
+            onClick={() => toast({ title: 'Coming soon', description: 'Image export will be available in a future update.' })}
+          >
             <Download className="h-4 w-4 mr-2" /> Square (1080x1080)
           </Button>
         </div>

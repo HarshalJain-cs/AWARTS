@@ -1,4 +1,4 @@
-import { useState, forwardRef } from 'react';
+import { useState, useEffect, forwardRef } from 'react';
 import { Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
@@ -21,6 +21,9 @@ export const KudosButton = forwardRef<HTMLButtonElement, KudosButtonProps>(
     const toggleKudos = useToggleKudos();
     const [active, setActive] = useState(hasKudosed);
     const [localCount, setLocalCount] = useState(count);
+
+    useEffect(() => { setActive(hasKudosed); }, [hasKudosed]);
+    useEffect(() => { setLocalCount(count); }, [count]);
 
     const handleClick = () => {
       if (!user) {

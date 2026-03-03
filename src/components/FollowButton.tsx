@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
@@ -20,6 +20,8 @@ export function FollowButton({ targetUserId, isFollowing: initial, username, onT
   const toggleFollow = useToggleFollow();
   const [following, setFollowing] = useState(initial);
   const [hovering, setHovering] = useState(false);
+
+  useEffect(() => { setFollowing(initial); }, [initial]);
 
   const handleClick = () => {
     if (!user) {
