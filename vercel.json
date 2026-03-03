@@ -39,6 +39,6 @@
     }
   ],
   "rewrites": [
-    { "source": "/((?!assets|favicon|og-image|apple-touch|manifest|sitemap|robots).*)", "destination": "/index.html" }
+    { "source": "/((?!assets|favicon|og-image|apple-touch|manifest|sitemap|robots|google).*)", "destination": "/index.html" }
   ]
 }
