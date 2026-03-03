@@ -19,8 +19,8 @@ export default function Login() {
       <SEO title="Log In" description="Sign in to AWARTS to track your AI coding sessions, view your stats, and compete on leaderboards." canonical="/login" />
       <SignIn
         routing="hash"
-        afterSignInUrl="/feed"
-        afterSignUpUrl="/onboarding"
+        fallbackRedirectUrl="/feed"
+        signUpFallbackRedirectUrl="/onboarding"
         appearance={{
           variables: {
             colorPrimary: "#7c3aed",
