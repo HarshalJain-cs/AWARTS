@@ -4,18 +4,22 @@ import { getCurrentUser } from "./users";
 
 function generateCode(length: number): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  const array = new Uint8Array(length);
+  crypto.getRandomValues(array);
   let result = "";
   for (let i = 0; i < length; i++) {
-    result += chars[Math.floor(Math.random() * chars.length)];
+    result += chars[array[i] % chars.length];
   }
   return result;
 }
 
 function generateToken(length: number): string {
   const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  const array = new Uint8Array(length);
+  crypto.getRandomValues(array);
   let result = "";
   for (let i = 0; i < length; i++) {
-    result += chars[Math.floor(Math.random() * chars.length)];
+    result += chars[array[i] % chars.length];
   }
   return result;
 }
@@ -25,7 +29,7 @@ export const initCLIAuth = mutation({
   args: {},
   handler: async (ctx) => {
     const code = generateCode(8);
-    const deviceToken = generateToken(32);
+    const deviceToken = generateToken(48); // Increased from 32 to 48 for better entropy
     const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes
 
     await ctx.db.insert("cli_auth_codes", {
@@ -47,6 +51,11 @@ export const initCLIAuth = mutation({
 export const pollCLIAuth = query({
   args: { deviceToken: v.string() },
   handler: async (ctx, { deviceToken }) => {
+    // Input validation
+    if (!deviceToken || deviceToken.length < 10 || deviceToken.length > 100) {
+      return { status: "invalid" };
+    }
+
     const row = await ctx.db
       .query("cli_auth_codes")
       .withIndex("by_device_token", (q) => q.eq("deviceToken", deviceToken))
@@ -75,6 +84,11 @@ export const verifyCLIAuth = mutation({
     const me = await getCurrentUser(ctx);
     if (!me) throw new Error("Not authenticated");
 
+    // Validate code format
+    if (!code || code.length !== 8 || !/^[A-Z0-9]+$/.test(code)) {
+      throw new Error("Invalid code format");
+    }
+
     const row = await ctx.db
       .query("cli_auth_codes")
       .withIndex("by_code", (q) => q.eq("code", code))
@@ -87,11 +101,11 @@ export const verifyCLIAuth = mutation({
       throw new Error("Code has expired");
     }
 
-    // For CLI auth, we store the user ID — the CLI will use Convex auth directly
+    // Generate a strong CLI auth token
     await ctx.db.patch(row._id, {
       status: "verified",
       userId: me._id,
-      jwtToken: `convex_cli_${generateToken(48)}`,
+      jwtToken: `convex_cli_${generateToken(64)}`,
     });
 
     return { success: true };

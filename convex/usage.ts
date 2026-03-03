@@ -15,15 +15,35 @@ const usageEntryValidator = v.object({
   raw_data: v.optional(v.any()),
 });
 
-// POST /usage/submit — core endpoint
+// POST /usage/submit — core endpoint (supports both Clerk auth and CLI token auth)
 export const submitUsage = mutation({
   args: {
     entries: v.array(usageEntryValidator),
     source: v.string(),
     hash: v.optional(v.string()),
+    authToken: v.optional(v.string()),
   },
-  handler: async (ctx, { entries, source, hash }) => {
-    const me = await getCurrentUser(ctx);
+  handler: async (ctx, { entries, source, hash, authToken }) => {
+    // Try Clerk auth first (browser), then fall back to CLI token auth
+    let me = await getCurrentUser(ctx);
+
+    if (!me && authToken) {
+      // CLI token auth: look up the token in cli_auth_codes
+      const authRow = await ctx.db
+        .query("cli_auth_codes")
+        .filter((q) =>
+          q.and(
+            q.eq(q.field("jwtToken"), authToken),
+            q.eq(q.field("status"), "verified")
+          )
+        )
+        .first();
+
+      if (authRow && authRow.userId) {
+        me = await ctx.db.get(authRow.userId);
+      }
+    }
+
     if (!me) throw new Error("Not authenticated");
 
     const errors: Array<{ date: string; provider: string; error: string }> = [];

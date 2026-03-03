@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
-import { useUpdateProfile } from '@/hooks/use-api';
+import { useUpdateProfile, useCheckUsername } from '@/hooks/use-api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -22,7 +22,8 @@ export default function Onboarding() {
   const [copied, setCopied] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  const usernameAvailable = username.length >= 3 && username !== 'admin';
+  const { data: usernameCheck } = useCheckUsername(username);
+  const usernameAvailable = username.length >= 3 && (usernameCheck?.available ?? false);
 
   const copyCmd = () => {
     navigator.clipboard.writeText('npx awarts@latest');
@@ -77,7 +78,13 @@ export default function Onboarding() {
                 />
                 {username.length > 0 && (
                   <p className={`text-xs ${usernameAvailable ? 'text-primary' : 'text-destructive'}`}>
-                    {usernameAvailable ? 'Available' : username.length < 3 ? 'At least 3 characters' : 'Username taken'}
+                    {username.length < 3
+                      ? 'At least 3 characters'
+                      : usernameCheck === undefined
+                        ? 'Checking...'
+                        : usernameAvailable
+                          ? 'Available'
+                          : usernameCheck?.reason ?? 'Username taken'}
                   </p>
                 )}
               </div>

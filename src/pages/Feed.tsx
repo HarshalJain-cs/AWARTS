@@ -26,12 +26,12 @@ export default function Feed() {
   const {
     data,
     isLoading,
-    isError,
-    refetch,
+    error,
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
   } = useFeed(feedType, providerParam);
+  const isError = !!error;
 
   // Infinite scroll observer
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -118,7 +118,7 @@ export default function Feed() {
             {isLoading
               ? [...Array(3)].map((_, i) => <SkeletonCard key={i} />)
               : isError
-                ? <ErrorState message="Failed to load feed." onRetry={() => refetch()} />
+                ? <ErrorState message="Failed to load feed." onRetry={() => window.location.reload()} />
                 : posts.length === 0
                   ? (
                     <div className="text-center py-12 text-muted-foreground">

@@ -3,7 +3,7 @@ import { AppShell } from '@/components/layout/AppShell';
 import { AuthGate } from '@/components/AuthGate';
 import { useAuth } from '@/context/AuthContext';
 import { useUser } from '@clerk/clerk-react';
-import { useCurrentUser, useUpdateProfile, useUploadImage } from '@/hooks/use-api';
+import { useCurrentUser, useUpdateProfile, useUploadAvatar } from '@/hooks/use-api';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -26,7 +26,7 @@ function SettingsContent() {
   const { user: clerkUser } = useUser();
   const { data: profile } = useCurrentUser();
   const updateProfile = useUpdateProfile();
-  const uploadImage = useUploadImage();
+  const uploadAvatar = useUploadAvatar();
 
   const [displayName, setDisplayName] = useState('');
   const [bio, setBio] = useState('');
@@ -61,27 +61,23 @@ function SettingsContent() {
     }
   }, [profile, clerkUser]);
 
-  const handleSave = () => {
-    updateProfile.mutate(
-      { displayName, bio, externalLink: externalLink || undefined, githubUsername: githubUsername || undefined },
-      {
-        onSuccess: () => toast({ title: 'Profile updated!' }),
-        onError: () => toast({ title: 'Failed to save', variant: 'destructive' }),
-      }
-    );
+  const handleSave = async () => {
+    try {
+      await updateProfile.mutateAsync({ displayName, bio, externalLink: externalLink || undefined, githubUsername: githubUsername || undefined });
+      toast({ title: 'Profile updated!' });
+    } catch {
+      toast({ title: 'Failed to save', variant: 'destructive' });
+    }
   };
 
-  const handlePrivacyToggle = (checked: boolean) => {
+  const handlePrivacyToggle = async (checked: boolean) => {
     setIsPublic(checked);
-    updateProfile.mutate(
-      { isPublic: checked },
-      {
-        onError: () => {
-          setIsPublic(!checked);
-          toast({ title: 'Failed to update privacy', variant: 'destructive' });
-        },
-      }
-    );
+    try {
+      await updateProfile.mutateAsync({ isPublic: checked });
+    } catch {
+      setIsPublic(!checked);
+      toast({ title: 'Failed to update privacy', variant: 'destructive' });
+    }
   };
 
   const avatarUrl = authUser?.avatarUrl ?? '';
@@ -109,23 +105,26 @@ function SettingsContent() {
                 onClick={() => {
                   const input = document.createElement('input');
                   input.type = 'file';
-                  input.accept = 'image/*';
-                  input.onchange = () => {
+                  input.accept = 'image/jpeg,image/png,image/webp';
+                  input.onchange = async () => {
                     const file = input.files?.[0];
                     if (!file) return;
-                    uploadImage.mutate(file, {
-                      onSuccess: (data: any) => {
-                        updateProfile.mutate({ avatarUrl: data.url });
-                        toast({ title: 'Avatar updated!' });
-                      },
-                      onError: () => toast({ title: 'Upload failed', variant: 'destructive' }),
-                    });
+                    if (file.size > 2 * 1024 * 1024) {
+                      toast({ title: 'File too large (max 2MB)', variant: 'destructive' });
+                      return;
+                    }
+                    try {
+                      await uploadAvatar.upload(file);
+                      toast({ title: 'Avatar updated!' });
+                    } catch {
+                      toast({ title: 'Upload failed', variant: 'destructive' });
+                    }
                   };
                   input.click();
                 }}
-                disabled={uploadImage.isPending}
+                disabled={uploadAvatar.isPending}
               >
-                {uploadImage.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
+                {uploadAvatar.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
                 Change Avatar
               </Button>
             </div>
@@ -169,12 +168,14 @@ function SettingsContent() {
               </div>
               <Switch
                 checked={emailNotifications}
-                onCheckedChange={(checked) => {
+                onCheckedChange={async (checked) => {
                   setEmailNotifications(checked);
-                  updateProfile.mutate(
-                    { emailNotificationsEnabled: checked },
-                    { onError: () => { setEmailNotifications(!checked); toast({ title: 'Failed to update', variant: 'destructive' }); } }
-                  );
+                  try {
+                    await updateProfile.mutateAsync({ emailNotificationsEnabled: checked });
+                  } catch {
+                    setEmailNotifications(!checked);
+                    toast({ title: 'Failed to update', variant: 'destructive' });
+                  }
                 }}
               />
             </div>

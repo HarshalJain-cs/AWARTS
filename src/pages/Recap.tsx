@@ -36,10 +36,10 @@ function RecapContent() {
   }
 
   const username = profile.username ?? user?.username ?? '';
-  const avatarUrl = profile.avatar_url ?? user?.avatar_url ?? '';
+  const avatarUrl = profile.avatarUrl ?? user?.avatarUrl ?? '';
   const totalCost = profile.stats?.total_cost_usd ?? 0;
   const streak = profile.stats?.current_streak ?? 0;
-  const providers = (profile.stats?.providers_used ?? []) as Provider[];
+  const providers = (profile.providers_used ?? []) as Provider[];
 
   return (
     <AppShell>

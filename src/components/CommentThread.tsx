@@ -27,30 +27,32 @@ function CommentItem({ comment, postId }: { comment: Comment; postId: string }) 
   const [editing, setEditing] = useState(false);
   const [editContent, setEditContent] = useState(comment.content);
 
-  const isOwn = user?.id === comment.user.id;
+  const isOwn = user?.username === comment.user.username;
 
-  const handleSaveEdit = () => {
+  const handleSaveEdit = async () => {
     if (!editContent.trim()) return;
-    editComment.mutate(
-      { commentId: comment.id, content: editContent.trim() },
-      {
-        onSuccess: () => { setEditing(false); toast({ title: 'Comment updated' }); },
-        onError: () => toast({ title: 'Failed to update', variant: 'destructive' }),
-      }
-    );
+    try {
+      await editComment.mutateAsync({ commentId: comment.id, content: editContent.trim() });
+      setEditing(false);
+      toast({ title: 'Comment updated' });
+    } catch {
+      toast({ title: 'Failed to update', variant: 'destructive' });
+    }
   };
 
-  const handleDelete = () => {
-    deleteComment.mutate(comment.id, {
-      onSuccess: () => toast({ title: 'Comment deleted' }),
-      onError: () => toast({ title: 'Failed to delete', variant: 'destructive' }),
-    });
+  const handleDelete = async () => {
+    try {
+      await deleteComment.mutateAsync(comment.id);
+      toast({ title: 'Comment deleted' });
+    } catch {
+      toast({ title: 'Failed to delete', variant: 'destructive' });
+    }
   };
 
   return (
     <div className="flex gap-3 group">
       <Link to={`/u/${comment.user.username}`}>
-        <img src={comment.user.avatar} alt={comment.user.displayName} className="h-8 w-8 rounded-full" />
+        <img src={comment.user.avatar || '/placeholder.svg'} alt={comment.user.displayName} className="h-8 w-8 rounded-full object-cover" />
       </Link>
       <div className="flex-1">
         <div className="flex items-center gap-2">
@@ -103,15 +105,14 @@ export function CommentThread({ postId, comments }: CommentThreadProps) {
   const createComment = useCreateComment();
   const [input, setInput] = useState('');
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!user || !input.trim()) return;
-    createComment.mutate(
-      { postId, content: input.trim() },
-      {
-        onSuccess: () => setInput(''),
-        onError: () => toast({ title: 'Failed to post comment', variant: 'destructive' }),
-      }
-    );
+    try {
+      await createComment.mutateAsync({ postId, content: input.trim() });
+      setInput('');
+    } catch {
+      toast({ title: 'Failed to post comment', variant: 'destructive' });
+    }
   };
 
   return (
@@ -122,7 +123,7 @@ export function CommentThread({ postId, comments }: CommentThreadProps) {
 
       {user ? (
         <div className="flex gap-3 pt-2 border-t border-border">
-          <img src={user.avatar_url ?? ''} alt="You" className="h-8 w-8 rounded-full mt-1" />
+          <img src={user.avatarUrl ?? ''} alt="You" className="h-8 w-8 rounded-full mt-1 object-cover" />
           <div className="flex-1 space-y-2">
             <Textarea
               value={input}

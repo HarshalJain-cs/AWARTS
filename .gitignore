@@ -26,6 +26,8 @@ bun.lock
 
 # npm auth tokens
 .npmrc
+cli/.npmrc
+**/.npmrc
 
 # Editor directories and files
 .vscode/*

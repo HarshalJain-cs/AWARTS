@@ -136,7 +136,7 @@ export default function Landing() {
           animate={{ opacity: 1, y: 0 }}
           className="font-mono text-sm uppercase tracking-widest text-primary mb-4"
         >
-          STRAVA FOR CLAUDE, CODEX, GEMINI
+          STRAVA FOR CLAUDE, CODEX, GEMINI & ANTIGRAVITY
         </motion.p>
         <motion.h1
           initial={{ opacity: 0, y: 20 }}
@@ -144,7 +144,7 @@ export default function Landing() {
           transition={{ delay: 0.1 }}
           className="text-4xl sm:text-6xl lg:text-7xl font-extrabold text-foreground leading-tight"
         >
-          Every session counts.
+          Every AI coding session counts.
         </motion.h1>
         <motion.p
           initial={{ opacity: 0, y: 20 }}
@@ -152,7 +152,7 @@ export default function Landing() {
           transition={{ delay: 0.2 }}
           className="mt-4 text-lg text-muted-foreground max-w-xl mx-auto"
         >
-          Track your AI coding sessions across Claude, Codex & Gemini. Compete with devs worldwide.
+          The Strava for AI-assisted coding. Track sessions across Claude, Codex, Gemini & Antigravity. Compete on leaderboards with developers worldwide.
         </motion.p>
         <motion.div
           initial={{ opacity: 0, y: 20 }}

@@ -19,8 +19,27 @@ export const getFeed = query({
       .order("desc")
       .collect();
 
-    // Filter: only published
+    // Filter: only published posts
     posts = posts.filter((p) => p.isPublished);
+
+    // Filter out posts from private profiles (except own posts)
+    const privateUserCache = new Map<string, boolean>();
+    const getIsPrivate = async (userId: any) => {
+      const key = String(userId);
+      if (!privateUserCache.has(key)) {
+        const u = await ctx.db.get(userId);
+        privateUserCache.set(key, u ? !u.isPublic : true);
+      }
+      return privateUserCache.get(key)!;
+    };
+    const visiblePosts = [];
+    for (const p of posts) {
+      const isPrivate = await getIsPrivate(p.userId);
+      if (!isPrivate || (me && p.userId === me._id)) {
+        visiblePosts.push(p);
+      }
+    }
+    posts = visiblePosts;
 
     // Filter: following only
     if (type === "following" && me) {

@@ -13,14 +13,14 @@ import { SkeletonProfile } from '@/components/SkeletonProfile';
 import { SkeletonCard } from '@/components/SkeletonCard';
 import { ErrorState } from '@/components/ErrorState';
 import { formatNumber } from '@/lib/format';
-import { MapPin, Calendar, BadgeCheck, Flame } from 'lucide-react';
+import { MapPin, Calendar, BadgeCheck, Flame, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 
 export default function Profile() {
   const { username } = useParams<{ username: string }>();
   const { user: authUser } = useAuth();
-  const { data: raw, isLoading, isError, refetch } = useProfile(username ?? '');
+  const { data: raw, isLoading } = useProfile(username ?? '');
   const { data: postsData, isLoading: postsLoading } = useUserPosts(username ?? '');
 
   if (isLoading) {
@@ -33,31 +33,44 @@ export default function Profile() {
     );
   }
 
-  if (isError || !raw) {
+  if (!raw) {
     return (
       <AppShell>
         <div className="max-w-2xl mx-auto">
-          <ErrorState message="Profile not found." onRetry={() => refetch()} />
+          <ErrorState message="Profile not found." />
+        </div>
+      </AppShell>
+    );
+  }
+
+  // Private profile check
+  if (raw.isPublic === false && !raw.isOwnProfile) {
+    return (
+      <AppShell>
+        <div className="max-w-2xl mx-auto text-center py-16 space-y-4">
+          <Lock className="h-12 w-12 mx-auto text-muted-foreground opacity-50" />
+          <h2 className="text-xl font-bold text-foreground">This profile is private</h2>
+          <p className="text-muted-foreground">@{raw.username} has set their profile to private.</p>
         </div>
       </AppShell>
     );
   }
 
   const user = transformUser(raw);
-  const isOwn = authUser ? raw.id === authUser.id : false;
+  const isOwn = raw.isOwnProfile ?? (authUser ? raw._id === authUser._id : false);
   const heatmap = raw.heatmap ? transformHeatmap(raw.heatmap) : [];
   const achievements = (raw.achievements ?? []).map(transformAchievement);
   const posts = postsData?.pages.flatMap((page) => page.posts.map(transformFeedPost)) ?? [];
 
-  const totalInput = Math.floor((raw.stats?.total_cost_usd ?? 0) * 2000);
-  const totalOutput = Math.floor((raw.stats?.total_cost_usd ?? 0) * 800);
+  const totalInput = raw.stats?.total_input_tokens ?? 0;
+  const totalOutput = raw.stats?.total_output_tokens ?? 0;
 
   return (
     <AppShell>
       <div className="max-w-2xl mx-auto space-y-8">
         {/* Header */}
         <div className="flex flex-col sm:flex-row gap-6">
-          <img src={user.avatar} alt={user.displayName} className="h-24 w-24 rounded-full border-2 border-border" />
+          <img src={user.avatar || '/placeholder.svg'} alt={user.displayName} className="h-24 w-24 rounded-full border-2 border-border object-cover" />
           <div className="flex-1 space-y-2">
             <div className="flex items-center gap-2 flex-wrap">
               <h1 className="text-2xl font-bold text-foreground">@{user.username}</h1>
@@ -89,7 +102,7 @@ export default function Profile() {
                 <span className="text-muted-foreground">following</span>
               </Link>
               <span>
-                <strong className="text-foreground">{posts.length}</strong>{' '}
+                <strong className="text-foreground">{raw.stats?.posts ?? posts.length}</strong>{' '}
                 <span className="text-muted-foreground">activities</span>
               </span>
             </div>
@@ -103,7 +116,7 @@ export default function Profile() {
             {isOwn ? (
               <Button variant="outline" size="sm" asChild><Link to="/settings">Edit Profile</Link></Button>
             ) : (
-              <FollowButton targetUserId={raw.id} isFollowing={raw.is_following} username={user.username} />
+              <FollowButton targetUserId={raw._id} isFollowing={raw.isFollowing} username={user.username} />
             )}
           </div>
         </div>

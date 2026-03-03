@@ -11,6 +11,9 @@ export const getLeaderboard = query({
     offset: v.optional(v.number()),
   },
   handler: async (ctx, { period = "all_time", provider, region, limit = 50, offset = 0 }) => {
+    // Cap limits to prevent abuse
+    const safeLimit = Math.min(Math.max(1, limit), 100);
+    const safeOffset = Math.max(0, offset);
     // Calculate date range based on period
     const now = new Date();
     let startDate: string | null = null;
@@ -83,7 +86,7 @@ export const getLeaderboard = query({
     const reranked = filtered.map((entry, i) => ({ ...entry!, rank: i + 1 }));
 
     return {
-      entries: reranked.slice(offset, offset + limit),
+      entries: reranked.slice(safeOffset, safeOffset + safeLimit),
       total: reranked.length,
     };
   },

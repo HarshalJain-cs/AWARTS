@@ -12,3 +12,8 @@ Allow: /
 
 User-agent: *
 Allow: /
+Disallow: /settings
+Disallow: /cli/verify
+Disallow: /onboarding
+
+Sitemap: https://awarts.com/sitemap.xml

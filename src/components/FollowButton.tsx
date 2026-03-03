@@ -29,15 +29,7 @@ export function FollowButton({ targetUserId, isFollowing: initial, username, onT
     const next = !following;
     setFollowing(next);
 
-    toggleFollow.mutate(
-      { targetUserId, isFollowing: following },
-      {
-        onError: () => {
-          setFollowing(following);
-          toast({ title: 'Failed to update follow', variant: 'destructive' });
-        },
-      }
-    );
+    toggleFollow.mutate({ targetUserId, isFollowing: following });
     toast({ title: next ? `Followed${username ? ` @${username}` : ''}` : `Unfollowed${username ? ` @${username}` : ''}` });
     onToggle?.();
   };

@@ -2,6 +2,41 @@ import { v } from "convex/values";
 import { query, mutation, QueryCtx, MutationCtx } from "./_generated/server";
 import { Id } from "./_generated/dataModel";
 
+// Reserved usernames that cannot be claimed
+const RESERVED_USERNAMES = new Set([
+  "admin", "administrator", "root", "system", "mod", "moderator",
+  "support", "help", "awarts", "api", "www", "mail", "app",
+  "settings", "login", "signup", "feed", "search", "leaderboard",
+  "notifications", "onboarding", "docs", "privacy", "terms",
+  "post", "profile", "cli", "null", "undefined",
+]);
+
+// Username validation
+function isValidUsername(username: string): boolean {
+  if (username.length < 3 || username.length > 30) return false;
+  if (!/^[a-z0-9_]+$/.test(username)) return false;
+  if (RESERVED_USERNAMES.has(username)) return false;
+  if (username.startsWith("_") || username.endsWith("_")) return false;
+  if (username.includes("__")) return false;
+  return true;
+}
+
+// Sanitize URL to prevent javascript: protocol injection
+function sanitizeUrl(url: string): string | undefined {
+  if (!url) return undefined;
+  const trimmed = url.trim();
+  if (!trimmed) return undefined;
+  // Only allow http/https URLs
+  if (!/^https?:\/\//i.test(trimmed)) {
+    // Prepend https:// if no protocol
+    if (trimmed.includes(".") && !trimmed.includes("://")) {
+      return `https://${trimmed}`;
+    }
+    return undefined;
+  }
+  return trimmed;
+}
+
 // Helper: get internal user from Clerk identity
 export async function getCurrentUser(ctx: QueryCtx | MutationCtx) {
   const identity = await ctx.auth.getUserIdentity();
@@ -34,10 +69,16 @@ export const getOrCreateUser = mutation({
 
     if (existing) return existing._id;
 
-    const username =
+    let username =
       identity.nickname ??
       identity.email?.split("@")[0]?.replace(/[^a-z0-9_]/gi, "").toLowerCase() ??
       `user_${Date.now()}`;
+
+    // Ensure username meets requirements
+    username = username.slice(0, 30);
+    if (username.length < 3) {
+      username = `user_${Date.now().toString(36)}`;
+    }
 
     // Check for username collision
     const taken = await ctx.db
@@ -45,7 +86,7 @@ export const getOrCreateUser = mutation({
       .withIndex("by_username", (q) => q.eq("username", username))
       .unique();
 
-    const finalUsername = taken ? `${username}_${Date.now().toString(36)}` : username;
+    const finalUsername = taken ? `${username.slice(0, 20)}_${Date.now().toString(36)}` : username;
 
     // Clerk sets nickname to the GitHub username when signing in via GitHub OAuth
     const githubUsername = identity.nickname ?? undefined;
@@ -53,7 +94,7 @@ export const getOrCreateUser = mutation({
     const userId = await ctx.db.insert("users", {
       clerkId: identity.subject,
       username: finalUsername,
-      displayName: identity.name ?? undefined,
+      displayName: (identity.name ?? undefined)?.slice(0, 50),
       avatarUrl: identity.pictureUrl ?? undefined,
       email: identity.email ?? undefined,
       githubUsername,
@@ -93,21 +134,49 @@ export const updateMe = mutation({
   handler: async (ctx, args) => {
     const user = await requireUser(ctx);
 
-    // If changing username, check availability
-    if (args.username && args.username !== user.username) {
-      const taken = await ctx.db
-        .query("users")
-        .withIndex("by_username", (q) => q.eq("username", args.username!))
-        .unique();
-      if (taken) throw new Error("Username is already taken");
+    // Validate username
+    if (args.username !== undefined) {
+      if (args.username !== user.username) {
+        if (!isValidUsername(args.username)) {
+          throw new Error("Invalid username. Must be 3-30 characters, lowercase letters, numbers, and underscores only.");
+        }
+        const taken = await ctx.db
+          .query("users")
+          .withIndex("by_username", (q) => q.eq("username", args.username!))
+          .unique();
+        if (taken) throw new Error("Username is already taken");
+      }
     }
 
+    // Validate and sanitize fields
     const updates: Record<string, any> = {};
-    for (const [key, value] of Object.entries(args)) {
-      if (value !== undefined) updates[key] = value;
-    }
 
-    await ctx.db.patch(user._id, updates);
+    if (args.username !== undefined) updates.username = args.username;
+    if (args.displayName !== undefined) updates.displayName = args.displayName.slice(0, 50);
+    if (args.bio !== undefined) updates.bio = args.bio.slice(0, 160);
+    if (args.avatarUrl !== undefined) updates.avatarUrl = args.avatarUrl;
+    if (args.githubUsername !== undefined) {
+      // Sanitize GitHub username
+      updates.githubUsername = args.githubUsername.replace(/[^a-zA-Z0-9-]/g, "").slice(0, 39);
+    }
+    if (args.externalLink !== undefined) {
+      updates.externalLink = sanitizeUrl(args.externalLink);
+    }
+    if (args.country !== undefined) updates.country = args.country.slice(0, 10);
+    if (args.region !== undefined) updates.region = args.region.slice(0, 50);
+    if (args.timezone !== undefined) updates.timezone = args.timezone.slice(0, 50);
+    if (args.isPublic !== undefined) updates.isPublic = args.isPublic;
+    if (args.defaultAiProvider !== undefined) {
+      const validProviders = ["claude", "codex", "gemini", "antigravity"];
+      if (validProviders.includes(args.defaultAiProvider)) {
+        updates.defaultAiProvider = args.defaultAiProvider;
+      }
+    }
+    if (args.emailNotificationsEnabled !== undefined) updates.emailNotificationsEnabled = args.emailNotificationsEnabled;
+
+    if (Object.keys(updates).length > 0) {
+      await ctx.db.patch(user._id, updates);
+    }
     return { success: true };
   },
 });
@@ -116,6 +185,9 @@ export const updateMe = mutation({
 export const checkUsername = query({
   args: { username: v.string() },
   handler: async (ctx, { username }) => {
+    if (!isValidUsername(username)) {
+      return { available: false, reason: "Invalid username format" };
+    }
     const taken = await ctx.db
       .query("users")
       .withIndex("by_username", (q) => q.eq("username", username))
@@ -133,6 +205,23 @@ export const getByUsername = query({
       .withIndex("by_username", (q) => q.eq("username", username))
       .unique();
     if (!user) return null;
+
+    const me = await getCurrentUser(ctx);
+
+    // If profile is private and viewer is not the owner, return limited info
+    if (!user.isPublic && (!me || me._id !== user._id)) {
+      return {
+        _id: user._id,
+        username: user.username,
+        displayName: user.displayName,
+        avatarUrl: user.avatarUrl,
+        isPublic: false,
+        stats: { followers: 0, following: 0, posts: 0 },
+        achievements: [],
+        isFollowing: false,
+        isOwnProfile: false,
+      };
+    }
 
     const followers = await ctx.db
       .query("follows")
@@ -154,10 +243,41 @@ export const getByUsername = query({
       .withIndex("by_user", (q) => q.eq("userId", user._id))
       .collect();
 
+    // Get usage stats for profile
+    const usageEntries = await ctx.db
+      .query("daily_usage")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect();
+
+    const totalCostUsd = usageEntries.reduce((sum, e) => sum + e.costUsd, 0);
+    const totalInputTokens = usageEntries.reduce((sum, e) => sum + e.inputTokens, 0);
+    const totalOutputTokens = usageEntries.reduce((sum, e) => sum + e.outputTokens, 0);
+    const uniqueDates = new Set(usageEntries.map((e) => e.date));
+    const uniqueProviders = [...new Set(usageEntries.map((e) => e.provider))];
+
+    // Calculate streak
+    const sortedDates = [...uniqueDates].sort().reverse();
+    let currentStreak = 0;
+    const today = new Date().toISOString().split("T")[0];
+    let checkDate = today;
+    for (const date of sortedDates) {
+      if (date === checkDate || date === getPreviousDate(checkDate)) {
+        currentStreak++;
+        checkDate = date;
+      } else {
+        break;
+      }
+    }
+
+    // Build heatmap from usage data
+    const heatmap: Record<string, number> = {};
+    for (const entry of usageEntries) {
+      heatmap[entry.date] = (heatmap[entry.date] ?? 0) + entry.costUsd;
+    }
+
     // Check if current user follows this profile
     let isFollowing = false;
-    const me = await getCurrentUser(ctx);
-    if (me) {
+    if (me && me._id !== user._id) {
       const followRow = await ctx.db
         .query("follows")
         .withIndex("by_pair", (q) =>
@@ -168,17 +288,41 @@ export const getByUsername = query({
     }
 
     return {
-      ...user,
+      _id: user._id,
+      username: user.username,
+      displayName: user.displayName,
+      avatarUrl: user.avatarUrl,
+      bio: user.bio,
+      country: user.country,
+      region: user.region,
+      githubUsername: user.githubUsername,
+      externalLink: user.externalLink,
+      isPublic: user.isPublic,
+      _creationTime: user._creationTime,
       stats: {
         followers: followers.length,
         following: following.length,
-        posts: posts.length,
+        posts: posts.filter((p) => p.isPublished).length,
+        total_cost_usd: totalCostUsd,
+        total_input_tokens: totalInputTokens,
+        total_output_tokens: totalOutputTokens,
+        total_days: uniqueDates.size,
+        current_streak: currentStreak,
       },
-      achievements: achievements.map((a) => a.slug),
+      providers_used: uniqueProviders,
+      achievements: achievements.map((a) => ({ slug: a.slug, awarded_at: String(a._creationTime) })),
+      heatmap,
       isFollowing,
+      isOwnProfile: me ? me._id === user._id : false,
     };
   },
 });
+
+function getPreviousDate(dateStr: string): string {
+  const d = new Date(dateStr);
+  d.setDate(d.getDate() - 1);
+  return d.toISOString().split("T")[0];
+}
 
 // GET /users/:username/followers
 export const getFollowers = query({

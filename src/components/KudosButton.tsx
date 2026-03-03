@@ -31,16 +31,7 @@ export const KudosButton = forwardRef<HTMLButtonElement, KudosButtonProps>(
       setActive(next);
       setLocalCount(next ? localCount + 1 : localCount - 1);
 
-      toggleKudos.mutate(
-        { postId, hasKudosed: active },
-        {
-          onError: () => {
-            setActive(active);
-            setLocalCount(count);
-            toast({ title: 'Failed to toggle kudos', variant: 'destructive' });
-          },
-        }
-      );
+      toggleKudos.mutate({ postId, hasKudosed: active });
       toast({ title: next ? 'Kudos sent!' : 'Kudos removed' });
       onToggle?.();
     };
