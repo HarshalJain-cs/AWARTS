@@ -1,22 +1,44 @@
 /**
- * Antigravity adapter -- reads local usage data from Antigravity AI tools.
+ * Antigravity adapter -- reads local usage data with token-based cost estimation.
  *
- * Expected location:  ~/.antigravity/usage/
+ * Primary: Local file reading from ~/.antigravity/usage/
+ * Fallback: Token-based cost estimation using pricing table
  *
- * Files are expected as YYYY-MM-DD.json.
+ * Antigravity is a newer tool without a public billing API, so we rely on
+ * local files and estimate costs from token counts when costs aren't provided.
  */
 
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
 import type { Adapter, UsageEntry } from '../types.js';
+import { getKey } from '../lib/keys.js';
 
 const HOME = os.homedir();
 
-const CANDIDATE_DIRS = [
+const LOCAL_DIRS = [
   path.join(HOME, '.antigravity', 'usage'),
   path.join(HOME, '.antigravity'),
 ];
+
+// ── Antigravity Pricing (per million tokens, USD) ───────────────────────
+// Estimated pricing based on comparable models
+const ANTIGRAVITY_PRICING: Record<string, { input: number; output: number }> = {
+  'antigravity-1':   { input: 3.00, output: 15.00 },
+  'antigravity-1.5': { input: 3.00, output: 15.00 },
+};
+const DEFAULT_PRICING = { input: 3.00, output: 15.00 };
+
+function estimateCost(
+  inputTokens: number,
+  outputTokens: number,
+  model?: string
+): number {
+  const pricing = (model && ANTIGRAVITY_PRICING[model]) || DEFAULT_PRICING;
+  return (inputTokens * pricing.input + outputTokens * pricing.output) / 1_000_000;
+}
+
+// ── Local file reading ──────────────────────────────────────────────────
 
 interface AntigravityUsageFile {
   date?: string;
@@ -46,68 +68,82 @@ async function dirExists(dir: string): Promise<boolean> {
 }
 
 async function findUsageDir(): Promise<string | null> {
-  for (const dir of CANDIDATE_DIRS) {
+  for (const dir of LOCAL_DIRS) {
     if (await dirExists(dir)) return dir;
   }
   return null;
 }
+
+async function readLocalFiles(): Promise<UsageEntry[]> {
+  const entries: UsageEntry[] = [];
+  const dir = await findUsageDir();
+  if (!dir) return entries;
+
+  let files: string[];
+  try {
+    files = await fs.readdir(dir);
+  } catch {
+    return entries;
+  }
+
+  const jsonFiles = files.filter((f) => f.endsWith('.json'));
+
+  for (const file of jsonFiles) {
+    try {
+      const filePath = path.join(dir, file);
+      const raw = await fs.readFile(filePath, 'utf-8');
+      const data: AntigravityUsageFile = JSON.parse(raw);
+
+      const date = data.date ?? dateFromFilename(file);
+      if (!date) continue;
+
+      const costUsd = data.cost_usd ?? data.total_cost ?? 0;
+      const inputTokens = Number(data.input_tokens ?? 0) || 0;
+      const outputTokens = Number(data.output_tokens ?? 0) || 0;
+      const model = data.model ?? (data.models?.[0]);
+
+      // If we have tokens but no cost, estimate
+      let finalCost = Number(costUsd) || 0;
+      let costSource: 'real' | 'estimated' = finalCost > 0 ? 'real' : 'estimated';
+      if (finalCost === 0 && (inputTokens > 0 || outputTokens > 0)) {
+        finalCost = estimateCost(inputTokens, outputTokens, model);
+        costSource = 'estimated';
+      }
+
+      entries.push({
+        date,
+        provider: 'antigravity',
+        cost_usd: finalCost,
+        input_tokens: inputTokens,
+        output_tokens: outputTokens,
+        cache_creation_tokens: Number(data.cache_creation_tokens ?? 0) || 0,
+        cache_read_tokens: Number(data.cache_read_tokens ?? 0) || 0,
+        models: data.models ?? (data.model ? [data.model] : []),
+        cost_source: costSource,
+      });
+    } catch {
+      // Skip unparseable files silently.
+    }
+  }
+
+  return entries;
+}
+
+// ── Adapter export ──────────────────────────────────────────────────────
 
 export const antigravityAdapter: Adapter = {
   name: 'antigravity',
   displayName: 'Antigravity',
 
   async detect(): Promise<boolean> {
+    // Detected if API key exists OR local files exist
+    const apiKey = await getKey('antigravity');
+    if (apiKey) return true;
     return (await findUsageDir()) !== null;
   },
 
   async read(): Promise<UsageEntry[]> {
-    const entries: UsageEntry[] = [];
-    const dir = await findUsageDir();
-    if (!dir) return entries;
-
-    let files: string[];
-    try {
-      files = await fs.readdir(dir);
-    } catch {
-      return entries;
-    }
-
-    const jsonFiles = files.filter((f) => f.endsWith('.json'));
-
-    for (const file of jsonFiles) {
-      try {
-        const filePath = path.join(dir, file);
-        const raw = await fs.readFile(filePath, 'utf-8');
-        const data: AntigravityUsageFile = JSON.parse(raw);
-
-        const date = data.date ?? dateFromFilename(file);
-        if (!date) continue;
-
-        const costUsd = data.cost_usd ?? data.total_cost ?? 0;
-        const inputTokens = data.input_tokens ?? 0;
-        const outputTokens = data.output_tokens ?? 0;
-
-        const models: string[] = data.models
-          ? data.models
-          : data.model
-            ? [data.model]
-            : [];
-
-        entries.push({
-          date,
-          provider: 'antigravity',
-          cost_usd: Number(costUsd) || 0,
-          input_tokens: Number(inputTokens) || 0,
-          output_tokens: Number(outputTokens) || 0,
-          cache_creation_tokens: Number(data.cache_creation_tokens ?? 0) || 0,
-          cache_read_tokens: Number(data.cache_read_tokens ?? 0) || 0,
-          models,
-        });
-      } catch {
-        // Skip unparseable files silently.
-      }
-    }
-
-    return entries;
+    // Read local files (primary and only source for Antigravity)
+    return readLocalFiles();
   },
 };

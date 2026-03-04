@@ -33,6 +33,7 @@ export interface PostStats {
   inputTokens: number;
   outputTokens: number;
   sessions: number;
+  isEstimated?: boolean;
 }
 
 export interface Post {

@@ -20,6 +20,9 @@ export function transformFeedPost(raw: any): Post {
     sessions: 1,
   }));
 
+  // Check if any usage entry has estimated cost
+  const hasEstimated = usage.some((u: any) => (u.costSource ?? u.cost_source) === 'estimated');
+
   // Handle author object from Convex (nested under "author") or legacy "user"
   const authorRaw = raw.author ?? raw.user;
 
@@ -35,6 +38,7 @@ export function transformFeedPost(raw: any): Post {
       inputTokens: totalInput,
       outputTokens: totalOutput,
       sessions: usage.length,
+      isEstimated: hasEstimated,
     },
     images: raw.images ?? [],
     kudosCount: raw.kudosCount ?? raw.kudos_count ?? 0,

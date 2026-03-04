@@ -1,7 +1,36 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useQuery, useMutation, useAction } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
+
+// ── Helper: wrap a Convex mutation with isPending tracking ──────────
+function useMutationWithPending<TArgs, TResult>(
+  mutationFn: any
+) {
+  const mutation = useMutation(mutationFn);
+  const [isPending, setIsPending] = useState(false);
+
+  const mutateAsync = useCallback(
+    async (args: TArgs): Promise<TResult> => {
+      setIsPending(true);
+      try {
+        return await mutation(args as any);
+      } finally {
+        setIsPending(false);
+      }
+    },
+    [mutation]
+  );
+
+  const mutate = useCallback(
+    (args: TArgs) => {
+      mutateAsync(args).catch(() => {});
+    },
+    [mutateAsync]
+  );
+
+  return { mutate, mutateAsync, isPending };
+}
 
 // ─── Feed ─────────────────────────────────────────────────────────────
 
@@ -48,15 +77,9 @@ export function useComments(postId: string) {
 }
 
 export function useCreateComment() {
-  const addComment = useMutation(api.social.addComment);
-  return {
-    mutate: (data: { postId: string; content: string }) => {
-      addComment({ postId: data.postId as Id<"posts">, content: data.content });
-    },
-    mutateAsync: (data: { postId: string; content: string }) =>
-      addComment({ postId: data.postId as Id<"posts">, content: data.content }),
-    isPending: false,
-  };
+  return useMutationWithPending<{ postId: string; content: string }, any>(
+    api.social.addComment
+  );
 }
 
 // ─── Kudos ────────────────────────────────────────────────────────────
@@ -64,16 +87,16 @@ export function useCreateComment() {
 export function useToggleKudos() {
   const give = useMutation(api.social.giveKudos);
   const remove = useMutation(api.social.removeKudos);
+  const [isPending, setIsPending] = useState(false);
+
   return {
     mutate: (data: { postId: string; hasKudosed: boolean }) => {
       const postId = data.postId as Id<"posts">;
-      if (data.hasKudosed) {
-        remove({ postId });
-      } else {
-        give({ postId });
-      }
+      setIsPending(true);
+      const promise = data.hasKudosed ? remove({ postId }) : give({ postId });
+      promise.finally(() => setIsPending(false));
     },
-    isPending: false,
+    isPending,
   };
 }
 
@@ -82,16 +105,16 @@ export function useToggleKudos() {
 export function useToggleFollow() {
   const follow = useMutation(api.social.follow);
   const unfollow = useMutation(api.social.unfollow);
+  const [isPending, setIsPending] = useState(false);
+
   return {
     mutate: (data: { targetUserId: string; isFollowing: boolean }) => {
       const followingId = data.targetUserId as Id<"users">;
-      if (data.isFollowing) {
-        unfollow({ followingId });
-      } else {
-        follow({ followingId });
-      }
+      setIsPending(true);
+      const promise = data.isFollowing ? unfollow({ followingId }) : follow({ followingId });
+      promise.finally(() => setIsPending(false));
     },
-    isPending: false,
+    isPending,
   };
 }
 
@@ -110,12 +133,7 @@ export function useNotifications() {
 }
 
 export function useMarkNotificationsRead() {
-  const markRead = useMutation(api.social.markNotificationsRead);
-  return {
-    mutate: () => markRead(),
-    mutateAsync: () => markRead(),
-    isPending: false,
-  };
+  return useMutationWithPending<void, any>(api.social.markNotificationsRead);
 }
 
 // ─── Leaderboard ──────────────────────────────────────────────────────
@@ -167,12 +185,7 @@ export function useCurrentUser() {
 }
 
 export function useUpdateProfile() {
-  const updateMe = useMutation(api.users.updateMe);
-  return {
-    mutate: (data: Record<string, unknown>) => updateMe(data as any),
-    mutateAsync: (data: Record<string, unknown>) => updateMe(data as any),
-    isPending: false,
-  };
+  return useMutationWithPending<Record<string, unknown>, any>(api.users.updateMe);
 }
 
 // ─── AI Caption ───────────────────────────────────────────────────────
@@ -220,18 +233,13 @@ export function useUploadImage() {
   const uploadFile = async (file: File): Promise<{ url: string }> => {
     setIsPending(true);
     try {
-      // Step 1: Get a short-lived upload URL from Convex
       const uploadUrl = await generateUploadUrl();
-
-      // Step 2: POST the file to that URL
       const result = await fetch(uploadUrl, {
         method: "POST",
         headers: { "Content-Type": file.type },
         body: file,
       });
       const { storageId } = await result.json();
-
-      // Step 3: Save the file reference and get the serving URL
       const { url } = await saveFile({ storageId });
       return { url };
     } finally {
@@ -277,39 +285,39 @@ export function useUploadAvatar() {
 
 export function useUpdatePost() {
   const updatePost = useMutation(api.posts.updatePost);
+  const [isPending, setIsPending] = useState(false);
+
   return {
     mutate: (data: { id: string; title?: string; description?: string; images?: string[]; is_published?: boolean }) => {
       const { id, is_published, ...rest } = data;
+      setIsPending(true);
       updatePost({
         postId: id as Id<"posts">,
         ...rest,
         isPublished: is_published,
-      });
+      }).finally(() => setIsPending(false));
     },
     mutateAsync: async (data: { id: string; title?: string; description?: string; images?: string[]; is_published?: boolean }) => {
       const { id, is_published, ...rest } = data;
-      return updatePost({
-        postId: id as Id<"posts">,
-        ...rest,
-        isPublished: is_published,
-      });
+      setIsPending(true);
+      try {
+        return await updatePost({
+          postId: id as Id<"posts">,
+          ...rest,
+          isPublished: is_published,
+        });
+      } finally {
+        setIsPending(false);
+      }
     },
-    isPending: false,
+    isPending,
   };
 }
 
 // ─── Delete Post ──────────────────────────────────────────────────────
 
 export function useDeletePost() {
-  const deletePost = useMutation(api.posts.deletePost);
-  return {
-    mutate: (id: string) => {
-      deletePost({ postId: id as Id<"posts"> });
-    },
-    mutateAsync: (id: string) =>
-      deletePost({ postId: id as Id<"posts"> }),
-    isPending: false,
-  };
+  return useMutationWithPending<string, any>(api.posts.deletePost);
 }
 
 // ─── User Posts ───────────────────────────────────────────────────────
@@ -352,30 +360,16 @@ export function useFollowing(username: string) {
   };
 }
 
-// ─── Delete Comment ──────────────────────────────────────────────────
+// ─── Edit / Delete Comment ──────────────────────────────────────────
 
 export function useEditComment() {
-  const editComment = useMutation(api.social.editComment);
-  return {
-    mutate: (data: { commentId: string; content: string }) => {
-      editComment({ commentId: data.commentId as Id<"comments">, content: data.content });
-    },
-    mutateAsync: (data: { commentId: string; content: string }) =>
-      editComment({ commentId: data.commentId as Id<"comments">, content: data.content }),
-    isPending: false,
-  };
+  return useMutationWithPending<{ commentId: string; content: string }, any>(
+    api.social.editComment
+  );
 }
 
 export function useDeleteComment() {
-  const deleteComment = useMutation(api.social.deleteComment);
-  return {
-    mutate: (commentId: string) => {
-      deleteComment({ commentId: commentId as Id<"comments"> });
-    },
-    mutateAsync: (commentId: string) =>
-      deleteComment({ commentId: commentId as Id<"comments"> }),
-    isPending: false,
-  };
+  return useMutationWithPending<string, any>(api.social.deleteComment);
 }
 
 // ─── Prompts ──────────────────────────────────────────────────────
@@ -390,27 +384,24 @@ export function usePrompts() {
 }
 
 export function useSubmitPrompt() {
-  const submit = useMutation(api.prompts.submitPrompt);
-  return {
-    mutate: (data: { content: string; isAnonymous: boolean }) => {
-      submit(data);
-    },
-    mutateAsync: (data: { content: string; isAnonymous: boolean }) =>
-      submit(data),
-    isPending: false,
-  };
+  return useMutationWithPending<{ content: string; isAnonymous: boolean }, any>(
+    api.prompts.submitPrompt
+  );
 }
 
 export function useTogglePromptVote() {
-  const toggle = useMutation(api.prompts.toggleVote);
-  return {
-    mutate: (data: { promptId: string }) => {
-      toggle({ promptId: data.promptId as Id<"prompts"> });
-    },
-    mutateAsync: (data: { promptId: string }) =>
-      toggle({ promptId: data.promptId as Id<"prompts"> }),
-    isPending: false,
-  };
+  return useMutationWithPending<{ promptId: string }, any>(
+    api.prompts.toggleVote
+  );
+}
+
+// ─── Import Usage (web) ──────────────────────────────────────────────
+
+export function useImportUsage() {
+  return useMutationWithPending<
+    { entries: Array<{ date: string; provider: string; cost_usd: number; input_tokens: number; output_tokens: number; models: string[]; cost_source?: string }> },
+    any
+  >(api.usage.importUsage);
 }
 
 // ─── Username Availability ────────────────────────────────────────────

@@ -98,9 +98,12 @@ export default defineSchema({
     status: v.string(),
     jwtToken: v.optional(v.string()),
     expiresAt: v.number(),
+    lastUsedAt: v.optional(v.number()),
+    tokenExpiresAt: v.optional(v.number()),
   })
     .index("by_code", ["code"])
-    .index("by_device_token", ["deviceToken"]),
+    .index("by_device_token", ["deviceToken"])
+    .index("by_jwt", ["jwtToken"]),
 
   user_achievements: defineTable({
     userId: v.id("users"),

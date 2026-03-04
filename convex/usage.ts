@@ -32,16 +32,19 @@ export const submitUsage = mutation({
       // CLI token auth: look up the token in cli_auth_codes
       const authRow = await ctx.db
         .query("cli_auth_codes")
-        .filter((q) =>
-          q.and(
-            q.eq(q.field("jwtToken"), authToken),
-            q.eq(q.field("status"), "verified")
-          )
-        )
+        .withIndex("by_jwt", (q) => q.eq("jwtToken", authToken))
         .first();
 
-      if (authRow && authRow.userId) {
+      if (authRow && authRow.status === "verified" && authRow.userId) {
+        // Check token expiry (90 days)
+        if (authRow.tokenExpiresAt && authRow.tokenExpiresAt < Date.now()) {
+          throw new Error("Token expired. Please re-authenticate with `awarts login`.");
+        }
         me = await ctx.db.get(authRow.userId);
+        // Update lastUsedAt
+        if (me) {
+          await ctx.db.patch(authRow._id, { lastUsedAt: Date.now() });
+        }
       }
     }
 
@@ -51,10 +54,47 @@ export const submitUsage = mutation({
     let processed = 0;
     const affectedDates = new Set<string>();
 
+    const validProviders = ["claude", "codex", "gemini", "antigravity"];
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    const today = new Date().toISOString().split("T")[0];
+
     for (const entry of entries) {
-      const validProviders = ["claude", "codex", "gemini", "antigravity"];
       if (!validProviders.includes(entry.provider)) {
         errors.push({ date: entry.date, provider: entry.provider, error: "Invalid provider" });
+        continue;
+      }
+
+      // Validate date format and not in the future
+      if (!dateRegex.test(entry.date)) {
+        errors.push({ date: entry.date, provider: entry.provider, error: "Invalid date format (expected YYYY-MM-DD)" });
+        continue;
+      }
+      if (entry.date > today) {
+        errors.push({ date: entry.date, provider: entry.provider, error: "Date cannot be in the future" });
+        continue;
+      }
+
+      // Validate numeric bounds
+      if (entry.cost_usd < 0 || entry.cost_usd > 100000) {
+        errors.push({ date: entry.date, provider: entry.provider, error: "cost_usd out of range (0-100000)" });
+        continue;
+      }
+      if (entry.input_tokens < 0 || entry.input_tokens > 1_000_000_000) {
+        errors.push({ date: entry.date, provider: entry.provider, error: "input_tokens out of range" });
+        continue;
+      }
+      if (entry.output_tokens < 0 || entry.output_tokens > 1_000_000_000) {
+        errors.push({ date: entry.date, provider: entry.provider, error: "output_tokens out of range" });
+        continue;
+      }
+
+      // Validate models array
+      if (entry.models.length > 20) {
+        errors.push({ date: entry.date, provider: entry.provider, error: "Too many models (max 20)" });
+        continue;
+      }
+      if (entry.models.some((m: string) => m.length > 100)) {
+        errors.push({ date: entry.date, provider: entry.provider, error: "Model name too long (max 100 chars)" });
         continue;
       }
 
@@ -205,3 +245,127 @@ async function checkAchievements(
     }
   }
 }
+
+// ─── Web Import (Clerk auth only) ──────────────────────────────────────
+export const importUsage = mutation({
+  args: {
+    entries: v.array(v.object({
+      date: v.string(),
+      provider: v.string(),
+      cost_usd: v.number(),
+      input_tokens: v.number(),
+      output_tokens: v.number(),
+      models: v.array(v.string()),
+      cost_source: v.optional(v.string()),
+    })),
+  },
+  handler: async (ctx, { entries }) => {
+    const me = await getCurrentUser(ctx);
+    if (!me) throw new Error("Not authenticated");
+
+    if (entries.length > 500) {
+      throw new Error("Too many entries (max 500)");
+    }
+
+    // Reuse submitUsage logic by calling it internally
+    const errors: Array<{ date: string; provider: string; error: string }> = [];
+    let processed = 0;
+    const affectedDates = new Set<string>();
+
+    const validProviders = ["claude", "codex", "gemini", "antigravity"];
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    const today = new Date().toISOString().split("T")[0];
+
+    for (const entry of entries) {
+      if (!validProviders.includes(entry.provider)) {
+        errors.push({ date: entry.date, provider: entry.provider, error: "Invalid provider" });
+        continue;
+      }
+      if (!dateRegex.test(entry.date)) {
+        errors.push({ date: entry.date, provider: entry.provider, error: "Invalid date format" });
+        continue;
+      }
+      if (entry.date > today) {
+        errors.push({ date: entry.date, provider: entry.provider, error: "Future date" });
+        continue;
+      }
+      if (entry.cost_usd < 0 || entry.cost_usd > 100000) {
+        errors.push({ date: entry.date, provider: entry.provider, error: "Cost out of range" });
+        continue;
+      }
+
+      const existing = await ctx.db
+        .query("daily_usage")
+        .withIndex("by_user_date_provider", (q) =>
+          q.eq("userId", me._id).eq("date", entry.date).eq("provider", entry.provider)
+        )
+        .unique();
+
+      const record = {
+        costUsd: entry.cost_usd,
+        inputTokens: entry.input_tokens,
+        outputTokens: entry.output_tokens,
+        cacheCreationTokens: 0,
+        cacheReadTokens: 0,
+        models: entry.models,
+        source: "web-import",
+        costSource: entry.cost_source ?? "real",
+      };
+
+      if (existing) {
+        await ctx.db.patch(existing._id, record);
+      } else {
+        await ctx.db.insert("daily_usage", {
+          userId: me._id,
+          date: entry.date,
+          provider: entry.provider,
+          ...record,
+        });
+      }
+
+      processed++;
+      affectedDates.add(entry.date);
+    }
+
+    // Create posts for affected dates
+    let postsCreated = 0;
+    for (const date of affectedDates) {
+      const existingPost = await ctx.db
+        .query("posts")
+        .withIndex("by_user_date", (q) => q.eq("userId", me._id).eq("usageDate", date))
+        .unique();
+
+      const usageEntries = await ctx.db
+        .query("daily_usage")
+        .withIndex("by_user_date_provider", (q) => q.eq("userId", me._id).eq("date", date))
+        .collect();
+
+      const providers = [...new Set(usageEntries.map((e) => e.provider))];
+
+      if (!existingPost) {
+        const postId = await ctx.db.insert("posts", {
+          userId: me._id,
+          usageDate: date,
+          images: [],
+          providers,
+          isPublished: true,
+        });
+        for (const ue of usageEntries) {
+          await ctx.db.insert("post_daily_usage", { postId, dailyUsageId: ue._id });
+        }
+        postsCreated++;
+      } else {
+        await ctx.db.patch(existingPost._id, { providers });
+      }
+    }
+
+    await checkAchievements(ctx, me._id);
+
+    return {
+      success: errors.length === 0,
+      processed,
+      posts_created: postsCreated,
+      ...(errors.length > 0 && { errors }),
+    };
+  },
+});

@@ -161,6 +161,7 @@ export default function Profile() {
             inputTokens={totalInput}
             outputTokens={totalOutput}
             sessions={raw.stats?.total_days ?? 0}
+            isEstimated={raw.stats?.hasEstimatedCost}
           />
         </div>
 

@@ -14,6 +14,7 @@ export const getLeaderboard = query({
     // Cap limits to prevent abuse
     const safeLimit = Math.min(Math.max(1, limit), 100);
     const safeOffset = Math.max(0, offset);
+
     // Calculate date range based on period
     const now = new Date();
     let startDate: string | null = null;
@@ -28,12 +29,21 @@ export const getLeaderboard = query({
       startDate = monthAgo.toISOString().split("T")[0];
     }
 
-    // Get all usage entries (filter by date range)
-    let usageEntries = await ctx.db.query("daily_usage").collect();
-
+    // Use by_date index for date-bounded queries, fall back to limited scan for all_time
+    let usageEntries;
     if (startDate) {
-      usageEntries = usageEntries.filter((e) => e.date >= startDate!);
+      // Use index to filter by date range efficiently
+      usageEntries = await ctx.db
+        .query("daily_usage")
+        .withIndex("by_date", (q) => q.gte("date", startDate!))
+        .collect();
+    } else {
+      // All time: take a reasonable limit to avoid loading entire table
+      usageEntries = await ctx.db
+        .query("daily_usage")
+        .take(10000);
     }
+
     if (provider) {
       usageEntries = usageEntries.filter((e) => e.provider === provider);
     }
@@ -41,7 +51,7 @@ export const getLeaderboard = query({
     // Aggregate by user
     const userTotals = new Map<string, { costUsd: number; totalTokens: number; days: Set<string> }>();
     for (const entry of usageEntries) {
-      const uid = entry.userId;
+      const uid = String(entry.userId);
       const existing = userTotals.get(uid) ?? { costUsd: 0, totalTokens: 0, days: new Set() };
       existing.costUsd += entry.costUsd;
       existing.totalTokens +=
@@ -54,31 +64,38 @@ export const getLeaderboard = query({
     const sorted = [...userTotals.entries()]
       .sort((a, b) => b[1].costUsd - a[1].costUsd);
 
-    // Hydrate with user info
-    const hydrated = await Promise.all(
-      sorted.map(async ([userId, totals], index) => {
-        const user = await ctx.db.get(userId as Id<"users">);
-        if (!user) return null;
+    // Only hydrate the slice we need (after offset, up to limit + some buffer for region filtering)
+    const sliceEnd = region ? sorted.length : safeOffset + safeLimit;
+    const toHydrate = sorted.slice(0, sliceEnd);
 
-        // Filter by region if requested
-        if (region && user.region !== region) return null;
+    // Batch-load users
+    const userIds = toHydrate.map(([id]) => id as Id<"users">);
+    const users = await Promise.all(userIds.map((id) => ctx.db.get(id)));
+    const userMap = new Map<string, typeof users[0]>();
+    for (const u of users) {
+      if (u) userMap.set(String(u._id), u);
+    }
 
-        return {
-          rank: index + 1,
-          user: {
-            _id: user._id,
-            username: user.username,
-            displayName: user.displayName,
-            avatarUrl: user.avatarUrl,
-            country: user.country,
-            region: user.region,
-          },
-          costUsd: totals.costUsd,
-          totalTokens: totals.totalTokens,
-          activeDays: totals.days.size,
-        };
-      })
-    );
+    const hydrated = toHydrate.map(([userId, totals], index) => {
+      const user = userMap.get(userId);
+      if (!user) return null;
+      if (region && user.region !== region) return null;
+
+      return {
+        rank: index + 1,
+        user: {
+          _id: user._id,
+          username: user.username,
+          displayName: user.displayName,
+          avatarUrl: user.avatarUrl,
+          country: user.country,
+          region: user.region,
+        },
+        costUsd: totals.costUsd,
+        totalTokens: totals.totalTokens,
+        activeDays: totals.days.size,
+      };
+    });
 
     const filtered = hydrated.filter(Boolean);
 

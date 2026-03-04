@@ -34,9 +34,11 @@ export const getPrompts = query({
     limit: v.optional(v.number()),
   },
   handler: async (ctx, { cursor, limit = 20 }) => {
+    const safeLimit = Math.min(Math.max(1, limit), 50);
     const me = await getCurrentUser(ctx);
 
-    let prompts = await ctx.db.query("prompts").order("desc").collect();
+    // Use .take() instead of .collect() to avoid loading entire table
+    let prompts = await ctx.db.query("prompts").order("desc").take(safeLimit * 3);
 
     // Cursor-based pagination
     if (cursor) {
@@ -44,9 +46,9 @@ export const getPrompts = query({
       prompts = prompts.filter((p) => p._creationTime < cursorTime);
     }
 
-    const sliced = prompts.slice(0, limit + 1);
-    const hasMore = sliced.length > limit;
-    const page = sliced.slice(0, limit);
+    const sliced = prompts.slice(0, safeLimit + 1);
+    const hasMore = sliced.length > safeLimit;
+    const page = sliced.slice(0, safeLimit);
 
     // Hydrate with author info and vote counts
     const hydrated = await Promise.all(

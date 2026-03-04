@@ -29,6 +29,7 @@ import {
 } from './commands/daemon.js';
 import { clearAuth } from './lib/auth-store.js';
 import { DEFAULT_INTERVAL_MS } from './lib/daemon.js';
+import { setKey, removeKey, listKeys, type ProviderKeyName } from './lib/keys.js';
 import * as out from './lib/output.js';
 
 const program = new Command();
@@ -179,6 +180,72 @@ daemon
       await daemonRunLoop(Number(opts.interval) || DEFAULT_INTERVAL_MS);
     } catch (err) {
       console.error(`Daemon error: ${err instanceof Error ? err.message : String(err)}`);
+      process.exit(1);
+    }
+  });
+
+// ─── keys ───────────────────────────────────────────────────────────────
+const keys = program
+  .command('keys')
+  .description('Manage API keys for provider billing (OpenAI, Google, Antigravity)');
+
+keys
+  .command('set <provider> <key>')
+  .description('Store an API key for a provider (openai, google, antigravity)')
+  .action(async (provider: string, key: string) => {
+    try {
+      const valid: ProviderKeyName[] = ['openai', 'google', 'antigravity'];
+      if (!valid.includes(provider as ProviderKeyName)) {
+        out.error(`Invalid provider "${provider}". Must be one of: ${valid.join(', ')}`);
+        process.exit(1);
+      }
+      await setKey(provider as ProviderKeyName, key);
+      out.success(`API key saved for ${provider} (stored in ~/.awarts/keys.json)`);
+    } catch (err) {
+      out.error(err instanceof Error ? err.message : String(err));
+      process.exit(1);
+    }
+  });
+
+keys
+  .command('list')
+  .description('List stored API keys (masked)')
+  .action(async () => {
+    try {
+      const stored = await listKeys();
+      if (stored.length === 0) {
+        out.info('No API keys stored. Use `awarts keys set <provider> <key>` to add one.');
+        return;
+      }
+      console.log();
+      for (const { provider, masked } of stored) {
+        console.log(`  ${provider.padEnd(14)} ${masked}`);
+      }
+      console.log();
+    } catch (err) {
+      out.error(err instanceof Error ? err.message : String(err));
+      process.exit(1);
+    }
+  });
+
+keys
+  .command('remove <provider>')
+  .description('Remove a stored API key')
+  .action(async (provider: string) => {
+    try {
+      const valid: ProviderKeyName[] = ['openai', 'google', 'antigravity'];
+      if (!valid.includes(provider as ProviderKeyName)) {
+        out.error(`Invalid provider "${provider}". Must be one of: ${valid.join(', ')}`);
+        process.exit(1);
+      }
+      const removed = await removeKey(provider as ProviderKeyName);
+      if (removed) {
+        out.success(`API key removed for ${provider}`);
+      } else {
+        out.info(`No key stored for ${provider}`);
+      }
+    } catch (err) {
+      out.error(err instanceof Error ? err.message : String(err));
       process.exit(1);
     }
   });

@@ -1,16 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { AppShell } from '@/components/layout/AppShell';
 import { AuthGate } from '@/components/AuthGate';
 import { useAuth } from '@/context/AuthContext';
 import { useUser } from '@clerk/clerk-react';
-import { useCurrentUser, useUpdateProfile, useUploadAvatar } from '@/hooks/use-api';
+import { useCurrentUser, useUpdateProfile, useUploadAvatar, useImportUsage } from '@/hooks/use-api';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Upload, Loader2, Check, Copy } from 'lucide-react';
+import { Upload, Loader2, Check, Copy, FileUp, X, AlertCircle } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { SEO } from '@/components/SEO';
 
@@ -22,12 +22,88 @@ export default function Settings() {
   );
 }
 
+// ── CSV Parser ──────────────────────────────────────────────────────────
+function parseCSV(text: string): Array<Record<string, string>> {
+  const lines = text.trim().split('\n');
+  if (lines.length < 2) return [];
+  const headers = lines[0].split(',').map((h) => h.trim().toLowerCase());
+  return lines.slice(1).map((line) => {
+    const values = line.split(',').map((v) => v.trim());
+    const row: Record<string, string> = {};
+    headers.forEach((h, i) => { row[h] = values[i] ?? ''; });
+    return row;
+  });
+}
+
+interface ImportEntry {
+  date: string;
+  provider: string;
+  cost_usd: number;
+  input_tokens: number;
+  output_tokens: number;
+  models: string[];
+  cost_source?: string;
+}
+
+function parseImportFile(content: string, filename: string): { entries: ImportEntry[]; errors: string[] } {
+  const errors: string[] = [];
+  const entries: ImportEntry[] = [];
+  const validProviders = ['claude', 'codex', 'gemini', 'antigravity'];
+  const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+
+  try {
+    let rawData: any[];
+
+    if (filename.endsWith('.csv')) {
+      const rows = parseCSV(content);
+      rawData = rows.map((r) => ({
+        date: r.date,
+        provider: r.provider,
+        cost_usd: Number(r.cost_usd || r.cost || 0),
+        input_tokens: Number(r.input_tokens || 0),
+        output_tokens: Number(r.output_tokens || 0),
+        models: (r.models || r.model || '').split(';').filter(Boolean),
+        cost_source: r.cost_source,
+      }));
+    } else {
+      const parsed = JSON.parse(content);
+      rawData = Array.isArray(parsed) ? parsed : parsed.entries ?? [parsed];
+    }
+
+    for (let i = 0; i < rawData.length; i++) {
+      const row = rawData[i];
+      if (!row.date || !dateRegex.test(row.date)) {
+        errors.push(`Row ${i + 1}: Invalid date "${row.date}"`);
+        continue;
+      }
+      if (!row.provider || !validProviders.includes(row.provider)) {
+        errors.push(`Row ${i + 1}: Invalid provider "${row.provider}"`);
+        continue;
+      }
+      entries.push({
+        date: row.date,
+        provider: row.provider,
+        cost_usd: Number(row.cost_usd) || 0,
+        input_tokens: Number(row.input_tokens) || 0,
+        output_tokens: Number(row.output_tokens) || 0,
+        models: Array.isArray(row.models) ? row.models : [],
+        cost_source: row.cost_source || 'real',
+      });
+    }
+  } catch (e) {
+    errors.push(`Failed to parse file: ${e instanceof Error ? e.message : 'Unknown error'}`);
+  }
+
+  return { entries, errors };
+}
+
 function SettingsContent() {
   const { user: authUser } = useAuth();
   const { user: clerkUser } = useUser();
   const { data: profile } = useCurrentUser();
   const updateProfile = useUpdateProfile();
   const uploadAvatar = useUploadAvatar();
+  const importUsage = useImportUsage();
 
   const [displayName, setDisplayName] = useState('');
   const [bio, setBio] = useState('');
@@ -42,6 +118,13 @@ function SettingsContent() {
   const [copiedSync, setCopiedSync] = useState(false);
   const [copiedDaemon, setCopiedDaemon] = useState(false);
 
+  // Import state
+  const [importEntries, setImportEntries] = useState<ImportEntry[]>([]);
+  const [importErrors, setImportErrors] = useState<string[]>([]);
+  const [importFileName, setImportFileName] = useState('');
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   // Populate form when profile loads
   useEffect(() => {
     if (profile) {
@@ -51,7 +134,6 @@ function SettingsContent() {
       setIsPublic((profile as any).isPublic ?? true);
       setEmailNotifications((profile as any).emailNotificationsEnabled ?? true);
 
-      // Auto-fill GitHub username: prefer saved value, fall back to Clerk GitHub account
       const saved = (profile as any).githubUsername ?? '';
       if (saved) {
         setGithubUsername(saved);
@@ -81,6 +163,58 @@ function SettingsContent() {
       setIsPublic(!checked);
       toast({ title: 'Failed to update privacy', variant: 'destructive' });
     }
+  };
+
+  // ── Import handlers ───────────────────────────────────────────────────
+  const handleFile = useCallback((file: File) => {
+    if (!file.name.endsWith('.json') && !file.name.endsWith('.csv')) {
+      toast({ title: 'Unsupported file type', description: 'Please upload a .json or .csv file.', variant: 'destructive' });
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: 'File too large', description: 'Max 5MB.', variant: 'destructive' });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const content = e.target?.result as string;
+      const { entries, errors } = parseImportFile(content, file.name);
+      setImportEntries(entries);
+      setImportErrors(errors);
+      setImportFileName(file.name);
+    };
+    reader.readAsText(file);
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files[0];
+    if (file) handleFile(file);
+  }, [handleFile]);
+
+  const handleImportSubmit = async () => {
+    if (importEntries.length === 0) return;
+    try {
+      const result = await importUsage.mutateAsync({ entries: importEntries });
+      toast({
+        title: 'Import successful!',
+        description: `Processed ${result.processed} entries, ${result.posts_created} posts created.`,
+      });
+      setImportEntries([]);
+      setImportErrors([]);
+      setImportFileName('');
+    } catch (err) {
+      toast({ title: 'Import failed', description: err instanceof Error ? err.message : 'Unknown error', variant: 'destructive' });
+    }
+  };
+
+  const clearImport = () => {
+    setImportEntries([]);
+    setImportErrors([]);
+    setImportFileName('');
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const avatarUrl = authUser?.avatarUrl || '/placeholder.svg';
@@ -200,11 +334,117 @@ function SettingsContent() {
           </TabsContent>
 
           <TabsContent value="import" className="space-y-4 mt-6">
-            <div className="rounded-lg border-2 border-dashed border-border bg-muted/20 p-12 text-center">
-              <Upload className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
-              <p className="font-medium text-foreground">Import session data</p>
-              <p className="text-sm text-muted-foreground mt-1">Use the CLI to sync your sessions manually:</p>
-              <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/30 px-4 py-3 font-mono text-sm max-w-sm mx-auto mt-3">
+            {/* File Import */}
+            {importEntries.length === 0 ? (
+              <div
+                className={`rounded-lg border-2 border-dashed p-8 text-center transition-colors ${
+                  isDragging ? 'border-primary bg-primary/5' : 'border-border bg-muted/20'
+                }`}
+                onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                onDragLeave={() => setIsDragging(false)}
+                onDrop={handleDrop}
+              >
+                <FileUp className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
+                <p className="font-medium text-foreground">Import usage data</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Drag and drop a .json or .csv file, or click to browse
+                </p>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".json,.csv"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleFile(file);
+                  }}
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-3"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  Browse Files
+                </Button>
+                <div className="mt-4 text-xs text-muted-foreground space-y-1">
+                  <p>JSON format: <code className="bg-muted px-1 rounded">[{`{"date":"2025-01-01","provider":"codex","cost_usd":1.5,...}`}]</code></p>
+                  <p>CSV columns: <code className="bg-muted px-1 rounded">date,provider,cost_usd,input_tokens,output_tokens,models</code></p>
+                </div>
+              </div>
+            ) : (
+              /* Preview */
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium text-foreground">{importFileName}</p>
+                    <p className="text-sm text-muted-foreground">{importEntries.length} entries ready to import</p>
+                  </div>
+                  <Button variant="ghost" size="sm" onClick={clearImport}>
+                    <X className="h-4 w-4 mr-1" /> Clear
+                  </Button>
+                </div>
+
+                {importErrors.length > 0 && (
+                  <div className="rounded-lg border border-destructive/50 bg-destructive/5 p-3 text-sm">
+                    <div className="flex items-center gap-2 font-medium text-destructive mb-1">
+                      <AlertCircle className="h-4 w-4" />
+                      {importErrors.length} validation error{importErrors.length > 1 ? 's' : ''}
+                    </div>
+                    <ul className="list-disc ml-6 text-muted-foreground space-y-0.5">
+                      {importErrors.slice(0, 5).map((e, i) => <li key={i}>{e}</li>)}
+                      {importErrors.length > 5 && <li>...and {importErrors.length - 5} more</li>}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Preview table */}
+                <div className="rounded-lg border border-border overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead className="bg-muted/50">
+                        <tr>
+                          <th className="text-left px-3 py-2 font-medium text-muted-foreground">Date</th>
+                          <th className="text-left px-3 py-2 font-medium text-muted-foreground">Provider</th>
+                          <th className="text-right px-3 py-2 font-medium text-muted-foreground">Cost</th>
+                          <th className="text-right px-3 py-2 font-medium text-muted-foreground">Input</th>
+                          <th className="text-right px-3 py-2 font-medium text-muted-foreground">Output</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {importEntries.slice(0, 10).map((e, i) => (
+                          <tr key={i} className="border-t border-border">
+                            <td className="px-3 py-1.5 font-mono text-xs">{e.date}</td>
+                            <td className="px-3 py-1.5 capitalize">{e.provider}</td>
+                            <td className="px-3 py-1.5 text-right font-mono">${e.cost_usd.toFixed(2)}</td>
+                            <td className="px-3 py-1.5 text-right font-mono text-muted-foreground">{e.input_tokens.toLocaleString()}</td>
+                            <td className="px-3 py-1.5 text-right font-mono text-muted-foreground">{e.output_tokens.toLocaleString()}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    {importEntries.length > 10 && (
+                      <p className="text-xs text-muted-foreground text-center py-2">
+                        ...and {importEntries.length - 10} more entries
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <Button onClick={handleImportSubmit} disabled={importUsage.isPending || importEntries.length === 0}>
+                  {importUsage.isPending ? (
+                    <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Importing...</>
+                  ) : (
+                    <>Import {importEntries.length} Entries</>
+                  )}
+                </Button>
+              </div>
+            )}
+
+            {/* CLI sync section */}
+            <div className="pt-4 border-t border-border">
+              <p className="text-sm font-medium text-foreground mb-2">Or use the CLI:</p>
+              <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/30 px-4 py-3 font-mono text-sm max-w-sm">
                 <span className="text-muted-foreground select-none">$</span>
                 <code className="flex-1 text-foreground text-left">npx awarts@latest sync</code>
                 <button
@@ -219,8 +459,7 @@ function SettingsContent() {
                   {copiedSync ? <Check className="h-4 w-4 text-primary" /> : <Copy className="h-4 w-4" />}
                 </button>
               </div>
-              <p className="text-xs text-muted-foreground mt-4">Or start automatic background syncing:</p>
-              <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/30 px-4 py-3 font-mono text-sm max-w-sm mx-auto mt-2">
+              <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/30 px-4 py-3 font-mono text-sm max-w-sm mt-2">
                 <span className="text-muted-foreground select-none">$</span>
                 <code className="flex-1 text-foreground text-left">npx awarts@latest daemon start</code>
                 <button
@@ -235,7 +474,6 @@ function SettingsContent() {
                   {copiedDaemon ? <Check className="h-4 w-4 text-primary" /> : <Copy className="h-4 w-4" />}
                 </button>
               </div>
-              <p className="text-xs text-muted-foreground mt-3">File import coming soon.</p>
             </div>
           </TabsContent>
 

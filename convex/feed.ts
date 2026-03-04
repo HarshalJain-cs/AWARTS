@@ -1,7 +1,21 @@
 import { v } from "convex/values";
 import { query } from "./_generated/server";
-import type { Id } from "./_generated/dataModel";
+import type { Id, Doc } from "./_generated/dataModel";
 import { getCurrentUser } from "./users";
+
+// Batch-load users by IDs, returning a Map for O(1) lookups
+async function batchLoadUsers(
+  ctx: any,
+  userIds: Id<"users">[]
+): Promise<Map<string, Doc<"users">>> {
+  const unique = [...new Set(userIds.map(String))];
+  const users = await Promise.all(unique.map((id) => ctx.db.get(id as Id<"users">)));
+  const map = new Map<string, Doc<"users">>();
+  for (const u of users) {
+    if (u) map.set(String(u._id), u);
+  }
+  return map;
+}
 
 // GET /feed — paginated feed with filtering
 export const getFeed = query({
@@ -12,81 +26,66 @@ export const getFeed = query({
     limit: v.optional(v.number()),
   },
   handler: async (ctx, { type = "global", provider, cursor, limit = 20 }) => {
+    const safeLimit = Math.min(Math.max(1, limit), 50);
     const me = await getCurrentUser(ctx);
 
-    let posts = await ctx.db
-      .query("posts")
-      .order("desc")
-      .collect();
-
-    // Filter: only published posts
-    posts = posts.filter((p) => p.isPublished);
-
-    // Filter out posts from private profiles (except own posts)
-    const privateUserCache = new Map<string, boolean>();
-    const getIsPrivate = async (userId: Id<"users">) => {
-      const key = String(userId);
-      if (!privateUserCache.has(key)) {
-        const u = await ctx.db.get(userId);
-        privateUserCache.set(key, u ? !u.isPublic : true);
-      }
-      return privateUserCache.get(key)!;
-    };
-    const visiblePosts = [];
-    for (const p of posts) {
-      const isPrivate = await getIsPrivate(p.userId);
-      if (!isPrivate || (me && p.userId === me._id)) {
-        visiblePosts.push(p);
-      }
-    }
-    posts = visiblePosts;
-
-    // Filter: following only
+    // Build following set upfront if needed
+    let followingIds: Set<string> | null = null;
     if (type === "following" && me) {
       const followRows = await ctx.db
         .query("follows")
         .withIndex("by_follower", (q) => q.eq("followerId", me._id))
         .collect();
-      const followingIds = new Set(followRows.map((f) => f.followingId));
-      posts = posts.filter((p) => followingIds.has(p.userId));
+      followingIds = new Set(followRows.map((f) => String(f.followingId)));
     }
 
-    // Filter: by provider
-    if (provider) {
-      posts = posts.filter((p) => p.providers.includes(provider));
+    // Stream through posts with cursor-based pagination
+    let query = ctx.db.query("posts").order("desc");
+
+    // Apply cursor filter
+    const posts: Doc<"posts">[] = [];
+    const cursorTime = cursor ? Number(cursor) : Infinity;
+
+    // Take enough to fill page after filtering
+    const candidates = await query.take(safeLimit * 5);
+
+    // Batch-load all candidate authors
+    const candidateUserIds = [...new Set(candidates.map((p) => p.userId))];
+    const userMap = await batchLoadUsers(ctx, candidateUserIds);
+
+    for (const p of candidates) {
+      if (posts.length >= safeLimit + 1) break;
+      if (cursor && p._creationTime >= cursorTime) continue;
+      if (!p.isPublished) continue;
+
+      // Check privacy
+      const author = userMap.get(String(p.userId));
+      if (!author) continue;
+      if (!author.isPublic && !(me && p.userId === me._id)) continue;
+
+      // Following filter
+      if (followingIds && !followingIds.has(String(p.userId))) continue;
+
+      // Provider filter
+      if (provider && !p.providers.includes(provider)) continue;
+
+      posts.push(p);
     }
 
-    // Cursor-based pagination
-    if (cursor) {
-      const cursorTime = Number(cursor);
-      posts = posts.filter((p) => p._creationTime < cursorTime);
-    }
+    const hasMore = posts.length > safeLimit;
+    const page = posts.slice(0, safeLimit);
 
-    // Limit + 1 to detect hasMore
-    const sliced = posts.slice(0, limit + 1);
-    const hasMore = sliced.length > limit;
-    const page = sliced.slice(0, limit);
-
-    // Hydrate with author info, kudos count, comment count
+    // Hydrate with kudos, comments, usage — batch where possible
     const hydrated = await Promise.all(
       page.map(async (post) => {
-        const author = await ctx.db.get(post.userId);
+        const author = userMap.get(String(post.userId));
 
-        const kudosRows = await ctx.db
-          .query("kudos")
-          .withIndex("by_post", (q) => q.eq("postId", post._id))
-          .collect();
+        const [kudosRows, commentRows, links] = await Promise.all([
+          ctx.db.query("kudos").withIndex("by_post", (q) => q.eq("postId", post._id)).collect(),
+          ctx.db.query("comments").withIndex("by_post", (q) => q.eq("postId", post._id)).collect(),
+          ctx.db.query("post_daily_usage").withIndex("by_post", (q) => q.eq("postId", post._id)).collect(),
+        ]);
 
-        const commentRows = await ctx.db
-          .query("comments")
-          .withIndex("by_post", (q) => q.eq("postId", post._id))
-          .collect();
-
-        // Get usage entries for the post
-        const links = await ctx.db
-          .query("post_daily_usage")
-          .withIndex("by_post", (q) => q.eq("postId", post._id))
-          .collect();
         const usageEntries = await Promise.all(
           links.map((l) => ctx.db.get(l.dailyUsageId))
         );
@@ -132,6 +131,7 @@ export const getUserPosts = query({
     limit: v.optional(v.number()),
   },
   handler: async (ctx, { username, cursor, limit = 20 }) => {
+    const safeLimit = Math.min(Math.max(1, limit), 50);
     const me = await getCurrentUser(ctx);
 
     // Find user by username
@@ -145,35 +145,24 @@ export const getUserPosts = query({
       .query("posts")
       .withIndex("by_user", (q) => q.eq("userId", target._id))
       .order("desc")
-      .collect();
+      .take(safeLimit * 3);
 
-    posts = posts.filter((p) => p.isPublished);
+    // Filter published and apply cursor
+    const cursorTime = cursor ? Number(cursor) : Infinity;
+    let filtered = posts.filter((p) => p.isPublished && (!cursor || p._creationTime < cursorTime));
 
-    if (cursor) {
-      const cursorTime = Number(cursor);
-      posts = posts.filter((p) => p._creationTime < cursorTime);
-    }
-
-    const sliced = posts.slice(0, limit + 1);
-    const hasMore = sliced.length > limit;
-    const page = sliced.slice(0, limit);
+    const sliced = filtered.slice(0, safeLimit + 1);
+    const hasMore = sliced.length > safeLimit;
+    const page = sliced.slice(0, safeLimit);
 
     const hydrated = await Promise.all(
       page.map(async (post) => {
-        const kudosRows = await ctx.db
-          .query("kudos")
-          .withIndex("by_post", (q) => q.eq("postId", post._id))
-          .collect();
+        const [kudosRows, commentRows, links] = await Promise.all([
+          ctx.db.query("kudos").withIndex("by_post", (q) => q.eq("postId", post._id)).collect(),
+          ctx.db.query("comments").withIndex("by_post", (q) => q.eq("postId", post._id)).collect(),
+          ctx.db.query("post_daily_usage").withIndex("by_post", (q) => q.eq("postId", post._id)).collect(),
+        ]);
 
-        const commentRows = await ctx.db
-          .query("comments")
-          .withIndex("by_post", (q) => q.eq("postId", post._id))
-          .collect();
-
-        const links = await ctx.db
-          .query("post_daily_usage")
-          .withIndex("by_post", (q) => q.eq("postId", post._id))
-          .collect();
         const usageEntries = await Promise.all(
           links.map((l) => ctx.db.get(l.dailyUsageId))
         );

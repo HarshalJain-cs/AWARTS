@@ -101,11 +101,14 @@ export const verifyCLIAuth = mutation({
       throw new Error("Code has expired");
     }
 
-    // Generate a strong CLI auth token
+    // Generate a strong CLI auth token (expires in 90 days)
+    const TOKEN_LIFETIME_MS = 90 * 24 * 60 * 60 * 1000;
     await ctx.db.patch(row._id, {
       status: "verified",
       userId: me._id,
       jwtToken: `convex_cli_${generateToken(64)}`,
+      tokenExpiresAt: Date.now() + TOKEN_LIFETIME_MS,
+      lastUsedAt: Date.now(),
     });
 
     return { success: true };

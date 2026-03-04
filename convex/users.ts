@@ -308,6 +308,7 @@ export const getByUsername = query({
         total_output_tokens: totalOutputTokens,
         total_days: uniqueDates.size,
         current_streak: currentStreak,
+        hasEstimatedCost: usageEntries.some((e) => e.costSource === "estimated"),
       },
       providers_used: uniqueProviders,
       achievements: achievements.map((a) => ({ slug: a.slug, awarded_at: String(a._creationTime) })),
