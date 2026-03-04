@@ -1,9 +1,15 @@
 /**
- * Claude adapter -- reads local usage data from Claude Code / Claude Desktop.
+ * Claude adapter -- reads local usage data from Claude Code's stats cache.
  *
- * Expected location:  ~/.claude/usage/
- * Each file is named YYYY-MM-DD.json and contains a JSON object with
- * cost, token counts, and model info for that day's sessions.
+ * Claude Code stores usage data in:  ~/.claude/stats-cache.json
+ *
+ * The file contains:
+ * - dailyModelTokens: per-day output tokens broken down by model
+ * - modelUsage: aggregate totals (input, output, cache tokens, cost)
+ * - dailyActivity: per-day session/message/tool-call counts
+ *
+ * We distribute the aggregate input/cache/cost totals across days
+ * proportionally based on each day's share of total output tokens.
  */
 
 import fs from 'node:fs/promises';
@@ -12,34 +18,45 @@ import os from 'node:os';
 import type { Adapter, UsageEntry } from '../types.js';
 
 const CLAUDE_DIR = path.join(os.homedir(), '.claude');
-const USAGE_DIR = path.join(CLAUDE_DIR, 'usage');
+const STATS_CACHE = path.join(CLAUDE_DIR, 'stats-cache.json');
 
-// Alternate location used by some Claude Code installations
-const ALT_USAGE_DIR = path.join(CLAUDE_DIR, 'projects');
+// ── stats-cache.json shape ──────────────────────────────────────────────
 
-interface ClaudeUsageFile {
-  date?: string;
-  totalCost?: number;
-  cost_usd?: number;
-  totalInputTokens?: number;
-  input_tokens?: number;
-  totalOutputTokens?: number;
-  output_tokens?: number;
-  cacheCreationTokens?: number;
-  cache_creation_tokens?: number;
-  cacheReadTokens?: number;
-  cache_read_tokens?: number;
-  models?: string[];
-  model?: string;
-  [key: string]: unknown;
+interface DailyModelTokens {
+  date: string;
+  tokensByModel: Record<string, number>; // model -> output tokens
 }
 
-/**
- * Attempt to parse a date from a filename like "2025-06-15.json".
- */
-function dateFromFilename(filename: string): string | null {
-  const match = filename.match(/^(\d{4}-\d{2}-\d{2})\.json$/);
-  return match ? match[1] : null;
+interface ModelUsageEntry {
+  inputTokens: number;
+  outputTokens: number;
+  cacheReadInputTokens: number;
+  cacheCreationInputTokens: number;
+  costUSD: number;
+}
+
+interface StatsCache {
+  version?: number;
+  dailyModelTokens?: DailyModelTokens[];
+  modelUsage?: Record<string, ModelUsageEntry>;
+  dailyActivity?: Array<{
+    date: string;
+    messageCount: number;
+    sessionCount: number;
+    toolCallCount: number;
+  }>;
+  totalSessions?: number;
+}
+
+// ── Helpers ─────────────────────────────────────────────────────────────
+
+async function fileExists(filePath: string): Promise<boolean> {
+  try {
+    const stat = await fs.stat(filePath);
+    return stat.isFile();
+  } catch {
+    return false;
+  }
 }
 
 async function dirExists(dir: string): Promise<boolean> {
@@ -51,80 +68,94 @@ async function dirExists(dir: string): Promise<boolean> {
   }
 }
 
-async function readUsageDir(dir: string): Promise<UsageEntry[]> {
-  const entries: UsageEntry[] = [];
+/**
+ * Read and parse stats-cache.json into UsageEntry[].
+ *
+ * Since the cache only stores output tokens per day, we proportionally
+ * distribute aggregate input tokens, cache tokens, and cost across days
+ * based on each day's share of total output tokens.
+ */
+async function readStatsCache(): Promise<UsageEntry[]> {
+  const raw = await fs.readFile(STATS_CACHE, 'utf-8');
+  const cache: StatsCache = JSON.parse(raw);
 
-  let files: string[];
-  try {
-    files = await fs.readdir(dir);
-  } catch {
-    return entries;
+  const dailyTokens = cache.dailyModelTokens;
+  if (!dailyTokens || dailyTokens.length === 0) return [];
+
+  // Compute aggregate totals across all models
+  let totalInputTokens = 0;
+  let totalOutputTokens = 0;
+  let totalCacheRead = 0;
+  let totalCacheCreation = 0;
+  let totalCost = 0;
+
+  if (cache.modelUsage) {
+    for (const usage of Object.values(cache.modelUsage)) {
+      totalInputTokens += usage.inputTokens || 0;
+      totalOutputTokens += usage.outputTokens || 0;
+      totalCacheRead += usage.cacheReadInputTokens || 0;
+      totalCacheCreation += usage.cacheCreationInputTokens || 0;
+      totalCost += usage.costUSD || 0;
+    }
   }
 
-  const jsonFiles = files.filter((f) => f.endsWith('.json'));
+  // Sum of all daily output tokens (for proportional distribution)
+  const dailyOutputSum = dailyTokens.reduce((sum, day) => {
+    return sum + Object.values(day.tokensByModel).reduce((s, t) => s + t, 0);
+  }, 0);
 
-  for (const file of jsonFiles) {
-    try {
-      const filePath = path.join(dir, file);
-      const raw = await fs.readFile(filePath, 'utf-8');
-      const data: ClaudeUsageFile = JSON.parse(raw);
+  const entries: UsageEntry[] = [];
 
-      const date = data.date ?? dateFromFilename(file);
-      if (!date) continue;
+  for (const day of dailyTokens) {
+    const dayOutputTokens = Object.values(day.tokensByModel).reduce(
+      (s, t) => s + t,
+      0,
+    );
+    if (dayOutputTokens === 0) continue;
 
-      const costUsd = data.cost_usd ?? data.totalCost ?? 0;
-      const inputTokens = data.input_tokens ?? data.totalInputTokens ?? 0;
-      const outputTokens = data.output_tokens ?? data.totalOutputTokens ?? 0;
-      const cacheCreation = data.cache_creation_tokens ?? data.cacheCreationTokens ?? 0;
-      const cacheRead = data.cache_read_tokens ?? data.cacheReadTokens ?? 0;
+    // Proportional share of this day's output vs total
+    const share = dailyOutputSum > 0 ? dayOutputTokens / dailyOutputSum : 0;
 
-      const models: string[] = data.models
-        ? data.models
-        : data.model
-          ? [data.model]
-          : [];
+    // Models used on this day
+    const models = Object.keys(day.tokensByModel).filter(
+      (m) => day.tokensByModel[m] > 0,
+    );
 
-      entries.push({
-        date,
-        provider: 'claude',
-        cost_usd: Number(costUsd) || 0,
-        input_tokens: Number(inputTokens) || 0,
-        output_tokens: Number(outputTokens) || 0,
-        cache_creation_tokens: Number(cacheCreation) || 0,
-        cache_read_tokens: Number(cacheRead) || 0,
-        models,
-      });
-    } catch {
-      // Skip unparseable files silently.
-    }
+    entries.push({
+      date: day.date,
+      provider: 'claude',
+      output_tokens: dayOutputTokens,
+      input_tokens: Math.round(totalInputTokens * share),
+      cache_read_tokens: Math.round(totalCacheRead * share),
+      cache_creation_tokens: Math.round(totalCacheCreation * share),
+      cost_usd: Number((totalCost * share).toFixed(4)),
+      models,
+    });
   }
 
   return entries;
 }
+
+// ── Exported adapter ────────────────────────────────────────────────────
 
 export const claudeAdapter: Adapter = {
   name: 'claude',
   displayName: 'Claude',
 
   async detect(): Promise<boolean> {
-    // Detect if the Claude config directory or usage directory exists
-    if (await dirExists(USAGE_DIR)) return true;
+    // Primary check: stats-cache.json exists
+    if (await fileExists(STATS_CACHE)) return true;
+    // Fallback: the .claude directory itself exists (user has Claude installed)
     if (await dirExists(CLAUDE_DIR)) return true;
-    if (await dirExists(ALT_USAGE_DIR)) return true;
     return false;
   },
 
   async read(): Promise<UsageEntry[]> {
-    const entries: UsageEntry[] = [];
-
-    // Read from primary usage dir
-    entries.push(...(await readUsageDir(USAGE_DIR)));
-
-    // If no entries found, try alternate location
-    if (entries.length === 0) {
-      entries.push(...(await readUsageDir(ALT_USAGE_DIR)));
+    try {
+      return await readStatsCache();
+    } catch {
+      // stats-cache.json missing or unparseable
+      return [];
     }
-
-    return entries;
   },
 };
