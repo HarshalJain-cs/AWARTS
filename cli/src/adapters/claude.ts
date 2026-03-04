@@ -48,6 +48,55 @@ interface StatsCache {
   totalSessions?: number;
 }
 
+// ── Pricing per million tokens (USD) ─────────────────────────────────────
+// Used to estimate cost when stats-cache.json reports costUSD = 0.
+
+interface ModelPricing {
+  input: number;
+  output: number;
+  cacheRead: number;
+  cacheWrite: number;
+}
+
+const MODEL_PRICING: Record<string, ModelPricing> = {
+  'claude-opus-4-6':    { input: 15,  output: 75,  cacheRead: 1.875, cacheWrite: 18.75 },
+  'claude-opus-4':      { input: 15,  output: 75,  cacheRead: 1.875, cacheWrite: 18.75 },
+  'claude-sonnet-4':    { input: 3,   output: 15,  cacheRead: 0.30,  cacheWrite: 3.75  },
+  'claude-sonnet-3-5':  { input: 3,   output: 15,  cacheRead: 0.30,  cacheWrite: 3.75  },
+  'claude-haiku-3-5':   { input: 0.80, output: 4,  cacheRead: 0.08,  cacheWrite: 1.0   },
+};
+
+// Fallback pricing if we don't recognize the model
+const DEFAULT_PRICING: ModelPricing = { input: 3, output: 15, cacheRead: 0.30, cacheWrite: 3.75 };
+
+function getPricing(model: string): ModelPricing {
+  // Try exact match first, then prefix match
+  if (MODEL_PRICING[model]) return MODEL_PRICING[model];
+  for (const [key, pricing] of Object.entries(MODEL_PRICING)) {
+    if (model.startsWith(key)) return pricing;
+  }
+  return DEFAULT_PRICING;
+}
+
+/**
+ * Estimate cost for a model from its token breakdown.
+ */
+function estimateCost(
+  model: string,
+  inputTokens: number,
+  outputTokens: number,
+  cacheReadTokens: number,
+  cacheCreationTokens: number,
+): number {
+  const p = getPricing(model);
+  return (
+    (inputTokens / 1_000_000) * p.input +
+    (outputTokens / 1_000_000) * p.output +
+    (cacheReadTokens / 1_000_000) * p.cacheRead +
+    (cacheCreationTokens / 1_000_000) * p.cacheWrite
+  );
+}
+
 // ── Helpers ─────────────────────────────────────────────────────────────
 
 async function fileExists(filePath: string): Promise<boolean> {
@@ -90,12 +139,24 @@ async function readStatsCache(): Promise<UsageEntry[]> {
   let totalCost = 0;
 
   if (cache.modelUsage) {
-    for (const usage of Object.values(cache.modelUsage)) {
+    for (const [model, usage] of Object.entries(cache.modelUsage)) {
       totalInputTokens += usage.inputTokens || 0;
       totalOutputTokens += usage.outputTokens || 0;
       totalCacheRead += usage.cacheReadInputTokens || 0;
       totalCacheCreation += usage.cacheCreationInputTokens || 0;
-      totalCost += usage.costUSD || 0;
+
+      // stats-cache.json often reports costUSD as 0 — estimate from tokens
+      if (usage.costUSD > 0) {
+        totalCost += usage.costUSD;
+      } else {
+        totalCost += estimateCost(
+          model,
+          usage.inputTokens || 0,
+          usage.outputTokens || 0,
+          usage.cacheReadInputTokens || 0,
+          usage.cacheCreationInputTokens || 0,
+        );
+      }
     }
   }
 
