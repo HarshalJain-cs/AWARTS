@@ -5,18 +5,20 @@ const lines = [
   { text: '$ bunx awarts', delay: 0 },
   { text: '', delay: 800 },
   { text: '  Scanning session data...', delay: 1200 },
-  { text: '  Found 3 sessions across 2 providers', delay: 2000 },
+  { text: '  Found 5 sessions across 4 providers', delay: 2000 },
   { text: '', delay: 2200 },
-  { text: '  ┌──────────────────────────────────────┐', delay: 2500 },
-  { text: '  │ Provider    Cost      Tokens    Sess. │', delay: 2600 },
-  { text: '  ├──────────────────────────────────────┤', delay: 2700 },
-  { text: '  │ Claude      $12.40    245K      2     │', delay: 2900 },
-  { text: '  │ Codex       $4.20     89K       1     │', delay: 3100 },
-  { text: '  ├──────────────────────────────────────┤', delay: 3300 },
-  { text: '  │ Total       $16.60    334K      3     │', delay: 3500 },
-  { text: '  └──────────────────────────────────────┘', delay: 3600 },
-  { text: '', delay: 3800 },
-  { text: '  ✓ POSTED to awarts.com/u/alexdev', delay: 4000 },
+  { text: '  ┌──────────────────────────────────────────┐', delay: 2500 },
+  { text: '  │ Provider       Cost      Tokens    Sess. │', delay: 2600 },
+  { text: '  ├──────────────────────────────────────────┤', delay: 2700 },
+  { text: '  │ Claude         $12.40    245K      2     │', delay: 2900 },
+  { text: '  │ Codex          $4.20     89K       1     │', delay: 3100 },
+  { text: '  │ Gemini         $3.10     112K      1     │', delay: 3300 },
+  { text: '  │ Antigravity    $1.80     42K       1     │', delay: 3500 },
+  { text: '  ├──────────────────────────────────────────┤', delay: 3700 },
+  { text: '  │ Total          $21.50    488K      5     │', delay: 3900 },
+  { text: '  └──────────────────────────────────────────┘', delay: 4000 },
+  { text: '', delay: 4200 },
+  { text: '  ✓ POSTED to awarts.com/u/alexdev', delay: 4400 },
 ];
 
 export function TerminalDemo() {
@@ -51,6 +53,10 @@ export function TerminalDemo() {
                 ? 'text-[hsl(24,95%,53%)]'
                 : line.text.includes('Codex')
                 ? 'text-[hsl(142,71%,45%)]'
+                : line.text.includes('Gemini')
+                ? 'text-[hsl(217,91%,60%)]'
+                : line.text.includes('Antigravity')
+                ? 'text-[hsl(270,91%,65%)]'
                 : 'text-muted-foreground'
             }
           >

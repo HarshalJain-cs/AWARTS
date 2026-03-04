@@ -9,7 +9,19 @@ export const getPost = query({
     const post = await ctx.db.get(postId);
     if (!post) return null;
 
+    const me = await getCurrentUser(ctx);
+
+    // Block access to unpublished posts unless the viewer is the author
+    if (!post.isPublished && (!me || me._id !== post.userId)) {
+      return null;
+    }
+
     const author = await ctx.db.get(post.userId);
+
+    // Block access to private profiles unless the viewer is the author
+    if (author && !author.isPublic && (!me || me._id !== post.userId)) {
+      return null;
+    }
 
     // Get linked daily_usage entries
     const links = await ctx.db
@@ -28,7 +40,6 @@ export const getPost = query({
 
     // Check if current user gave kudos
     let hasGivenKudos = false;
-    const me = await getCurrentUser(ctx);
     if (me) {
       const myKudo = await ctx.db
         .query("kudos")
@@ -202,9 +213,15 @@ export const updatePost = mutation({
     if (!post || post.userId !== me._id) throw new Error("Post not found");
 
     const patch: Record<string, any> = {};
-    for (const [k, val] of Object.entries(updates)) {
-      if (val !== undefined) patch[k] = val;
+    if (updates.title !== undefined) patch.title = updates.title.slice(0, 200);
+    if (updates.description !== undefined) patch.description = updates.description.slice(0, 2000);
+    if (updates.images !== undefined) {
+      patch.images = updates.images
+        .slice(0, 10)
+        .filter((url: string) => /^https?:\/\//i.test(url));
     }
+    if (updates.isPublished !== undefined) patch.isPublished = updates.isPublished;
+    if (updates.captionGeneratedBy !== undefined) patch.captionGeneratedBy = updates.captionGeneratedBy.slice(0, 50);
     await ctx.db.patch(postId, patch);
     return { success: true };
   },

@@ -87,7 +87,7 @@ function NotificationsContent() {
                 ? `/u/${n.actor.username}`
                 : n.post
                   ? `/post/${n.post.id}`
-                  : '#';
+                  : `/notifications`;
 
               return (
                 <Link

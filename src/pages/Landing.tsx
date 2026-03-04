@@ -4,6 +4,7 @@ import { TestimonialCard } from '@/components/TestimonialCard';
 import { ActivityCard } from '@/components/ActivityCard';
 import { mockPosts, mockTestimonials } from '@/lib/mock-data';
 import { Button } from '@/components/ui/button';
+import { EtheralShadow } from '@/components/ui/etheral-shadow';
 import { ArrowRight, Terminal, Share2, Trophy, Copy, Menu, X } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useState, useEffect, useRef } from 'react';
@@ -77,11 +78,23 @@ export default function Landing() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative">
       <SEO
         canonical="/"
         keywords="AI coding tracker, Strava for coding, Claude tracker, Codex tracker, Gemini tracker, AI session tracker, developer leaderboard, coding streak, AI usage tracker, Claude Code tracker, code Strava, Antigravity tracker, AI developer tools, coding competition, developer stats, token tracker, AI cost tracker"
       />
+
+      {/* Ethereal Shadow Background */}
+      <div className="fixed inset-0 z-0 pointer-events-none">
+        <EtheralShadow
+          color="rgba(232, 122, 53, 0.12)"
+          animation={{ scale: 60, speed: 40 }}
+          noise={{ opacity: 0.3, scale: 1.2 }}
+          sizing="fill"
+          style={{ width: '100%', height: '100%' }}
+        />
+      </div>
+
       {/* Nav */}
       <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
@@ -135,7 +148,7 @@ export default function Landing() {
       </header>
 
       {/* Hero */}
-      <section className="mx-auto max-w-6xl px-4 pt-20 pb-16 text-center">
+      <section className="relative z-10 mx-auto max-w-6xl px-4 pt-20 pb-16 text-center">
         <motion.p
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -187,13 +200,13 @@ export default function Landing() {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: '-80px' }}
         transition={{ duration: 0.6 }}
-        className="mx-auto max-w-2xl px-4 pb-20"
+        className="relative z-10 mx-auto max-w-2xl px-4 pb-20"
       >
         <TerminalDemo />
       </motion.section>
 
       {/* Live Stats with animated counters */}
-      <section className="border-y border-border bg-muted/20 py-12">
+      <section className="relative z-10 border-y border-border bg-muted/20 py-12">
         <div className="mx-auto max-w-4xl grid grid-cols-3 gap-8 text-center">
           <div ref={devs.ref}>
             <p className="font-mono text-3xl font-bold text-foreground">{devs.count.toLocaleString()}</p>
@@ -211,7 +224,7 @@ export default function Landing() {
       </section>
 
       {/* Sessions Visualized */}
-      <section className="mx-auto max-w-6xl px-4 py-20">
+      <section className="relative z-10 mx-auto max-w-6xl px-4 py-20">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -231,7 +244,7 @@ export default function Landing() {
       </section>
 
       {/* Features */}
-      <section className="mx-auto max-w-6xl px-4 py-16">
+      <section className="relative z-10 mx-auto max-w-6xl px-4 py-16">
         <div className="grid sm:grid-cols-3 gap-6">
           {[
             { icon: Terminal, title: 'Log your output', desc: 'One CLI command. All your sessions tracked across providers.' },
@@ -255,7 +268,7 @@ export default function Landing() {
       </section>
 
       {/* Wall of Love */}
-      <section className="mx-auto max-w-6xl px-4 py-16">
+      <section className="relative z-10 mx-auto max-w-6xl px-4 py-16">
         <motion.h2
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -286,7 +299,7 @@ export default function Landing() {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
         transition={{ duration: 0.6 }}
-        className="mx-auto max-w-6xl px-4 py-20 text-center"
+        className="relative z-10 mx-auto max-w-6xl px-4 py-20 text-center"
       >
         <h2 className="text-4xl sm:text-5xl font-extrabold text-foreground mb-6">Your move.</h2>
         <Button asChild size="lg" className="text-base px-10">
@@ -297,7 +310,7 @@ export default function Landing() {
       </motion.section>
 
       {/* Footer */}
-      <footer className="border-t border-border py-8">
+      <footer className="relative z-10 border-t border-border py-8">
         <div className="mx-auto max-w-6xl px-4 flex items-center justify-between text-sm text-muted-foreground">
           <div className="flex items-center gap-2">
             <div className="h-5 w-3.5 bg-primary" style={{ clipPath: 'polygon(15% 0%, 100% 0%, 85% 100%, 0% 100%)' }} />

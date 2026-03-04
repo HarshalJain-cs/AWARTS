@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
@@ -51,7 +51,7 @@ export default function CLIVerify() {
             <div className="space-y-2">
               <p className="text-sm text-muted-foreground">You need to sign in first.</p>
               <Button asChild className="w-full">
-                <a href={`/login?next=${encodeURIComponent(`/cli/verify?code=${code}`)}`}>Sign In</a>
+                <Link to="/login" state={{ from: `/cli/verify?code=${code}` }}>Sign In</Link>
               </Button>
             </div>
           ) : status === 'success' ? (

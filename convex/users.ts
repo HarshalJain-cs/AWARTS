@@ -154,7 +154,12 @@ export const updateMe = mutation({
     if (args.username !== undefined) updates.username = args.username;
     if (args.displayName !== undefined) updates.displayName = args.displayName.slice(0, 50);
     if (args.bio !== undefined) updates.bio = args.bio.slice(0, 160);
-    if (args.avatarUrl !== undefined) updates.avatarUrl = args.avatarUrl;
+    if (args.avatarUrl !== undefined) {
+      // Only allow HTTPS URLs for avatars (Convex storage URLs or legitimate CDNs)
+      if (args.avatarUrl && /^https:\/\//i.test(args.avatarUrl)) {
+        updates.avatarUrl = args.avatarUrl;
+      }
+    }
     if (args.githubUsername !== undefined) {
       // Sanitize GitHub username
       updates.githubUsername = args.githubUsername.replace(/[^a-zA-Z0-9-]/g, "").slice(0, 39);

@@ -317,7 +317,12 @@ export function useUpdatePost() {
 // ─── Delete Post ──────────────────────────────────────────────────────
 
 export function useDeletePost() {
-  return useMutationWithPending<string, any>(api.posts.deletePost);
+  const inner = useMutationWithPending<{ postId: Id<"posts"> }, any>(api.posts.deletePost);
+  return {
+    ...inner,
+    mutate: (id: string) => inner.mutate({ postId: id as Id<"posts"> }),
+    mutateAsync: (id: string) => inner.mutateAsync({ postId: id as Id<"posts"> }),
+  };
 }
 
 // ─── User Posts ───────────────────────────────────────────────────────
@@ -369,7 +374,12 @@ export function useEditComment() {
 }
 
 export function useDeleteComment() {
-  return useMutationWithPending<string, any>(api.social.deleteComment);
+  const inner = useMutationWithPending<{ commentId: Id<"comments"> }, any>(api.social.deleteComment);
+  return {
+    ...inner,
+    mutate: (id: string) => inner.mutate({ commentId: id as Id<"comments"> }),
+    mutateAsync: (id: string) => inner.mutateAsync({ commentId: id as Id<"comments"> }),
+  };
 }
 
 // ─── Prompts ──────────────────────────────────────────────────────

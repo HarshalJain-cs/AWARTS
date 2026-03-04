@@ -13,9 +13,10 @@ export const searchUsers = query({
     const safeLimit = Math.min(Math.max(1, limit), 50);
     const term = q.toLowerCase().slice(0, 100); // Cap search term length
 
-    // Get all users and filter (Convex doesn't have ILIKE, so we filter in-memory)
+    // Get users and filter in-memory (Convex doesn't have ILIKE)
     // Only search by username and displayName - NOT email (privacy)
-    const allUsers = await ctx.db.query("users").collect();
+    // Cap scan to prevent full table load abuse
+    const allUsers = await ctx.db.query("users").take(500);
 
     const matched = allUsers
       .filter(

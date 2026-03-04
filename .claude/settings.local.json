@@ -3,7 +3,29 @@
     "allow": [
       "Bash(npx vite)",
       "WebFetch(domain:localhost)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "WebFetch(domain:awarts.vercel.app)",
+      "Bash(npm i:*)",
+      "Bash(npx vite build)",
+      "Bash(git push:*)",
+      "Bash(git pull:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nfeat: add Google Search Console verification file and meta tag\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git commit:*)",
+      "Bash(npx tsc:*)",
+      "Bash(ls:*)",
+      "WebFetch(domain:brilliant-corgi-819.convex.cloud)",
+      "WebFetch(domain:honorable-bee-242.convex.cloud)",
+      "Bash(node -e:*)",
+      "Bash(npx convex deploy --help:*)",
+      "Bash(CONVEX_DEPLOY_KEY=\"prod:honorable-bee-242|eyJ2MiI6IjAzMWNhZThiYzhlYzQwZTE5MjQ5ZTNkNzA4NWY0ZjU4In0=\" npx convex deploy --yes)",
+      "WebFetch(domain:honorable-bee-242.convex.site)",
+      "Bash(npm run build:*)",
+      "Bash(npm publish:*)",
+      "Bash(node dist/index.js:*)",
+      "Bash(npm install:*)",
+      "Bash(npx convex:*)",
+      "Bash(wc:*)"
     ]
   }
 }

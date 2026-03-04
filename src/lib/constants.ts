@@ -50,19 +50,15 @@ export const PROVIDERS: Record<Provider, ProviderConfig> = {
 };
 
 export const ACHIEVEMENTS: Achievement[] = [
-  { id: 'first-sync', name: 'First Sync', emoji: '🚀', description: 'Push your first session', earned: false },
+  { id: 'first-submit', name: 'First Sync', emoji: '🚀', description: 'Push your first session', earned: false },
   { id: 'week-warrior', name: 'Week Warrior', emoji: '⚔️', description: '7-day streak', earned: false },
-  { id: 'power-user', name: 'Power User', emoji: '💪', description: '30-day streak', earned: false },
-  { id: '100k-output', name: '100K Output', emoji: '📝', description: '100K output tokens in one session', earned: false },
-  { id: '1m-output', name: '1M Output', emoji: '📚', description: '1M total output tokens', earned: false },
-  { id: '100m-output', name: '100M Output', emoji: '🏛️', description: '100M total output tokens', earned: false },
-  { id: 'big-spender', name: 'Big Spender', emoji: '💸', description: 'Spend $100 in a single session', earned: false },
-  { id: 'elite', name: 'Elite', emoji: '👑', description: 'Top 10 on the leaderboard', earned: false },
-  { id: 'polyglot', name: 'Polyglot Coder', emoji: '🌐', description: 'Use 2+ providers', earned: false },
-  { id: 'full-stack-ai', name: 'Full Stack AI', emoji: '🤖', description: 'Use all 4 providers', earned: false },
-  { id: 'codex-pioneer', name: 'Codex Pioneer', emoji: '🟢', description: 'First Codex session', earned: false },
-  { id: 'gemini-explorer', name: 'Gemini Explorer', emoji: '🔵', description: 'First Gemini session', earned: false },
-  { id: 'antigravity-adept', name: 'Antigravity Adept', emoji: '🟣', description: 'First Antigravity session', earned: false },
+  { id: 'month-master', name: 'Power User', emoji: '💪', description: '30-day streak', earned: false },
+  { id: 'hundred-days', name: '100 Days', emoji: '💯', description: '100-day streak', earned: false },
+  { id: 'big-spender-10', name: 'Spender $10', emoji: '💵', description: 'Spend $10 total', earned: false },
+  { id: 'big-spender-100', name: 'Big Spender', emoji: '💸', description: 'Spend $100 total', earned: false },
+  { id: 'big-spender-1000', name: 'Whale', emoji: '🐳', description: 'Spend $1000 total', earned: false },
+  { id: 'multi-provider', name: 'Polyglot Coder', emoji: '🌐', description: 'Use 2+ providers', earned: false },
+  { id: 'all-providers', name: 'Full Stack AI', emoji: '🤖', description: 'Use all 4 providers', earned: false },
 ];
 
 export const COUNTRIES = [
