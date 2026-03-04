@@ -137,6 +137,7 @@ async function readStatsCache(): Promise<UsageEntry[]> {
   let totalCacheRead = 0;
   let totalCacheCreation = 0;
   let totalCost = 0;
+  let hasRealCost = false;
 
   if (cache.modelUsage) {
     for (const [model, usage] of Object.entries(cache.modelUsage)) {
@@ -148,6 +149,7 @@ async function readStatsCache(): Promise<UsageEntry[]> {
       // stats-cache.json often reports costUSD as 0 — estimate from tokens
       if (usage.costUSD > 0) {
         totalCost += usage.costUSD;
+        hasRealCost = true;
       } else {
         totalCost += estimateCost(
           model,
@@ -191,6 +193,7 @@ async function readStatsCache(): Promise<UsageEntry[]> {
       cache_creation_tokens: Math.round(totalCacheCreation * share),
       cost_usd: Number((totalCost * share).toFixed(4)),
       models,
+      cost_source: hasRealCost ? 'real' : 'estimated',
     });
   }
 

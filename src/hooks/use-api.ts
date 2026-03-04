@@ -378,6 +378,41 @@ export function useDeleteComment() {
   };
 }
 
+// ─── Prompts ──────────────────────────────────────────────────────
+
+export function usePrompts() {
+  const result = useQuery(api.prompts.getPrompts, {});
+  return {
+    data: result,
+    isLoading: result === undefined,
+    error: null,
+  };
+}
+
+export function useSubmitPrompt() {
+  const submit = useMutation(api.prompts.submitPrompt);
+  return {
+    mutate: (data: { content: string; isAnonymous: boolean }) => {
+      submit(data);
+    },
+    mutateAsync: (data: { content: string; isAnonymous: boolean }) =>
+      submit(data),
+    isPending: false,
+  };
+}
+
+export function useTogglePromptVote() {
+  const toggle = useMutation(api.prompts.toggleVote);
+  return {
+    mutate: (data: { promptId: string }) => {
+      toggle({ promptId: data.promptId as Id<"prompts"> });
+    },
+    mutateAsync: (data: { promptId: string }) =>
+      toggle({ promptId: data.promptId as Id<"prompts"> }),
+    isPending: false,
+  };
+}
+
 // ─── Username Availability ────────────────────────────────────────────
 
 export function useCheckUsername(username: string) {

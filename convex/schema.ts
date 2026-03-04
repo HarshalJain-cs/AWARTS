@@ -35,6 +35,7 @@ export default defineSchema({
     source: v.string(),
     dataHash: v.optional(v.string()),
     rawData: v.optional(v.any()),
+    costSource: v.optional(v.string()),
   })
     .index("by_user_date_provider", ["userId", "date", "provider"])
     .index("by_user", ["userId"])
@@ -113,4 +114,20 @@ export default defineSchema({
     countryName: v.string(),
     region: v.string(),
   }).index("by_country_code", ["countryCode"]),
+
+  prompts: defineTable({
+    userId: v.id("users"),
+    content: v.string(),
+    isAnonymous: v.boolean(),
+    status: v.string(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_status", ["status"]),
+
+  prompt_votes: defineTable({
+    userId: v.id("users"),
+    promptId: v.id("prompts"),
+  })
+    .index("by_prompt", ["promptId"])
+    .index("by_user_prompt", ["userId", "promptId"]),
 });

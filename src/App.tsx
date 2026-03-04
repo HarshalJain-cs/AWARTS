@@ -18,6 +18,7 @@ const PostDetail = lazy(() => import("./pages/PostDetail"));
 const PostNew = lazy(() => import("./pages/PostNew"));
 const Settings = lazy(() => import("./pages/Settings"));
 const Recap = lazy(() => import("./pages/Recap"));
+const Prompts = lazy(() => import("./pages/Prompts"));
 const Notifications = lazy(() => import("./pages/Notifications"));
 const Onboarding = lazy(() => import("./pages/Onboarding"));
 const Docs = lazy(() => import("./pages/Docs"));
@@ -54,6 +55,7 @@ const App = () => (
             <Route path="/post/:id" element={<PostDetail />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/recap" element={<Recap />} />
+            <Route path="/prompts" element={<Prompts />} />
             <Route path="/notifications" element={<Notifications />} />
             <Route path="/onboarding" element={<Onboarding />} />
             <Route path="/docs" element={<Docs />} />

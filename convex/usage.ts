@@ -13,6 +13,7 @@ const usageEntryValidator = v.object({
   cache_read_tokens: v.optional(v.number()),
   models: v.array(v.string()),
   raw_data: v.optional(v.any()),
+  cost_source: v.optional(v.string()),
 });
 
 // POST /usage/submit — core endpoint (supports both Clerk auth and CLI token auth)
@@ -76,6 +77,7 @@ export const submitUsage = mutation({
           source,
           dataHash: hash ?? undefined,
           rawData: entry.raw_data ?? undefined,
+          costSource: entry.cost_source ?? undefined,
         });
       } else {
         await ctx.db.insert("daily_usage", {
@@ -91,6 +93,7 @@ export const submitUsage = mutation({
           source,
           dataHash: hash ?? undefined,
           rawData: entry.raw_data ?? undefined,
+          costSource: entry.cost_source ?? undefined,
         });
       }
 

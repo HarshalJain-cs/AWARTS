@@ -15,6 +15,7 @@ export interface UsageEntry {
   cache_creation_tokens?: number;
   cache_read_tokens?: number;
   models: string[];
+  cost_source?: 'real' | 'estimated';
 }
 
 // ── Adapter contract ───────────────────────────────────────────────────

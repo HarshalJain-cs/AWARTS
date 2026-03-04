@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Trophy, Search, User, Settings, Upload, BarChart3, BookOpen, Bell, PlusCircle } from 'lucide-react';
+import { Home, Trophy, Search, User, Settings, Upload, BarChart3, BookOpen, Bell, PlusCircle, Lightbulb } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/AuthContext';
 
@@ -17,6 +17,7 @@ export function LeftSidebar() {
     { label: 'Settings', icon: Settings, href: '/settings' },
     { label: 'Import Data', icon: Upload, href: '/settings' },
     { label: 'My Recap', icon: BarChart3, href: '/recap' },
+    { label: 'Prompts', icon: Lightbulb, href: '/prompts' },
     { label: 'Docs', icon: BookOpen, href: '/docs' },
   ];
 
