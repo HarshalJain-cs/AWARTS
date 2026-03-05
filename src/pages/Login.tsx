@@ -1,12 +1,62 @@
 import { useNavigate } from "react-router-dom";
 import { SignIn } from "@clerk/clerk-react";
 import { useAuth } from "@/context/AuthContext";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { SEO } from '@/components/SEO';
+
+/** Read a CSS variable from :root and convert HSL triplet to a full hsl() string */
+function getCssHsl(varName: string): string {
+  const raw = getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+  return raw ? `hsl(${raw})` : '';
+}
+
+function useClerkTheme() {
+  const isDark = document.documentElement.classList.contains('dark');
+
+  return useMemo(() => ({
+    variables: {
+      colorPrimary: getCssHsl('--primary'),
+      colorBackground: getCssHsl('--card'),
+      colorText: getCssHsl('--card-foreground'),
+      colorTextSecondary: getCssHsl('--muted-foreground'),
+      colorInputBackground: getCssHsl('--muted'),
+      colorInputText: getCssHsl('--card-foreground'),
+      colorDanger: getCssHsl('--destructive'),
+      borderRadius: '0.5rem',
+    },
+    elements: {
+      rootBox: 'mx-auto',
+      card: {
+        backgroundColor: getCssHsl('--card'),
+        border: `1px solid ${getCssHsl('--border')}`,
+        boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)',
+      },
+      formButtonPrimary: {
+        backgroundColor: getCssHsl('--primary'),
+        color: getCssHsl('--primary-foreground'),
+      },
+      formFieldInput: {
+        backgroundColor: getCssHsl('--muted'),
+        borderColor: getCssHsl('--border'),
+        color: getCssHsl('--card-foreground'),
+      },
+      footerActionLink: { color: getCssHsl('--primary') },
+      identityPreviewEditButton: { color: getCssHsl('--primary') },
+      socialButtonsBlockButton: {
+        backgroundColor: getCssHsl('--muted'),
+        borderColor: getCssHsl('--border'),
+        color: getCssHsl('--card-foreground'),
+      },
+      dividerLine: { backgroundColor: getCssHsl('--border') },
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }), [isDark]);
+}
 
 export default function Login() {
   const { isSignedIn, isLoaded } = useAuth();
   const navigate = useNavigate();
+  const clerkAppearance = useClerkTheme();
 
   useEffect(() => {
     if (isLoaded && isSignedIn) {
@@ -21,27 +71,7 @@ export default function Login() {
         routing="hash"
         fallbackRedirectUrl="/feed"
         signUpFallbackRedirectUrl="/onboarding"
-        appearance={{
-          variables: {
-            colorPrimary: "hsl(18, 82%, 50%)",
-            borderRadius: "0.5rem",
-          },
-          elements: {
-            rootBox: "mx-auto",
-            card: "bg-card border border-border shadow-xl",
-            headerTitle: "text-foreground",
-            headerSubtitle: "text-muted-foreground",
-            formButtonPrimary: "bg-primary hover:bg-primary/90 text-primary-foreground",
-            formFieldInput: "bg-muted border-border text-foreground",
-            formFieldLabel: "text-foreground",
-            footerActionLink: "text-primary hover:text-primary/80",
-            identityPreviewEditButton: "text-primary",
-            socialButtonsBlockButton: "bg-muted border-border text-foreground hover:bg-muted/80",
-            socialButtonsBlockButtonArrow: "text-muted-foreground",
-            dividerLine: "bg-border",
-            dividerText: "text-muted-foreground",
-          },
-        }}
+        appearance={clerkAppearance}
       />
     </div>
   );
