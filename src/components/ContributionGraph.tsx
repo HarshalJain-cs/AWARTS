@@ -23,8 +23,8 @@ const INTENSITY_OPACITY: Record<number, number> = {
 };
 
 function getCellStyle(day: HeatmapDay): React.CSSProperties {
-  if (day.intensity === 0 || !day.dominantProvider) return {};
-  const hsl = PROVIDER_HSL[day.dominantProvider];
+  if (day.intensity === 0) return {};
+  const hsl = day.dominantProvider ? PROVIDER_HSL[day.dominantProvider] : '18, 82%, 50%';
   const opacity = INTENSITY_OPACITY[day.intensity] ?? 0;
   return { backgroundColor: `hsl(${hsl} / ${opacity})` };
 }

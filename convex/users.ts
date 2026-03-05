@@ -274,10 +274,24 @@ export const getByUsername = query({
       }
     }
 
-    // Build heatmap from usage data
-    const heatmap: Record<string, number> = {};
+    // Build heatmap from usage data (includes dominant provider per day)
+    const heatmapCost: Record<string, number> = {};
+    const heatmapProviderCost: Record<string, Record<string, number>> = {};
     for (const entry of usageEntries) {
-      heatmap[entry.date] = (heatmap[entry.date] ?? 0) + entry.costUsd;
+      heatmapCost[entry.date] = (heatmapCost[entry.date] ?? 0) + entry.costUsd;
+      if (!heatmapProviderCost[entry.date]) heatmapProviderCost[entry.date] = {};
+      heatmapProviderCost[entry.date][entry.provider] =
+        (heatmapProviderCost[entry.date][entry.provider] ?? 0) + entry.costUsd;
+    }
+    const heatmap: Record<string, { cost: number; provider: string | null }> = {};
+    for (const [date, cost] of Object.entries(heatmapCost)) {
+      const providerCosts = heatmapProviderCost[date] ?? {};
+      let dominant: string | null = null;
+      let maxCost = 0;
+      for (const [p, c] of Object.entries(providerCosts)) {
+        if (c > maxCost) { maxCost = c; dominant = p; }
+      }
+      heatmap[date] = { cost, provider: dominant };
     }
 
     // Check if current user follows this profile

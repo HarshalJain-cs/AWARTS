@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useQuery, useMutation, useAction } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
@@ -35,14 +35,48 @@ function useMutationWithPending<TArgs, TResult>(
 // ─── Feed ─────────────────────────────────────────────────────────────
 
 export function useFeed(type: "global" | "following" = "global", provider?: string) {
-  const result = useQuery(api.feed.getFeed, { type, provider });
+  const [cursors, setCursors] = useState<string[]>([]);
+  const [pages, setPages] = useState<any[]>([]);
+  const [isFetchingNext, setIsFetchingNext] = useState(false);
+
+  const currentCursor = cursors.length > 0 ? cursors[cursors.length - 1] : undefined;
+  const result = useQuery(api.feed.getFeed, { type, provider, cursor: currentCursor });
+
+  // Sync first page or new cursor page into pages array
+  useEffect(() => {
+    if (result) {
+      setPages((prev) => {
+        const pageIndex = cursors.length;
+        const next = [...prev];
+        next[pageIndex] = result;
+        return next;
+      });
+      setIsFetchingNext(false);
+    }
+  }, [result, cursors.length]);
+
+  // Reset when filters change
+  useEffect(() => {
+    setCursors([]);
+    setPages([]);
+  }, [type, provider]);
+
+  const latestPage = pages[pages.length - 1];
+  const hasNextPage = latestPage?.nextCursor != null;
+
+  const fetchNextPage = useCallback(() => {
+    if (!hasNextPage || isFetchingNext) return;
+    setIsFetchingNext(true);
+    setCursors((prev) => [...prev, latestPage.nextCursor]);
+  }, [hasNextPage, isFetchingNext, latestPage]);
+
   return {
-    data: result ? { pages: [result] } : undefined,
-    isLoading: result === undefined,
+    data: pages.length > 0 ? { pages } : undefined,
+    isLoading: result === undefined && pages.length === 0,
     error: null,
-    hasNextPage: result?.nextCursor != null,
-    fetchNextPage: () => {}, // TODO: implement cursor pagination with Convex
-    isFetchingNextPage: false,
+    hasNextPage,
+    fetchNextPage,
+    isFetchingNextPage: isFetchingNext,
   };
 }
 
@@ -133,7 +167,12 @@ export function useNotifications() {
 }
 
 export function useMarkNotificationsRead() {
-  return useMutationWithPending<void, any>(api.social.markNotificationsRead);
+  const inner = useMutationWithPending<Record<string, never>, any>(api.social.markNotificationsRead);
+  return {
+    ...inner,
+    mutate: () => inner.mutate({} as Record<string, never>),
+    mutateAsync: () => inner.mutateAsync({} as Record<string, never>),
+  };
 }
 
 // ─── Leaderboard ──────────────────────────────────────────────────────

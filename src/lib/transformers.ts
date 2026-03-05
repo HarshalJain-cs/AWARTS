@@ -147,9 +147,19 @@ export function transformLeaderboardEntry(raw: any, rank: number): LeaderboardEn
 }
 
 // ─── Heatmap Transformer ──────────────────────────────────────────────
-export function transformHeatmap(heatmapData: Record<string, number>): HeatmapDay[] {
-  const maxSpend = Math.max(...Object.values(heatmapData), 1);
-  return Object.entries(heatmapData).map(([date, spend]) => {
+export function transformHeatmap(heatmapData: Record<string, any>): HeatmapDay[] {
+  // Support both formats:
+  // New: { date: { cost: number, provider: string | null } }
+  // Legacy: { date: number }
+  const entries = Object.entries(heatmapData).map(([date, val]) => {
+    const isNew = typeof val === 'object' && val !== null && 'cost' in val;
+    const spend = isNew ? val.cost : Number(val);
+    const provider = isNew ? (val.provider as Provider | null) : null;
+    return { date, spend, provider };
+  });
+
+  const maxSpend = Math.max(...entries.map((e) => e.spend), 1);
+  return entries.map(({ date, spend, provider }) => {
     const ratio = spend / maxSpend;
     let intensity: 0 | 1 | 2 | 3 | 4 = 0;
     if (ratio > 0.75) intensity = 4;
@@ -160,7 +170,7 @@ export function transformHeatmap(heatmapData: Record<string, number>): HeatmapDa
     return {
       date,
       spend,
-      dominantProvider: null,
+      dominantProvider: spend > 0 ? provider : null,
       intensity,
     };
   });

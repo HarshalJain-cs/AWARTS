@@ -44,7 +44,7 @@ export default function PostDetail() {
 
   return (
     <AppShell>
-      <SEO title={post.title || 'Session Detail'} description={post.description || `AI coding session by @${post.author?.username ?? 'unknown'} on AWARTS.`} canonical={`/post/${id}`} />
+      <SEO title={post.title || 'Session Detail'} description={post.description || `AI coding session by @${post.user?.username ?? 'unknown'} on AWARTS.`} canonical={`/post/${id}`} />
       <div className="max-w-2xl mx-auto space-y-6">
         <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="mb-2">
           <ArrowLeft className="h-4 w-4 mr-1.5" /> Back
