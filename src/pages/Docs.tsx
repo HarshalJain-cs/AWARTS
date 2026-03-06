@@ -7,22 +7,44 @@ import { cn } from '@/lib/utils';
 import {
   BookOpen, Download, Cpu, Layers, LayoutDashboard, Award,
   TerminalSquare, Code2, Shield, HelpCircle, Keyboard, Bug,
-  Search, ChevronUp
+  Search, ChevronUp, Copy, Check
 } from 'lucide-react';
 import { SEO } from '@/components/SEO';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { toast } from '@/hooks/use-toast';
 
 interface DocSection {
   id: string;
   title: string;
   icon: React.ElementType;
+  keywords: string;
   content: React.ReactNode;
 }
 
 function CodeBlock({ children, title }: { children: string; title?: string }) {
+  const [copied, setCopied] = useState(false);
+
+  async function handleCopy() {
+    try {
+      await navigator.clipboard.writeText(children);
+      setCopied(true);
+      toast({ title: 'Copied!', description: 'Code copied to clipboard.' });
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast({ title: 'Failed to copy', variant: 'destructive' });
+    }
+  }
+
   return (
-    <div className="rounded-md border border-border bg-muted/50 overflow-hidden my-3">
+    <div className="rounded-md border border-border bg-muted/50 overflow-hidden my-3 group relative">
       {title && <div className="border-b border-border px-3 py-1.5 text-xs font-mono text-muted-foreground bg-muted/80">{title}</div>}
+      <button
+        onClick={handleCopy}
+        className="absolute right-2 top-2 p-1.5 rounded-md bg-background/80 border border-border text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100 transition-opacity"
+        aria-label="Copy code"
+      >
+        {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+      </button>
       <pre className="p-3 text-sm font-mono text-foreground overflow-x-auto whitespace-pre">{children}</pre>
     </div>
   );
@@ -70,6 +92,7 @@ const sections: DocSection[] = [
     id: 'getting-started',
     title: 'Getting Started',
     icon: BookOpen,
+    keywords: 'awarts quick start setup requirements node username country cli install',
     content: (
       <>
         <Heading3>What is AWARTS?</Heading3>
@@ -102,6 +125,7 @@ const sections: DocSection[] = [
     id: 'installation',
     title: 'Installation',
     icon: Download,
+    keywords: 'install npm npx bun pnpm global awartsrc config update cli terminal',
     content: (
       <>
         <Heading3>Install the CLI</Heading3>
@@ -137,6 +161,7 @@ const sections: DocSection[] = [
     id: 'providers',
     title: 'Providers',
     icon: Cpu,
+    keywords: 'claude codex gemini antigravity api key session multi provider polyglot',
     content: (
       <>
         <Para>AWARTS supports four AI coding providers. Each tracks sessions, tokens, and cost independently.</Para>
@@ -175,6 +200,7 @@ const sections: DocSection[] = [
     id: 'core-concepts',
     title: 'Core Concepts',
     icon: Layers,
+    keywords: 'sessions tokens cost pricing streak input output model heatmap contribution',
     content: (
       <>
         <Heading3>Sessions</Heading3>
@@ -225,6 +251,7 @@ const sections: DocSection[] = [
     id: 'dashboard',
     title: 'Dashboard Guide',
     icon: LayoutDashboard,
+    keywords: 'feed leaderboard profile recap search following global kudos comment activity',
     content: (
       <>
         <Heading3>Feed</Heading3>
@@ -269,6 +296,7 @@ const sections: DocSection[] = [
     id: 'achievements',
     title: 'Achievements',
     icon: Award,
+    keywords: 'badge milestone unlock earned trophy permanent streak week warrior power user',
     content: (
       <>
         <Para>
@@ -295,6 +323,7 @@ const sections: DocSection[] = [
     id: 'cli-reference',
     title: 'CLI Reference',
     icon: TerminalSquare,
+    keywords: 'sync status export config whoami logout daemon start stop logs flags verbose provider format since dry-run interval environment variables debug',
     content: (
       <>
         <Para>The AWARTS CLI is your primary interface for syncing session data. Here are all available commands:</Para>
@@ -349,6 +378,7 @@ export AWARTS_API_URL="https://api.your-server.com"`}</CodeBlock>
     id: 'api-reference',
     title: 'API Reference',
     icon: Code2,
+    keywords: 'rest api authentication bearer endpoint sessions leaderboard kudos rate limit curl post get',
     content: (
       <>
         <Para>The AWARTS REST API lets you programmatically access your data. All endpoints require authentication via API key.</Para>
@@ -417,6 +447,7 @@ X-RateLimit-Reset: 1708700000`}</CodeBlock>
     id: 'privacy',
     title: 'Privacy & Data',
     icon: Shield,
+    keywords: 'data collected public private profile export delete account code prompts safety security',
     content: (
       <>
         <Heading3>What Data is Collected</Heading3>
@@ -462,6 +493,7 @@ awarts export --format csv --output my-data.csv`}</CodeBlock>
     id: 'faq',
     title: 'FAQ',
     icon: HelpCircle,
+    keywords: 'free cost accurate self-hosted streak reset backfill multiple machines hide sessions team org bug feature request',
     content: (
       <>
         <Para>Common questions from the AWARTS community.</Para>
@@ -491,6 +523,7 @@ awarts export --format csv --output my-data.csv`}</CodeBlock>
     id: 'keyboard-shortcuts',
     title: 'Keyboard Shortcuts',
     icon: Keyboard,
+    keywords: 'shortcut hotkey keybind slash search go navigate kudos enter escape modal',
     content: (
       <>
         <Para>Navigate AWARTS faster with these keyboard shortcuts. Available on all pages within the dashboard.</Para>
@@ -521,6 +554,7 @@ awarts export --format csv --output my-data.csv`}</CodeBlock>
     id: 'troubleshooting',
     title: 'Troubleshooting',
     icon: Bug,
+    keywords: 'no sessions found authentication failed rate limit wrong cost debug verbose support email github issue',
     content: (
       <>
         <Para>Common issues and how to fix them.</Para>
@@ -578,21 +612,34 @@ awarts sync --verbose
 
 export default function Docs() {
   const [search, setSearch] = useState('');
-  const [activeSectionId, setActiveSectionId] = useState(sections[0].id);
+  const [activeSectionId, setActiveSectionId] = useState(() => {
+    const hash = window.location.hash.replace('#', '');
+    return sections.find((s) => s.id === hash)?.id ?? sections[0].id;
+  });
   const contentRef = useRef<HTMLDivElement>(null);
 
   const filtered = search.trim()
-    ? sections.filter((s) =>
-        s.title.toLowerCase().includes(search.toLowerCase()) ||
-        (typeof s.content === 'string' && s.content.toLowerCase().includes(search.toLowerCase()))
-      )
+    ? sections.filter((s) => {
+        const q = search.toLowerCase();
+        return s.title.toLowerCase().includes(q) || s.keywords.toLowerCase().includes(q);
+      })
     : sections;
 
   const scrollToSection = (id: string) => {
     setActiveSectionId(id);
+    window.history.replaceState(null, '', `#${id}`);
     const el = document.getElementById(`docs-${id}`);
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
+
+  // Scroll to hash section on mount
+  useEffect(() => {
+    const hash = window.location.hash.replace('#', '');
+    if (hash) {
+      const el = document.getElementById(`docs-${hash}`);
+      if (el) setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+    }
+  }, []);
 
   // Track active section via IntersectionObserver
   useEffect(() => {
@@ -601,7 +648,12 @@ export default function Docs() {
       const el = document.getElementById(`docs-${s.id}`);
       if (!el) return;
       const obs = new IntersectionObserver(
-        ([entry]) => { if (entry.isIntersecting) setActiveSectionId(s.id); },
+        ([entry]) => {
+          if (entry.isIntersecting) {
+            setActiveSectionId(s.id);
+            window.history.replaceState(null, '', `#${s.id}`);
+          }
+        },
         { rootMargin: '-80px 0px -60% 0px', threshold: 0 }
       );
       obs.observe(el);

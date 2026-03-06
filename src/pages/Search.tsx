@@ -37,6 +37,7 @@ export default function Search() {
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search users by username..."
             className="pl-10 h-11 bg-muted/50 border-none"
+            aria-label="Search developers"
           />
           {isLoading && debouncedQuery.length >= 2 && (
             <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground animate-spin" />

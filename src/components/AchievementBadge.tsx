@@ -11,6 +11,8 @@ export function AchievementBadge({ achievement }: AchievementBadgeProps) {
     <Tooltip>
       <TooltipTrigger asChild>
         <div
+          role="img"
+          aria-label={achievement.name}
           className={cn(
             'flex h-12 w-12 items-center justify-center rounded-xl text-xl transition-all',
             achievement.earned

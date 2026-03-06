@@ -30,7 +30,7 @@ export const saveFile = mutation({
 
     // Validate content type (images only)
     const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
-    if (metadata.contentType && !allowedTypes.includes(metadata.contentType)) {
+    if (!metadata.contentType || !allowedTypes.includes(metadata.contentType)) {
       throw new Error("Invalid file type. Only JPEG, PNG, WebP, and GIF are allowed.");
     }
 
@@ -58,7 +58,7 @@ export const saveAvatar = mutation({
 
     // Validate content type (images only)
     const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
-    if (metadata.contentType && !allowedTypes.includes(metadata.contentType)) {
+    if (!metadata.contentType || !allowedTypes.includes(metadata.contentType)) {
       throw new Error("Invalid file type. Only JPEG, PNG, and WebP are allowed for avatars.");
     }
 

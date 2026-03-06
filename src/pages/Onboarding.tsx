@@ -60,7 +60,7 @@ export default function Onboarding() {
           <span className="font-mono text-xl font-bold text-foreground">AWARTS</span>
         </div>
 
-        <Progress value={(step / 3) * 100} className="h-1" />
+        <Progress value={(step / 3) * 100} className="h-1" role="progressbar" aria-valuenow={step} aria-valuemin={1} aria-valuemax={3} aria-label="Onboarding progress" />
 
         <AnimatePresence mode="wait">
           {step === 1 && (

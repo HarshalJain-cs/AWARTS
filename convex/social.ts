@@ -71,11 +71,14 @@ export const giveKudos = mutation({
       .unique();
     if (existing) return { success: true };
 
+    // Verify post exists and is accessible
+    const post = await ctx.db.get(postId);
+    if (!post || !post.isPublished) throw new Error("Post not found");
+
     await ctx.db.insert("kudos", { userId: me._id, postId });
 
     // Notify post author
-    const post = await ctx.db.get(postId);
-    if (post && post.userId !== me._id) {
+    if (post.userId !== me._id) {
       await ctx.db.insert("notifications", {
         recipientId: post.userId,
         senderId: me._id,
@@ -118,17 +121,23 @@ export const getComments = query({
       .order("asc")
       .collect();
 
-    return await Promise.all(
-      comments.map(async (c) => {
-        const author = await ctx.db.get(c.userId);
-        return {
-          ...c,
-          author: author
-            ? { _id: author._id, username: author.username, displayName: author.displayName, avatarUrl: author.avatarUrl }
-            : null,
-        };
-      })
-    );
+    // Batch load all comment authors
+    const authorIds = [...new Set(comments.map((c) => String(c.userId)))];
+    const authors = await Promise.all(authorIds.map((id) => ctx.db.get(id as any)));
+    const authorMap = new Map<string, any>();
+    for (const a of authors) {
+      if (a) authorMap.set(String(a._id), a);
+    }
+
+    return comments.map((c) => {
+      const author = authorMap.get(String(c.userId));
+      return {
+        ...c,
+        author: author
+          ? { _id: author._id, username: author.username, displayName: author.displayName, avatarUrl: author.avatarUrl }
+          : null,
+      };
+    });
   },
 });
 
@@ -230,17 +239,23 @@ export const getNotifications = query({
       .order("desc")
       .take(50);
 
-    return await Promise.all(
-      notifs.map(async (n) => {
-        const sender = n.senderId ? await ctx.db.get(n.senderId) : null;
-        return {
-          ...n,
-          sender: sender
-            ? { username: sender.username, displayName: sender.displayName, avatarUrl: sender.avatarUrl }
-            : null,
-        };
-      })
-    );
+    // Batch load all senders
+    const senderIds = [...new Set(notifs.filter((n) => n.senderId).map((n) => String(n.senderId)))];
+    const senders = await Promise.all(senderIds.map((id) => ctx.db.get(id as any)));
+    const senderMap = new Map<string, any>();
+    for (const s of senders) {
+      if (s) senderMap.set(String(s._id), s);
+    }
+
+    return notifs.map((n) => {
+      const sender = n.senderId ? senderMap.get(String(n.senderId)) : null;
+      return {
+        ...n,
+        sender: sender
+          ? { username: sender.username, displayName: sender.displayName, avatarUrl: sender.avatarUrl }
+          : null,
+      };
+    });
   },
 });
 

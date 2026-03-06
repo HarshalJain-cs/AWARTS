@@ -68,7 +68,7 @@ export default function Profile() {
 
   return (
     <AppShell>
-      <SEO title={`@${user.username} — AI Coding Profile`} description={user.bio || `Check out @${user.username}'s AI coding stats, sessions, and achievements on AWARTS.`} canonical={`/u/${user.username}`} ogType="profile" />
+      <SEO title={`@${user.username} — AI Coding Profile`} description={user.bio || `Check out @${user.username}'s AI coding stats, sessions, and achievements on AWARTS.`} canonical={`/u/${user.username}`} ogType="profile" ogImage={user.avatar || undefined} keywords={`${user.username}, AI coding profile, developer stats, ${(user.providers || []).join(', ')}`} jsonLd={{ "@context": "https://schema.org", "@type": "ProfilePage", "mainEntity": { "@type": "Person", "name": user.displayName || user.username, "alternateName": `@${user.username}`, "url": `https://awarts.vercel.app/u/${user.username}`, ...(user.avatar ? { "image": user.avatar } : {}) } }} />
       <div className="max-w-2xl mx-auto space-y-8">
         {/* Header */}
         <div className="flex flex-col sm:flex-row gap-6">

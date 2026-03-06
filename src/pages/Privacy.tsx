@@ -4,7 +4,7 @@ import { SEO } from '@/components/SEO';
 export default function Privacy() {
   return (
     <div className="min-h-screen bg-background">
-      <SEO title="Privacy Policy" description="AWARTS privacy policy — learn how we collect, use, and protect your data. No code or prompts are ever accessed." canonical="/privacy" />
+      <SEO title="Privacy Policy" description="AWARTS privacy policy — learn how we collect, use, and protect your data. No code or prompts are ever accessed." canonical="/privacy" keywords="privacy policy, data protection, AWARTS privacy, user data" jsonLd={{ "@context": "https://schema.org", "@type": "WebPage", "name": "Privacy Policy", "description": "AWARTS privacy policy", "url": "https://awarts.vercel.app/privacy" }} />
       <nav className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-sm">
         <div className="max-w-3xl mx-auto flex items-center justify-between px-4 h-14">
           <Link to="/" className="flex items-center gap-2">

@@ -84,11 +84,12 @@ function RecapContent() {
         {/* Theme picker */}
         <div className="space-y-2">
           <p className="text-sm font-medium text-muted-foreground">Theme</p>
-          <div className="flex gap-3">
+          <div className="flex gap-3" aria-label="Theme selector" role="group">
             {THEMES.map((t) => (
               <button
                 key={t.id}
                 onClick={() => setTheme(t.id)}
+                aria-pressed={theme === t.id}
                 className={cn(
                   'flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-all',
                   theme === t.id

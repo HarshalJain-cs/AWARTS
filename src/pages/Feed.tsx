@@ -64,13 +64,15 @@ export default function Feed() {
 
   return (
     <AppShell>
-      <SEO title="Feed — AI Coding Activity" description="See the latest AI coding sessions from developers worldwide. Filter by Claude, Codex, Gemini, and Antigravity providers." canonical="/feed" keywords="AI coding feed, developer activity, Claude sessions, Codex sessions, AI coding community" />
+      <SEO title="Feed — AI Coding Activity" description="See the latest AI coding sessions from developers worldwide. Filter by Claude, Codex, Gemini, and Antigravity providers." canonical="/feed" keywords="AI coding feed, developer activity, Claude sessions, Codex sessions, AI coding community" jsonLd={{ "@context": "https://schema.org", "@type": "CollectionPage", "name": "AI Coding Activity Feed", "description": "Latest AI coding sessions from developers worldwide", "url": "https://awarts.vercel.app/feed" }} />
       <div className="max-w-2xl mx-auto space-y-6">
         {/* Tabs */}
-        <div className="flex gap-6 border-b border-border">
+        <div className="flex gap-6 border-b border-border" role="tablist">
           {tabs.map((tab) => (
             <button
               key={tab}
+              role="tab"
+              aria-selected={activeTab === tab}
               onClick={() => setActiveTab(tab)}
               className={cn(
                 'pb-3 text-sm font-medium transition-colors relative',

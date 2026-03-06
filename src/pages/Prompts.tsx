@@ -59,7 +59,7 @@ function PromptsContent() {
 
   return (
     <AppShell>
-      <SEO title="Community Prompts" description="Submit a prompt to suggest what AWARTS should build or improve next." />
+      <SEO title="Community Prompts" description="Submit and vote on community prompts to shape what AWARTS builds next. Suggest features, improvements, and integrations." canonical="/prompts" keywords="community prompts, feature requests, AI coding suggestions, AWARTS roadmap" jsonLd={{ "@context": "https://schema.org", "@type": "CollectionPage", "name": "Community Prompts", "description": "Community-driven feature requests for AWARTS", "url": "https://awarts.vercel.app/prompts" }} />
       <div className="max-w-2xl mx-auto space-y-8">
         {/* Header */}
         <div>

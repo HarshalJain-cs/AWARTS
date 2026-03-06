@@ -32,13 +32,13 @@ export default function Leaderboard() {
 
   return (
     <AppShell>
-      <SEO title="Leaderboard — Top AI Coders" description="See who's writing the most AI-assisted code. Global leaderboard ranked by output tokens across Claude, Codex, Gemini, and Antigravity." canonical="/leaderboard" keywords="AI coding leaderboard, top developers, Claude leaderboard, Codex ranking, developer competition" />
+      <SEO title="Leaderboard — Top AI Coders" description="See who's writing the most AI-assisted code. Global leaderboard ranked by output tokens across Claude, Codex, Gemini, and Antigravity." canonical="/leaderboard" keywords="AI coding leaderboard, top developers, Claude leaderboard, Codex ranking, developer competition" jsonLd={{ "@context": "https://schema.org", "@type": "CollectionPage", "name": "AI Coding Leaderboard", "description": "Top AI-assisted developers ranked by usage", "url": "https://awarts.vercel.app/leaderboard" }} />
       <div className="max-w-3xl mx-auto space-y-6">
         <h1 className="text-2xl font-bold text-foreground">Leaderboard</h1>
 
         <div className="flex flex-wrap gap-3">
           <Select value={period} onValueChange={setPeriod}>
-            <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-[140px]" aria-label="Time period"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="today">Today</SelectItem>
               <SelectItem value="week">This Week</SelectItem>
@@ -48,7 +48,7 @@ export default function Leaderboard() {
           </Select>
 
           <Select value={region} onValueChange={setRegion}>
-            <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-[180px]" aria-label="Region filter"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="global">Global</SelectItem>
               <SelectItem value="north_america">North America</SelectItem>
@@ -64,7 +64,7 @@ export default function Leaderboard() {
           </Select>
 
           <Select value={provider} onValueChange={setProvider}>
-            <SelectTrigger className="w-[150px]"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-[150px]" aria-label="Provider filter"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Providers</SelectItem>
               <SelectItem value="claude">Claude</SelectItem>

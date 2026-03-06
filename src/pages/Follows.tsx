@@ -37,13 +37,15 @@ export default function Follows() {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-6 border-b border-border">
+        <div className="flex gap-6 border-b border-border" role="tablist">
           {([
             { label: 'Followers', count: followersData?.users.length ?? 0 },
             { label: 'Following', count: followingData?.users.length ?? 0 },
           ] as const).map((tab) => (
             <button
               key={tab.label}
+              role="tab"
+              aria-selected={activeTab === tab.label}
               onClick={() => setActiveTab(tab.label as typeof activeTab)}
               className={cn(
                 'pb-3 text-sm font-medium transition-colors relative',

@@ -6,13 +6,23 @@ import { formatCost } from '@/lib/format';
 
 export function RightSidebar() {
   const { user } = useAuth();
-  const { data: profileData } = useProfile(user?.username ?? '');
+  const { data: profileData, isLoading } = useProfile(user?.username ?? '');
 
   return (
     <aside className="hidden xl:flex flex-col w-[280px] shrink-0 border-l border-border p-4 gap-6 sticky top-14 h-[calc(100vh-3.5rem)] overflow-y-auto">
       {user ? (
         <div className="rounded-lg border border-border bg-card p-4 space-y-3">
           <h3 className="text-sm font-semibold text-foreground">Your Stats</h3>
+          {isLoading ? (
+            <div className="space-y-2">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="flex items-center justify-between text-sm">
+                  <span className="h-4 w-16 bg-muted animate-pulse rounded" />
+                  <span className="h-4 w-10 bg-muted animate-pulse rounded" />
+                </div>
+              ))}
+            </div>
+          ) : (
           <div className="space-y-2">
             <div className="flex items-center justify-between text-sm">
               <span className="flex items-center gap-1.5 text-muted-foreground">
@@ -33,6 +43,7 @@ export function RightSidebar() {
               <span className="font-mono font-semibold text-foreground">{profileData?.stats?.total_days ?? 0}</span>
             </div>
           </div>
+          )}
         </div>
       ) : (
         <div className="rounded-lg border border-border bg-card p-4 text-center">

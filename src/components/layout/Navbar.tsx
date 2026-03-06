@@ -22,7 +22,7 @@ export function Navbar() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isDark, setIsDark] = useState(() => {
     const saved = localStorage.getItem('theme');
-    if (saved) return saved === 'dark';
+    if (saved !== null) return saved === 'dark';
     return document.documentElement.classList.contains('dark');
   });
 

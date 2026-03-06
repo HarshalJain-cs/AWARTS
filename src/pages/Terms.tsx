@@ -4,7 +4,7 @@ import { SEO } from '@/components/SEO';
 export default function Terms() {
   return (
     <div className="min-h-screen bg-background">
-      <SEO title="Terms of Service" description="AWARTS terms of service — rules, acceptable use, content ownership, and account policies." canonical="/terms" />
+      <SEO title="Terms of Service" description="AWARTS terms of service — rules, acceptable use, content ownership, and account policies." canonical="/terms" keywords="terms of service, acceptable use, AWARTS terms, user agreement" jsonLd={{ "@context": "https://schema.org", "@type": "WebPage", "name": "Terms of Service", "description": "AWARTS terms of service", "url": "https://awarts.vercel.app/terms" }} />
       <nav className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-sm">
         <div className="max-w-3xl mx-auto flex items-center justify-between px-4 h-14">
           <Link to="/" className="flex items-center gap-2">

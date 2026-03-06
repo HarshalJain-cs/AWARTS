@@ -53,7 +53,7 @@ export function PromptCard({ prompt, onVote, isAuthenticated }: PromptCardProps)
           ) : (
             <span className="flex items-center gap-1.5">
               <User className="h-3.5 w-3.5" />
-              Anonymous
+              {prompt.isOwn ? 'You (anonymous)' : 'Anonymous'}
             </span>
           )}
           <span>·</span>
