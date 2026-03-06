@@ -40,20 +40,38 @@ export function useFeed(type: "global" | "following" = "global", provider?: stri
   const [isFetchingNext, setIsFetchingNext] = useState(false);
 
   const currentCursor = cursors.length > 0 ? cursors[cursors.length - 1] : undefined;
-  const result = useQuery(api.feed.getFeed, { type, provider, cursor: currentCursor });
 
-  // Sync first page or new cursor page into pages array
+  // Always subscribe to the first page for live updates (no cursor)
+  const firstPage = useQuery(api.feed.getFeed, { type, provider, cursor: undefined });
+  // Also subscribe to the current paginated page (if paginating beyond page 0)
+  const paginatedResult = useQuery(
+    api.feed.getFeed,
+    currentCursor ? { type, provider, cursor: currentCursor } : "skip"
+  );
+
+  // Keep first page always up to date (real-time feed)
   useEffect(() => {
-    if (result) {
+    if (firstPage) {
+      setPages((prev) => {
+        const next = [...prev];
+        next[0] = firstPage;
+        return next;
+      });
+    }
+  }, [firstPage]);
+
+  // Sync paginated pages beyond page 0
+  useEffect(() => {
+    if (paginatedResult && cursors.length > 0) {
       setPages((prev) => {
         const pageIndex = cursors.length;
         const next = [...prev];
-        next[pageIndex] = result;
+        next[pageIndex] = paginatedResult;
         return next;
       });
       setIsFetchingNext(false);
     }
-  }, [result, cursors.length]);
+  }, [paginatedResult, cursors.length]);
 
   // Reset when filters change
   useEffect(() => {
@@ -72,7 +90,7 @@ export function useFeed(type: "global" | "following" = "global", provider?: stri
 
   return {
     data: pages.length > 0 ? { pages } : undefined,
-    isLoading: result === undefined && pages.length === 0,
+    isLoading: firstPage === undefined && pages.length === 0,
     error: null,
     hasNextPage,
     fetchNextPage,

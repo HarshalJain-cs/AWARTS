@@ -16,6 +16,25 @@ const usageEntryValidator = v.object({
   cost_source: v.optional(v.string()),
 });
 
+// Maximum per-token cost in USD (very generous: $75/1M output = $0.000075/token)
+// Using 5x safety margin = $0.000375/token ≈ $0.0004/token
+const MAX_COST_PER_TOKEN = 0.0004;
+// Minimum tokens required if cost exceeds this threshold
+const COST_SANITY_THRESHOLD = 0.50; // $0.50
+
+/**
+ * Validate that cost_usd is proportional to token counts.
+ * Returns the corrected cost (capped if unrealistic) or the original cost.
+ */
+function sanitizeCost(costUsd: number, inputTokens: number, outputTokens: number): number {
+  if (costUsd <= COST_SANITY_THRESHOLD) return costUsd; // small costs are fine
+  const totalTokens = inputTokens + outputTokens;
+  if (totalTokens === 0) return 0; // no tokens means no cost
+  const maxReasonableCost = totalTokens * MAX_COST_PER_TOKEN;
+  // Cap the cost at the maximum reasonable amount (with a floor of $1)
+  return Math.min(costUsd, Math.max(maxReasonableCost, 1));
+}
+
 // POST /usage/submit — core endpoint (supports both Clerk auth and CLI token auth)
 export const submitUsage = mutation({
   args: {
@@ -75,8 +94,8 @@ export const submitUsage = mutation({
       }
 
       // Validate numeric bounds
-      if (entry.cost_usd < 0 || entry.cost_usd > 100000) {
-        errors.push({ date: entry.date, provider: entry.provider, error: "cost_usd out of range (0-100000)" });
+      if (entry.cost_usd < 0 || entry.cost_usd > 10000) {
+        errors.push({ date: entry.date, provider: entry.provider, error: "cost_usd out of range (0-10000)" });
         continue;
       }
       if (entry.input_tokens < 0 || entry.input_tokens > 1_000_000_000) {
@@ -87,6 +106,9 @@ export const submitUsage = mutation({
         errors.push({ date: entry.date, provider: entry.provider, error: "output_tokens out of range" });
         continue;
       }
+
+      // Sanitize cost to prevent unrealistic values
+      const sanitizedCost = sanitizeCost(entry.cost_usd, entry.input_tokens, entry.output_tokens);
 
       // Validate models array
       if (entry.models.length > 20) {
@@ -108,7 +130,7 @@ export const submitUsage = mutation({
 
       if (existing) {
         await ctx.db.patch(existing._id, {
-          costUsd: entry.cost_usd,
+          costUsd: sanitizedCost,
           inputTokens: entry.input_tokens,
           outputTokens: entry.output_tokens,
           cacheCreationTokens: entry.cache_creation_tokens ?? 0,
@@ -117,14 +139,14 @@ export const submitUsage = mutation({
           source,
           dataHash: hash ?? undefined,
           rawData: entry.raw_data ?? undefined,
-          costSource: entry.cost_source ?? undefined,
+          costSource: sanitizedCost < entry.cost_usd ? "capped" : (entry.cost_source ?? undefined),
         });
       } else {
         await ctx.db.insert("daily_usage", {
           userId: me._id,
           date: entry.date,
           provider: entry.provider,
-          costUsd: entry.cost_usd,
+          costUsd: sanitizedCost,
           inputTokens: entry.input_tokens,
           outputTokens: entry.output_tokens,
           cacheCreationTokens: entry.cache_creation_tokens ?? 0,
@@ -133,7 +155,7 @@ export const submitUsage = mutation({
           source,
           dataHash: hash ?? undefined,
           rawData: entry.raw_data ?? undefined,
-          costSource: entry.cost_source ?? undefined,
+          costSource: sanitizedCost < entry.cost_usd ? "capped" : (entry.cost_source ?? undefined),
         });
       }
 
@@ -289,10 +311,12 @@ export const importUsage = mutation({
         errors.push({ date: entry.date, provider: entry.provider, error: "Future date" });
         continue;
       }
-      if (entry.cost_usd < 0 || entry.cost_usd > 100000) {
+      if (entry.cost_usd < 0 || entry.cost_usd > 10000) {
         errors.push({ date: entry.date, provider: entry.provider, error: "Cost out of range" });
         continue;
       }
+
+      const importSanitizedCost = sanitizeCost(entry.cost_usd, entry.input_tokens, entry.output_tokens);
 
       const existing = await ctx.db
         .query("daily_usage")
@@ -302,14 +326,14 @@ export const importUsage = mutation({
         .unique();
 
       const record = {
-        costUsd: entry.cost_usd,
+        costUsd: importSanitizedCost,
         inputTokens: entry.input_tokens,
         outputTokens: entry.output_tokens,
         cacheCreationTokens: 0,
         cacheReadTokens: 0,
         models: entry.models,
         source: "web-import",
-        costSource: entry.cost_source ?? "real",
+        costSource: importSanitizedCost < entry.cost_usd ? "capped" : (entry.cost_source ?? "real"),
       };
 
       if (existing) {
@@ -367,5 +391,31 @@ export const importUsage = mutation({
       posts_created: postsCreated,
       ...(errors.length > 0 && { errors }),
     };
+  },
+});
+
+// ─── Fix unrealistic costs in existing data ─────────────────────────
+export const fixUnrealisticCosts = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const me = await getCurrentUser(ctx);
+    if (!me) throw new Error("Not authenticated");
+
+    // Fix all usage entries (not scoped to current user — admin action)
+    const allEntries = await ctx.db.query("daily_usage").collect();
+
+    let fixed = 0;
+    for (const entry of allEntries) {
+      const corrected = sanitizeCost(entry.costUsd, entry.inputTokens, entry.outputTokens);
+      if (corrected < entry.costUsd) {
+        await ctx.db.patch(entry._id, {
+          costUsd: corrected,
+          costSource: "capped",
+        });
+        fixed++;
+      }
+    }
+
+    return { fixed, total: allEntries.length };
   },
 });

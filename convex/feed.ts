@@ -29,7 +29,7 @@ export const getFeed = query({
     const safeLimit = Math.min(Math.max(1, limit), 50);
     const me = await getCurrentUser(ctx);
 
-    // Build following set upfront if needed
+    // Build following set upfront if needed (include self so own posts appear)
     let followingIds: Set<string> | null = null;
     if (type === "following" && me) {
       const followRows = await ctx.db
@@ -37,6 +37,7 @@ export const getFeed = query({
         .withIndex("by_follower", (q) => q.eq("followerId", me._id))
         .collect();
       followingIds = new Set(followRows.map((f) => String(f.followingId)));
+      followingIds.add(String(me._id)); // include own posts in Following feed
     }
 
     // Stream through posts with cursor-based pagination
@@ -46,8 +47,8 @@ export const getFeed = query({
     const posts: Doc<"posts">[] = [];
     const cursorTime = cursor ? Number(cursor) : Infinity;
 
-    // Take enough to fill page after filtering
-    const candidates = await query.take(safeLimit * 5);
+    // Take enough to fill page after filtering (higher multiplier to avoid missing posts)
+    const candidates = await query.take(safeLimit * 10);
 
     // Batch-load all candidate authors
     const candidateUserIds = [...new Set(candidates.map((p) => p.userId))];
