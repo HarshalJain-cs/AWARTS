@@ -141,6 +141,11 @@ export const getUserPosts = query({
       .unique();
     if (!target) return { posts: [], nextCursor: null };
 
+    // Privacy check: if profile is private and viewer is not the owner, return empty
+    if (!target.isPublic && (!me || me._id !== target._id)) {
+      return { posts: [], nextCursor: null };
+    }
+
     let posts = await ctx.db
       .query("posts")
       .withIndex("by_user", (q) => q.eq("userId", target._id))

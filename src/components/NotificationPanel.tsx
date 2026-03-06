@@ -51,7 +51,11 @@ export function NotificationPanel({ notifications, onClose, onMarkAllRead }: Not
                 <Icon className="h-4 w-4 mt-0.5 text-primary shrink-0" />
                 <div className="flex-1 min-w-0">
                   <p className="text-foreground">
-                    <span className="font-semibold">@{n.actor.username}</span>{' '}
+                    {n.actor ? (
+                      <span className="font-semibold">@{n.actor.username}</span>
+                    ) : (
+                      <span className="font-semibold">Someone</span>
+                    )}{' '}
                     <span className="text-muted-foreground">{labelMap[n.type] ?? n.type}</span>
                   </p>
                   <p className="text-xs text-muted-foreground mt-0.5">{formatDate(n.createdAt)}</p>

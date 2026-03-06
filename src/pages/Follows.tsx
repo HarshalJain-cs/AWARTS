@@ -10,6 +10,8 @@ import { cn } from '@/lib/utils';
 import { Users } from 'lucide-react';
 import { SEO } from '@/components/SEO';
 
+const tabs = ['Followers', 'Following'] as const;
+
 export default function Follows() {
   const { username } = useParams<{ username: string }>();
   const [activeTab, setActiveTab] = useState<typeof tabs[number]>('Followers');

@@ -27,51 +27,46 @@ export const submitPrompt = mutation({
   },
 });
 
-// Get community prompts (paginated)
+// Get community prompts (paginated by offset to support vote-based sorting)
 export const getPrompts = query({
   args: {
-    cursor: v.optional(v.string()),
+    cursor: v.optional(v.string()), // kept for API compat, ignored
     limit: v.optional(v.number()),
+    offset: v.optional(v.number()),
   },
-  handler: async (ctx, { cursor, limit = 20 }) => {
+  handler: async (ctx, { limit = 20, offset = 0 }) => {
     const safeLimit = Math.min(Math.max(1, limit), 50);
+    const safeOffset = Math.max(0, offset);
     const me = await getCurrentUser(ctx);
 
-    // Use .take() instead of .collect() to avoid loading entire table
-    let prompts = await ctx.db.query("prompts").order("desc").take(safeLimit * 3);
+    // Load all prompts (community prompts are a small dataset)
+    const prompts = await ctx.db.query("prompts").order("desc").take(500);
 
-    // Cursor-based pagination
-    if (cursor) {
-      const cursorTime = Number(cursor);
-      prompts = prompts.filter((p) => p._creationTime < cursorTime);
+    // Batch-load all vote counts and user's votes
+    const allVotes = await Promise.all(
+      prompts.map((p) =>
+        ctx.db
+          .query("prompt_votes")
+          .withIndex("by_prompt", (q) => q.eq("promptId", p._id))
+          .collect()
+      )
+    );
+
+    let myVotedSet = new Set<string>();
+    if (me) {
+      const myVotes = await ctx.db
+        .query("prompt_votes")
+        .filter((q) => q.eq(q.field("userId"), me._id))
+        .collect();
+      myVotedSet = new Set(myVotes.map((v) => String(v.promptId)));
     }
-
-    const sliced = prompts.slice(0, safeLimit + 1);
-    const hasMore = sliced.length > safeLimit;
-    const page = sliced.slice(0, safeLimit);
 
     // Hydrate with author info and vote counts
     const hydrated = await Promise.all(
-      page.map(async (prompt) => {
+      prompts.map(async (prompt, i) => {
         const author = prompt.isAnonymous
           ? null
           : await ctx.db.get(prompt.userId);
-
-        const votes = await ctx.db
-          .query("prompt_votes")
-          .withIndex("by_prompt", (q) => q.eq("promptId", prompt._id))
-          .collect();
-
-        let hasVoted = false;
-        if (me) {
-          const myVote = await ctx.db
-            .query("prompt_votes")
-            .withIndex("by_user_prompt", (q) =>
-              q.eq("userId", me._id).eq("promptId", prompt._id)
-            )
-            .unique();
-          hasVoted = !!myVote;
-        }
 
         return {
           _id: prompt._id,
@@ -87,8 +82,8 @@ export const getPrompts = query({
                 avatarUrl: author.avatarUrl,
               }
             : null,
-          voteCount: votes.length,
-          hasVoted,
+          voteCount: allVotes[i].length,
+          hasVoted: myVotedSet.has(String(prompt._id)),
           isOwn: me ? prompt.userId === me._id : false,
         };
       })
@@ -97,11 +92,13 @@ export const getPrompts = query({
     // Sort by vote count descending, then by creation time descending
     hydrated.sort((a, b) => b.voteCount - a.voteCount || b._creationTime - a._creationTime);
 
+    // Paginate the sorted results (offset-based, consistent with sort order)
+    const page = hydrated.slice(safeOffset, safeOffset + safeLimit);
+    const hasMore = safeOffset + safeLimit < hydrated.length;
+
     return {
-      prompts: hydrated,
-      nextCursor: hasMore
-        ? String(page[page.length - 1]._creationTime)
-        : null,
+      prompts: page,
+      nextCursor: hasMore ? String(safeOffset + safeLimit) : null,
     };
   },
 });

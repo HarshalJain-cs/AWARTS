@@ -134,18 +134,17 @@ export const updateMe = mutation({
   handler: async (ctx, args) => {
     const user = await requireUser(ctx);
 
-    // Validate username
-    if (args.username !== undefined) {
-      if (args.username !== user.username) {
-        if (!isValidUsername(args.username)) {
-          throw new Error("Invalid username. Must be 3-30 characters, lowercase letters, numbers, and underscores only.");
-        }
-        const taken = await ctx.db
-          .query("users")
-          .withIndex("by_username", (q) => q.eq("username", args.username!))
-          .unique();
-        if (taken) throw new Error("Username is already taken");
+    // Validate username change
+    if (args.username !== undefined && args.username !== user.username) {
+      if (!isValidUsername(args.username)) {
+        throw new Error("Invalid username. Must be 3-30 characters, lowercase letters, numbers, and underscores only.");
       }
+      // Check uniqueness — Convex mutations are transactional so this check-then-act is safe
+      const taken = await ctx.db
+        .query("users")
+        .withIndex("by_username", (q) => q.eq("username", args.username!))
+        .unique();
+      if (taken) throw new Error("Username is already taken");
     }
 
     // Validate and sanitize fields

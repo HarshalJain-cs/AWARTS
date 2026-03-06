@@ -47,6 +47,7 @@ export function ShareActions({ cardRef, username }: ShareActionsProps) {
       if (!dataUrl) throw new Error('Failed to generate image');
 
       const res = await fetch(dataUrl);
+      if (!res.ok) throw new Error('Failed to convert image');
       const blob = await res.blob();
       await navigator.clipboard.write([
         new ClipboardItem({ 'image/png': blob }),

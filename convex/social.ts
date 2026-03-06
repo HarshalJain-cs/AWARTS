@@ -144,15 +144,28 @@ export const addComment = mutation({
       throw new Error("Comment must be 1-1000 characters");
     }
 
+    // Verify the post exists and is published
+    const post = await ctx.db.get(postId);
+    if (!post || !post.isPublished) {
+      throw new Error("Post not found");
+    }
+
+    // Verify the post author's profile is public (or commenter is the author)
+    if (post.userId !== me._id) {
+      const author = await ctx.db.get(post.userId);
+      if (!author || !author.isPublic) {
+        throw new Error("Post not found");
+      }
+    }
+
     const commentId = await ctx.db.insert("comments", {
       postId,
       userId: me._id,
       content,
     });
 
-    // Notify post author
-    const post = await ctx.db.get(postId);
-    if (post && post.userId !== me._id) {
+    // Notify post author (post already fetched above)
+    if (post.userId !== me._id) {
       await ctx.db.insert("notifications", {
         recipientId: post.userId,
         senderId: me._id,

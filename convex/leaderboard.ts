@@ -64,8 +64,12 @@ export const getLeaderboard = query({
     const sorted = [...userTotals.entries()]
       .sort((a, b) => b[1].costUsd - a[1].costUsd);
 
-    // Only hydrate the slice we need (after offset, up to limit + some buffer for region filtering)
-    const sliceEnd = region ? sorted.length : safeOffset + safeLimit;
+    // Cap hydration to prevent memory DoS — max 1000 users even for region filter
+    const maxHydrate = 1000;
+    const sliceEnd = Math.min(
+      region ? sorted.length : safeOffset + safeLimit,
+      maxHydrate
+    );
     const toHydrate = sorted.slice(0, sliceEnd);
 
     // Batch-load users
@@ -76,35 +80,38 @@ export const getLeaderboard = query({
       if (u) userMap.set(String(u._id), u);
     }
 
-    const hydrated = toHydrate.map(([userId, totals], index) => {
-      const user = userMap.get(userId);
-      if (!user) return null;
-      if (region && user.region !== region) return null;
+    // Filter FIRST, then rank — fixes rank miscalculation
+    const filtered = toHydrate
+      .map(([userId, totals]) => {
+        const user = userMap.get(userId);
+        if (!user) return null;
+        // Exclude private users from leaderboard
+        if (!user.isPublic) return null;
+        // Apply region filter
+        if (region && user.region !== region) return null;
 
-      return {
-        rank: index + 1,
-        user: {
-          _id: user._id,
-          username: user.username,
-          displayName: user.displayName,
-          avatarUrl: user.avatarUrl,
-          country: user.country,
-          region: user.region,
-        },
-        costUsd: totals.costUsd,
-        totalTokens: totals.totalTokens,
-        activeDays: totals.days.size,
-      };
-    });
+        return {
+          user: {
+            _id: user._id,
+            username: user.username,
+            displayName: user.displayName,
+            avatarUrl: user.avatarUrl,
+            country: user.country,
+            region: user.region,
+          },
+          costUsd: totals.costUsd,
+          totalTokens: totals.totalTokens,
+          activeDays: totals.days.size,
+        };
+      })
+      .filter(Boolean);
 
-    const filtered = hydrated.filter(Boolean);
-
-    // Re-rank after region filter
-    const reranked = filtered.map((entry, i) => ({ ...entry!, rank: i + 1 }));
+    // Rank AFTER filtering (correct rank assignment)
+    const ranked = filtered.map((entry, i) => ({ ...entry!, rank: i + 1 }));
 
     return {
-      entries: reranked.slice(safeOffset, safeOffset + safeLimit),
-      total: reranked.length,
+      entries: ranked.slice(safeOffset, safeOffset + safeLimit),
+      total: ranked.length,
     };
   },
 });

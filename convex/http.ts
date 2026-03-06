@@ -4,12 +4,11 @@ import { api } from "./_generated/api";
 
 const http = httpRouter();
 
-// Allowed origins for CORS
+// Allowed origins for CORS — production only
 const ALLOWED_ORIGINS = [
   "https://awarts.com",
   "https://www.awarts.com",
-  "http://localhost:5173",
-  "http://localhost:3000",
+  "https://awarts.vercel.app",
 ];
 
 function getCorsHeaders(request?: Request): Record<string, string> {
@@ -113,9 +112,13 @@ http.route({
     }
 
     try {
+      // Validate source parameter
+      const validSources = ["cli", "web", "api"];
+      const source = validSources.includes(body.source) ? body.source : "cli";
+
       const result = await ctx.runMutation(api.usage.submitUsage, {
         entries: body.entries,
-        source: body.source ?? "cli",
+        source,
         hash: body.hash,
         authToken: token,
       });

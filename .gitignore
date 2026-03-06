@@ -24,6 +24,9 @@ bun.lockb
 bun.lock
 *.lockb
 
+# npm lock (using pnpm as package manager)
+package-lock.json
+
 # npm auth tokens
 .npmrc
 cli/.npmrc
@@ -39,3 +42,15 @@ cli/.npmrc
 *.njsproj
 *.sln
 *.sw?
+
+# Claude Code local settings
+.claude/settings.local.json
+
+# Lovable
+.lovable/
+
+# Coverage
+coverage/
+
+# pnpm store
+.pnpm-store/
