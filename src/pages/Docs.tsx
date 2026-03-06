@@ -375,6 +375,80 @@ export AWARTS_API_URL="https://api.your-server.com"`}</CodeBlock>
     ),
   },
   {
+    id: 'sync-daemon',
+    title: 'Sync Daemon',
+    icon: TerminalSquare,
+    keywords: 'daemon background auto sync automatic interval start stop status logs systemd launchd cron persistent',
+    content: (
+      <>
+        <Para>
+          The sync daemon runs in the background and automatically syncs your sessions at a configurable interval. This means you never have to manually run <code className="font-mono bg-muted px-1 rounded text-foreground">awarts sync</code> — your sessions appear on the dashboard in near real-time.
+        </Para>
+
+        <Heading3>Starting the Daemon</Heading3>
+        <CodeBlock title="Terminal">{`# Start with default interval (5 minutes)
+awarts daemon start
+
+# Start with custom interval (every 10 minutes)
+awarts daemon start --interval 10
+
+# Start with specific provider only
+awarts daemon start --provider claude`}</CodeBlock>
+
+        <InfoBox>
+          💡 <strong>Recommended:</strong> Run <code className="font-mono">awarts daemon start</code> once after installing the CLI. It persists across terminal sessions and restarts automatically if it crashes.
+        </InfoBox>
+
+        <Heading3>Managing the Daemon</Heading3>
+        <TableWrapper
+          headers={['Command', 'Description']}
+          rows={[
+            ['awarts daemon start', 'Start the background sync daemon'],
+            ['awarts daemon stop', 'Stop the running daemon'],
+            ['awarts daemon status', 'Check if the daemon is running and show last sync time'],
+            ['awarts daemon logs', 'View recent sync logs (last 50 entries)'],
+            ['awarts daemon logs -n 100', 'View more log entries'],
+          ]}
+        />
+
+        <Heading3>How It Works</Heading3>
+        <Para>
+          When started, the daemon forks a background process that:
+        </Para>
+        <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1 mb-3 ml-2">
+          <li>Scans all enabled provider session directories for new/updated sessions</li>
+          <li>Deduplicates sessions by their provider-assigned IDs</li>
+          <li>Batches and uploads new sessions to the AWARTS API</li>
+          <li>Writes a PID file to <code className="font-mono bg-muted px-1 rounded text-foreground">~/.awarts/daemon.pid</code></li>
+          <li>Logs all activity to <code className="font-mono bg-muted px-1 rounded text-foreground">~/.awarts/daemon.log</code></li>
+        </ul>
+
+        <Heading3>Keeping the Daemon Running</Heading3>
+        <Para>
+          The daemon runs as long as your system is on. If your machine reboots, you'll need to restart it. To auto-start the daemon on boot:
+        </Para>
+        <CodeBlock title="macOS (launchd)">{`# Create a launch agent
+awarts daemon install
+
+# This creates ~/Library/LaunchAgents/com.awarts.daemon.plist
+# The daemon will start automatically on login`}</CodeBlock>
+        <CodeBlock title="Linux (systemd)">{`# Create a systemd user service
+awarts daemon install
+
+# This creates ~/.config/systemd/user/awarts.service
+# Enable with: systemctl --user enable awarts`}</CodeBlock>
+        <CodeBlock title="Windows (Task Scheduler)">{`# Register a scheduled task
+awarts daemon install
+
+# This creates a Task Scheduler entry that runs on login`}</CodeBlock>
+
+        <InfoBox>
+          🔄 <strong>Without the daemon:</strong> You can still sync manually anytime with <code className="font-mono">awarts sync</code>. The daemon is optional but recommended for the best experience — your feed updates automatically and your streak never gets missed.
+        </InfoBox>
+      </>
+    ),
+  },
+  {
     id: 'api-reference',
     title: 'API Reference',
     icon: Code2,

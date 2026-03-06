@@ -5,7 +5,7 @@ import { Flame, DollarSign, Trophy } from 'lucide-react';
 import { formatCost } from '@/lib/format';
 
 export function RightSidebar() {
-  const { user } = useAuth();
+  const { user, isSignedIn, isUserLoading } = useAuth();
   const { data: profileData, isLoading } = useProfile(user?.username ?? '');
 
   return (
@@ -44,6 +44,18 @@ export function RightSidebar() {
             </div>
           </div>
           )}
+        </div>
+      ) : (isSignedIn || isUserLoading) ? (
+        <div className="rounded-lg border border-border bg-card p-4 space-y-3">
+          <div className="h-4 w-20 bg-muted animate-pulse rounded" />
+          <div className="space-y-2">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="flex items-center justify-between text-sm">
+                <span className="h-4 w-16 bg-muted animate-pulse rounded" />
+                <span className="h-4 w-10 bg-muted animate-pulse rounded" />
+              </div>
+            ))}
+          </div>
         </div>
       ) : (
         <div className="rounded-lg border border-border bg-card p-4 text-center">

@@ -26,6 +26,8 @@ interface AuthContextType {
   // Clerk auth state
   isSignedIn: boolean;
   isLoaded: boolean;
+  // True while signed in but Convex user profile is still loading
+  isUserLoading: boolean;
   // Convex user profile (null if not yet created or not signed in)
   user: AppUser | null;
   signOut: () => Promise<void>;
@@ -59,6 +61,9 @@ export function ConvexAuthProvider({ children }: { children: ReactNode }) {
     await clerkSignOut();
   };
 
+  // convexUser is undefined while query is in-flight, null if no record exists
+  const isUserLoading = !!isSignedIn && convexUser === undefined;
+
   const user: AppUser | null = convexUser
     ? {
         _id: convexUser._id,
@@ -80,7 +85,7 @@ export function ConvexAuthProvider({ children }: { children: ReactNode }) {
     : null;
 
   return (
-    <AuthContext.Provider value={{ isSignedIn: !!isSignedIn, isLoaded, user, signOut }}>
+    <AuthContext.Provider value={{ isSignedIn: !!isSignedIn, isLoaded, isUserLoading, user, signOut }}>
       {children}
     </AuthContext.Provider>
   );

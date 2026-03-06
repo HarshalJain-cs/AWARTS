@@ -191,12 +191,44 @@ export function ActivityCard({ post, index = 0, showInlineComments = false }: Ac
           <ImageGrid images={post.images} onImageClick={setLightboxIndex} />
         )}
 
-        {/* Provider chips */}
-        <div className="flex flex-wrap gap-1.5">
-          {post.providers.map((p) => (
-            <ProviderChip key={p} provider={p} />
-          ))}
-        </div>
+        {/* Model usage bar — stacked bar showing cost distribution across providers */}
+        {providerPercentages.length > 0 && (
+          <div className="space-y-1.5">
+            <div className="flex h-2.5 w-full rounded-full overflow-hidden bg-muted/50">
+              {providerPercentages.map((pp) => (
+                <div
+                  key={pp.provider}
+                  className="h-full transition-all duration-300"
+                  style={{
+                    width: `${Math.max(pp.percentage, 2)}%`,
+                    backgroundColor: PROVIDERS[pp.provider]?.color ?? '#888',
+                  }}
+                  title={`${PROVIDERS[pp.provider]?.name}: ${pp.percentage}%`}
+                />
+              ))}
+            </div>
+            <div className="flex flex-wrap gap-x-3 gap-y-0.5">
+              {providerPercentages.map((pp) => (
+                <span key={pp.provider} className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
+                  <span
+                    className="inline-block h-2 w-2 rounded-full"
+                    style={{ backgroundColor: PROVIDERS[pp.provider]?.color }}
+                  />
+                  {PROVIDERS[pp.provider]?.name} {pp.percentage}%
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Provider chips (shown when no breakdown data) */}
+        {providerPercentages.length === 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {post.providers.map((p) => (
+              <ProviderChip key={p} provider={p} />
+            ))}
+          </div>
+        )}
 
         {/* Stats */}
         <StatsGrid {...post.stats} />

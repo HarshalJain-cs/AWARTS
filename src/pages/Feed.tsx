@@ -3,7 +3,7 @@ import { AppShell } from '@/components/layout/AppShell';
 import { ActivityCard } from '@/components/ActivityCard';
 import { SkeletonCard } from '@/components/SkeletonCard';
 import { ErrorState } from '@/components/ErrorState';
-import { useFeed } from '@/hooks/use-api';
+import { useFeed, useUserPosts } from '@/hooks/use-api';
 import { transformFeedPost } from '@/lib/transformers';
 import { useAuth } from '@/context/AuthContext';
 import { Provider } from '@/lib/types';
@@ -12,7 +12,7 @@ import { ArrowUp } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { SEO } from '@/components/SEO';
 
-const tabs = ['Following', 'Global'] as const;
+const tabs = ['Following', 'Global', 'My Sessions'] as const;
 const providers: (Provider | 'all')[] = ['all', 'claude', 'codex', 'gemini', 'antigravity'];
 
 export default function Feed() {
@@ -21,17 +21,26 @@ export default function Feed() {
   const [providerFilter, setProviderFilter] = useState<Provider | 'all'>('all');
   const [showTop, setShowTop] = useState(false);
 
+  const isMySessionsTab = activeTab === 'My Sessions';
   const feedType = activeTab === 'Following' ? 'following' : 'global';
   const providerParam = providerFilter === 'all' ? undefined : providerFilter;
 
+  const feedResult = useFeed(
+    isMySessionsTab ? 'global' : feedType,
+    isMySessionsTab ? undefined : providerParam
+  );
+  const myPostsResult = useUserPosts(isMySessionsTab && user ? user.username : '');
+
+  // Use the right data source based on active tab
+  const activeResult = isMySessionsTab ? myPostsResult : feedResult;
   const {
     data,
     isLoading,
     error,
-    fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-  } = useFeed(feedType, providerParam);
+  } = activeResult;
+  const fetchNextPage = activeResult.fetchNextPage;
   const isError = !!error;
 
   // Infinite scroll observer
@@ -105,11 +114,11 @@ export default function Feed() {
           ))}
         </div>
 
-        {/* Auth prompt for Following tab */}
-        {activeTab === 'Following' && !user && (
+        {/* Auth prompt for auth-required tabs */}
+        {(activeTab === 'Following' || activeTab === 'My Sessions') && !user && (
           <div className="text-center py-12 text-muted-foreground">
-            <p className="text-lg font-medium">Sign in to see your feed</p>
-            <p className="text-sm mt-1">Follow developers and see their sessions here.</p>
+            <p className="text-lg font-medium">Sign in to see {activeTab === 'My Sessions' ? 'your sessions' : 'your feed'}</p>
+            <p className="text-sm mt-1">{activeTab === 'My Sessions' ? 'Track your AI coding sessions and view them here.' : 'Follow developers and see their sessions here.'}</p>
             <Link to="/login" className="inline-block mt-4 text-sm text-primary hover:underline">
               Sign in
             </Link>
@@ -117,7 +126,7 @@ export default function Feed() {
         )}
 
         {/* Feed */}
-        {(activeTab !== 'Following' || user) && (
+        {((activeTab !== 'Following' && activeTab !== 'My Sessions') || user) && (
           <div className="space-y-4">
             {isLoading
               ? [...Array(3)].map((_, i) => <SkeletonCard key={i} />)
@@ -130,7 +139,9 @@ export default function Feed() {
                       <p className="text-sm mt-1">
                         {activeTab === 'Following'
                           ? 'Follow some developers to see their sessions here.'
-                          : 'Try changing your filters or check back later.'}
+                          : activeTab === 'My Sessions'
+                            ? 'Sync your first session with the CLI to see it here.'
+                            : 'Try changing your filters or check back later.'}
                       </p>
                     </div>
                   )

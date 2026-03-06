@@ -5,14 +5,14 @@ import { useAuth } from '@/context/AuthContext';
 
 export function BottomNav() {
   const location = useLocation();
-  const { user } = useAuth();
+  const { user, isSignedIn } = useAuth();
 
   const items = [
     { icon: Home, href: '/feed', label: 'Feed' },
     { icon: Trophy, href: '/leaderboard', label: 'Board' },
     { icon: PlusCircle, href: '/post/new', label: 'Post' },
     { icon: Search, href: '/search', label: 'Search' },
-    { icon: User, href: user ? `/u/${user.username}` : '/login', label: 'Profile' },
+    { icon: User, href: user ? `/u/${user.username}` : isSignedIn ? '#' : '/login', label: 'Profile' },
   ];
 
   return (

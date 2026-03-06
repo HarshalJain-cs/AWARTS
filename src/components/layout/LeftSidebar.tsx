@@ -5,7 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 
 export function LeftSidebar() {
   const location = useLocation();
-  const { user } = useAuth();
+  const { user, isSignedIn } = useAuth();
 
   const navItems = [
     { label: 'Feed', icon: Home, href: '/feed' },
@@ -13,7 +13,7 @@ export function LeftSidebar() {
     { label: 'Search', icon: Search, href: '/search' },
     { label: 'Notifications', icon: Bell, href: '/notifications' },
     { label: 'New Post', icon: PlusCircle, href: '/post/new' },
-    { label: 'My Profile', icon: User, href: user ? `/u/${user.username}` : '/login' },
+    { label: 'My Profile', icon: User, href: user ? `/u/${user.username}` : isSignedIn ? '#' : '/login' },
     { label: 'Settings', icon: Settings, href: '/settings' },
     { label: 'Import Data', icon: Upload, href: '/settings' },
     { label: 'My Recap', icon: BarChart3, href: '/recap' },
