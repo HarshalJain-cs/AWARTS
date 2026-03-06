@@ -5,7 +5,7 @@ import { ActivityCard } from '@/components/ActivityCard';
 import { mockPosts, mockTestimonials } from '@/lib/mock-data';
 import { Button } from '@/components/ui/button';
 import { EtheralShadow } from '@/components/ui/etheral-shadow';
-import { ArrowRight, Terminal, Share2, Trophy, Copy, Menu, X } from 'lucide-react';
+import { ArrowRight, Terminal, Share2, Trophy, Copy, Menu, X, ShieldCheck } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useState, useEffect, useRef } from 'react';
 import { Sun, Moon } from 'lucide-react';
@@ -170,7 +170,7 @@ export default function Landing() {
           transition={{ delay: 0.2 }}
           className="mt-4 text-lg text-muted-foreground max-w-xl mx-auto"
         >
-          The Strava for AI-assisted coding. Track sessions across Claude, Codex, Gemini & Antigravity. Compete on leaderboards with developers worldwide.
+          The Strava for AI-assisted coding. Track sessions across Claude, Codex, Gemini & Antigravity. No API keys needed — reads from your local files. Compete on leaderboards worldwide.
         </motion.p>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -245,9 +245,10 @@ export default function Landing() {
 
       {/* Features */}
       <section className="relative z-10 mx-auto max-w-6xl px-4 py-16">
-        <div className="grid sm:grid-cols-3 gap-6">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {[
             { icon: Terminal, title: 'Log your output', desc: 'One CLI command. All your sessions tracked across providers.' },
+            { icon: ShieldCheck, title: 'No API keys needed', desc: 'Reads local files from Claude, Codex, Gemini & Antigravity. Your API keys never leave your machine.' },
             { icon: Share2, title: 'Share your sessions', desc: 'Beautiful activity cards. Show the world what you shipped.' },
             { icon: Trophy, title: 'Chase the leaderboard', desc: 'Compete globally or by country. Maintain your streak.' },
           ].map((f, i) => (

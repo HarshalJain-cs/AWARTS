@@ -104,15 +104,15 @@ const sections: DocSection[] = [
         <div className="space-y-3 my-3">
           <div className="flex gap-3 items-start">
             <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">1</span>
-            <div><p className="text-sm font-medium text-foreground">Create your username</p><p className="text-xs text-muted-foreground">Pick a unique handle — this is your public identity on AWARTS.</p></div>
+            <div><p className="text-sm font-medium text-foreground">Sign up & create your username</p><p className="text-xs text-muted-foreground">Pick a unique handle — this is your public identity on AWARTS.</p></div>
           </div>
           <div className="flex gap-3 items-start">
             <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">2</span>
-            <div><p className="text-sm font-medium text-foreground">Choose your country</p><p className="text-xs text-muted-foreground">Set your region for country-specific leaderboards.</p></div>
+            <div><p className="text-sm font-medium text-foreground">Run the CLI</p><p className="text-xs text-muted-foreground">Run <code className="font-mono bg-muted px-1 rounded text-foreground">npx awarts@latest login</code> — opens your browser, click Authorize, done. <strong>No API keys needed.</strong></p></div>
           </div>
           <div className="flex gap-3 items-start">
             <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">3</span>
-            <div><p className="text-sm font-medium text-foreground">Install the CLI</p><p className="text-xs text-muted-foreground">Run <code className="font-mono bg-muted px-1 rounded text-foreground">npx awarts@latest</code> to start tracking.</p></div>
+            <div><p className="text-sm font-medium text-foreground">Sync your sessions</p><p className="text-xs text-muted-foreground">Run <code className="font-mono bg-muted px-1 rounded text-foreground">npx awarts@latest sync</code> to auto-detect and upload your Claude, Codex, Gemini, or Antigravity usage from local files.</p></div>
           </div>
         </div>
 
@@ -134,19 +134,22 @@ const sections: DocSection[] = [
         <Para>Or install globally:</Para>
         <CodeBlock title="Terminal">{`npm install -g awarts\n# or\nbun add -g awarts`}</CodeBlock>
 
-        <Heading3>Configuration File</Heading3>
-        <Para>After first run, AWARTS creates a <code className="font-mono bg-muted px-1 rounded text-foreground">.awartsrc</code> file in your home directory:</Para>
-        <CodeBlock title="~/.awartsrc">{`{
-  "username": "alexdev",
-  "apiKey": "aw_xxxxxxxxxxxxxxxxxxxx",
-  "providers": {
-    "claude": { "enabled": true, "apiKey": "sk-ant-..." },
-    "codex": { "enabled": true },
-    "gemini": { "enabled": false }
-  },
-  "autoSync": true,
-  "syncInterval": 300
-}`}</CodeBlock>
+        <Heading3>First Run & Authentication</Heading3>
+        <Para>On first run, the CLI opens your browser for a quick login — no API keys needed:</Para>
+        <CodeBlock title="Terminal">{`npx awarts@latest login\n# Opens browser → click Authorize → done!`}</CodeBlock>
+        <Para>Your credentials are stored securely at <code className="font-mono bg-muted px-1 rounded text-foreground">~/.awarts/auth.json</code> (file permissions 0600, owner-only).</Para>
+
+        <Heading3>How It Works (No API Keys!)</Heading3>
+        <Para>
+          AWARTS reads usage data directly from local files that your AI tools already create. <strong>You never need to share your provider API keys.</strong> The CLI scans these local directories:
+        </Para>
+        <CodeBlock title="Where your data lives">{`Claude:      ~/.claude/stats-cache.json
+Codex:       ~/.codex/usage/ or ~/.openai-codex/usage/
+Gemini:      ~/.gemini/usage/ or ~/.config/gemini/usage/
+Antigravity: ~/.antigravity/usage/`}</CodeBlock>
+        <InfoBox>
+          🔐 <strong>Your API keys stay on your machine.</strong> AWARTS only reads token counts, costs, and model names from local cache files — it never accesses your provider APIs or sends your keys anywhere.
+        </InfoBox>
 
         <Heading3>Updating the CLI</Heading3>
         <CodeBlock title="Terminal">{`npm update -g awarts\n# or just use npx — it always fetches the latest`}</CodeBlock>
@@ -161,30 +164,50 @@ const sections: DocSection[] = [
     id: 'providers',
     title: 'Providers',
     icon: Cpu,
-    keywords: 'claude codex gemini antigravity api key session multi provider polyglot',
+    keywords: 'claude codex gemini antigravity session multi provider polyglot local files no api key',
     content: (
       <>
-        <Para>AWARTS supports four AI coding providers. Each tracks sessions, tokens, and cost independently.</Para>
+        <Para>AWARTS supports four AI coding providers. Each is auto-detected from local files — <strong>no API keys required.</strong></Para>
 
-        {Object.values(PROVIDERS).map((p) => (
-          <div key={p.id} className="my-4">
-            <div className="flex items-center gap-2 mb-2">
-              <div className={cn('h-3 w-3 rounded-full', p.dotClass)} />
-              <h3 className="text-lg font-semibold text-foreground">{p.name}</h3>
-            </div>
-            <Para>To enable {p.name} tracking, add your API key to the configuration:</Para>
-            <CodeBlock title={`~/.awartsrc → providers.${p.id}`}>{`{
-  "${p.id}": {
-    "enabled": true,
-    "apiKey": "your-${p.id}-api-key",
-    "sessionDir": "~/.${p.id}/sessions"
-  }
-}`}</CodeBlock>
-            <Para>
-              AWARTS reads session data from {p.name}'s local cache directory. Sessions are detected automatically when you start and stop a coding conversation. Each session records: start time, end time, input tokens, output tokens, model used, and estimated cost.
-            </Para>
+        <div className="my-4">
+          <div className="flex items-center gap-2 mb-2">
+            <div className={cn('h-3 w-3 rounded-full', PROVIDERS.claude.dotClass)} />
+            <h3 className="text-lg font-semibold text-foreground">Claude</h3>
           </div>
-        ))}
+          <Para>Reads from <code className="font-mono bg-muted px-1 rounded text-foreground">~/.claude/stats-cache.json</code> — a file Claude Code maintains automatically. Includes per-day output tokens by model, aggregate input/cache/cost totals, and session activity counts.</Para>
+          <CodeBlock title="Auto-detected data">{`# No setup needed! Just use Claude Code normally.
+# AWARTS reads: tokens, costs, models, daily activity
+awarts sync  # detects Claude automatically`}</CodeBlock>
+        </div>
+
+        <div className="my-4">
+          <div className="flex items-center gap-2 mb-2">
+            <div className={cn('h-3 w-3 rounded-full', PROVIDERS.codex.dotClass)} />
+            <h3 className="text-lg font-semibold text-foreground">Codex (OpenAI)</h3>
+          </div>
+          <Para>Reads daily usage files from <code className="font-mono bg-muted px-1 rounded text-foreground">~/.codex/usage/</code>. Optionally, store an OpenAI API key for real billing data (not required — local files work without it).</Para>
+          <CodeBlock title="Optional: real billing data">{`# Works without API key (reads local files)
+awarts sync
+
+# Optional: add OpenAI key for exact billing data
+awarts keys set openai sk-your-openai-key`}</CodeBlock>
+        </div>
+
+        <div className="my-4">
+          <div className="flex items-center gap-2 mb-2">
+            <div className={cn('h-3 w-3 rounded-full', PROVIDERS.gemini.dotClass)} />
+            <h3 className="text-lg font-semibold text-foreground">Gemini</h3>
+          </div>
+          <Para>Reads from <code className="font-mono bg-muted px-1 rounded text-foreground">~/.gemini/usage/</code> or <code className="font-mono bg-muted px-1 rounded text-foreground">~/.config/gemini/usage/</code>. Costs are estimated from token counts using published pricing when not provided.</Para>
+        </div>
+
+        <div className="my-4">
+          <div className="flex items-center gap-2 mb-2">
+            <div className={cn('h-3 w-3 rounded-full', PROVIDERS.antigravity.dotClass)} />
+            <h3 className="text-lg font-semibold text-foreground">Antigravity</h3>
+          </div>
+          <Para>Reads from <code className="font-mono bg-muted px-1 rounded text-foreground">~/.antigravity/usage/</code>. Costs are estimated from token counts when not provided in usage files.</Para>
+        </div>
 
         <Heading3>Multi-Provider Sessions</Heading3>
         <Para>
@@ -360,11 +383,8 @@ const sections: DocSection[] = [
         />
 
         <Heading3>Environment Variables</Heading3>
-        <CodeBlock title="Shell">{`# Override config file location
-export AWARTS_CONFIG="~/custom/.awartsrc"
-
-# Set API key without config file
-export AWARTS_API_KEY="aw_xxxxxxxxxxxxxxxxxxxx"
+        <CodeBlock title="Shell">{`# Override config directory
+export AWARTS_HOME="~/custom/.awarts"
 
 # Enable debug logging
 export AWARTS_DEBUG=1
@@ -455,10 +475,11 @@ awarts daemon install
     keywords: 'rest api authentication bearer endpoint sessions leaderboard kudos rate limit curl post get',
     content: (
       <>
-        <Para>The AWARTS REST API lets you programmatically access your data. All endpoints require authentication via API key.</Para>
+        <Para>The AWARTS REST API lets you programmatically access your data. Authentication uses JWT tokens issued via the CLI login flow.</Para>
 
         <Heading3>Authentication</Heading3>
-        <CodeBlock title="HTTP Header">{`Authorization: Bearer aw_xxxxxxxxxxxxxxxxxxxx`}</CodeBlock>
+        <Para>The CLI automatically handles auth via device code flow. For direct API access, use the JWT token from <code className="font-mono bg-muted px-1 rounded text-foreground">~/.awarts/auth.json</code>:</Para>
+        <CodeBlock title="HTTP Header">{`Authorization: Bearer <your-jwt-token>`}</CodeBlock>
 
         <Heading3>Base URL</Heading3>
         <CodeBlock>{`https://api.awarts.com/v1`}</CodeBlock>
@@ -534,7 +555,7 @@ X-RateLimit-Reset: 1708700000`}</CodeBlock>
           <li>Your username and country (set during onboarding)</li>
         </ul>
         <InfoBox>
-          🔒 <strong>No code is ever sent.</strong> AWARTS reads token counts from provider logs — it never accesses your prompts or generated code.
+          🔒 <strong>No code, prompts, or API keys are ever sent.</strong> AWARTS reads only token counts and costs from local cache files — it never accesses your provider APIs, prompts, or generated code. Your API keys stay on your machine.
         </InfoBox>
 
         <Heading3>Public vs Private Profiles</Heading3>
@@ -574,12 +595,12 @@ awarts export --format csv --output my-data.csv`}</CodeBlock>
         <Accordion type="multiple" className="w-full">
           {[
             { q: 'Is AWARTS free?', a: 'Yes! AWARTS is free for individual developers. We may introduce premium features in the future (custom themes, team leaderboards), but core tracking and social features will always be free.' },
-            { q: 'Does AWARTS read my code or prompts?', a: 'No. AWARTS only reads session metadata (timestamps, token counts, costs) from provider log files. Your actual code and conversations are never accessed or transmitted.' },
+            { q: 'Does AWARTS read my code, prompts, or API keys?', a: 'No. AWARTS only reads session metadata (token counts, costs, model names) from local cache files on your machine. Your code, conversations, and provider API keys are never accessed, transmitted, or stored by AWARTS.' },
             { q: 'How accurate are the cost estimates?', a: 'Costs are calculated using each provider\'s published per-token pricing at the time of the session. They should be within 5% of your actual bill. If a provider changes pricing, new sessions reflect the new rates.' },
             { q: 'Can I use AWARTS with a self-hosted LLM?', a: 'Not yet, but it\'s on our roadmap. We plan to support OpenAI-compatible endpoints so you can track usage from local models like Llama or Mistral.' },
             { q: 'What happens if I miss a day — does my streak reset?', a: 'Yes. Streaks count consecutive calendar days (in your local timezone) with at least one synced session. Missing a single day resets it to 0.' },
             { q: 'Can I backfill old sessions?', a: 'Yes! Use `awarts sync --since 2025-01-01` to sync sessions from a specific date. The CLI will scan provider logs for any sessions it hasn\'t already uploaded.' },
-            { q: 'How do I connect multiple machines?', a: 'Install the CLI on each machine and run `awarts config set apiKey YOUR_KEY`. All machines sync to the same account. Sessions are deduplicated by their provider-assigned IDs.' },
+            { q: 'How do I connect multiple machines?', a: 'Install the CLI on each machine and run `awarts login`. All machines sync to the same account via browser-based auth. Sessions are deduplicated automatically.' },
             { q: 'Can I hide specific sessions?', a: 'Yes. Go to your Profile, click on any session card, and select "Make Private". Private sessions still count toward your stats but aren\'t visible to others.' },
             { q: 'Is there a team/org version?', a: 'Coming soon! Team leaderboards and organization dashboards are in development. Join the waitlist in Settings → Teams.' },
             { q: 'How do I report a bug or request a feature?', a: 'Open an issue on our GitHub repository or email support@awarts.com. We respond to all reports within 48 hours.' },
@@ -635,12 +656,12 @@ awarts export --format csv --output my-data.csv`}</CodeBlock>
 
         <Heading3>"No sessions found" after sync</Heading3>
         <Para>
-          This usually means the CLI can't find your provider's session logs. Check that:
+          This usually means the CLI can't find your provider's local usage files. Check that:
         </Para>
         <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1 mb-3 ml-2">
-          <li>The provider is enabled in your <code className="font-mono bg-muted px-1 rounded text-foreground">.awartsrc</code></li>
-          <li>The session directory path is correct</li>
-          <li>You've actually had a coding session since the last sync</li>
+          <li>You've had at least one coding session with the provider</li>
+          <li>The provider stores usage data locally (e.g., <code className="font-mono bg-muted px-1 rounded text-foreground">~/.claude/stats-cache.json</code> for Claude)</li>
+          <li>The usage files aren't corrupted — run <code className="font-mono bg-muted px-1 rounded text-foreground">awarts sync --verbose</code> for details</li>
         </ul>
         <CodeBlock title="Debug">{`# Run with verbose output to see what's happening
 awarts sync --verbose
@@ -649,7 +670,7 @@ awarts sync --verbose
 awarts config list`}</CodeBlock>
 
         <Heading3>"Authentication failed"</Heading3>
-        <Para>Your API key may be invalid or expired. Re-authenticate:</Para>
+        <Para>Your auth token may have expired (tokens last 90 days). Re-authenticate:</Para>
         <CodeBlock title="Terminal">{`awarts logout
 awarts login`}</CodeBlock>
 
