@@ -34,8 +34,7 @@ export function ShareActions({ cardRef, username }: ShareActionsProps) {
       await toPng(cardRef.current, { quality: 1, pixelRatio: 2 });
       const dataUrl = await toPng(cardRef.current, { quality: 1, pixelRatio: 2 });
       return dataUrl;
-    } catch (err) {
-      console.error('Image generation failed:', err);
+    } catch {
       return null;
     }
   }

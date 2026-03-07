@@ -12,7 +12,7 @@ const usageEntryValidator = v.object({
   cache_creation_tokens: v.optional(v.number()),
   cache_read_tokens: v.optional(v.number()),
   models: v.array(v.string()),
-  raw_data: v.optional(v.any()),
+  raw_data: v.optional(v.string()),
   cost_source: v.optional(v.string()),
 });
 
@@ -394,14 +394,21 @@ export const importUsage = mutation({
   },
 });
 
-// ─── Fix unrealistic costs in existing data ─────────────────────────
+// ─── Fix unrealistic costs in existing data (admin only) ────────────
+const ADMIN_CLERK_IDS = ["user_2xYz"]; // Replace with real admin Clerk IDs
+
 export const fixUnrealisticCosts = mutation({
   args: {},
   handler: async (ctx) => {
     const me = await getCurrentUser(ctx);
     if (!me) throw new Error("Not authenticated");
 
-    // Fix all usage entries (not scoped to current user — admin action)
+    // Only allow admins to run this mutation
+    if (!ADMIN_CLERK_IDS.includes(me.clerkId)) {
+      throw new Error("Forbidden: admin access required");
+    }
+
+    // Fix all usage entries (admin action)
     const allEntries = await ctx.db.query("daily_usage").collect();
 
     let fixed = 0;

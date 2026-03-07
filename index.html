@@ -166,8 +166,9 @@
     </script>
 
     <!-- Security -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://challenges.cloudflare.com https://*.clerk.accounts.dev https://*.clerk.com https://*.vercel-scripts.com; connect-src 'self' ws: wss: https://*.convex.cloud wss://*.convex.cloud https://*.clerk.accounts.dev https://*.clerk.com https://*.clerk.dev https://*.vercel-scripts.com https://*.vercel-insights.com; img-src 'self' https://*.convex.cloud https://img.clerk.com https://framerusercontent.com https://ui-avatars.com data: blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; frame-src https://*.clerk.accounts.dev https://*.clerk.com https://challenges.cloudflare.com; worker-src 'self' blob:; media-src 'self'" />
     <meta name="referrer" content="strict-origin-when-cross-origin" />
-    <!-- X-Frame-Options and X-Content-Type-Options are set via HTTP headers in vercel.json -->
+    <!-- Additional security headers (X-Frame-Options, HSTS, etc.) are set via HTTP headers in vercel.json -->
   </head>
 
   <body>

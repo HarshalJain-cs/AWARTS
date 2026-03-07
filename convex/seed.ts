@@ -1,9 +1,12 @@
 import { mutation } from "./_generated/server";
+import { getCurrentUser } from "./users";
 
-// Run once to seed countries_to_regions data
+// Run once to seed countries_to_regions data (requires authentication)
 export const seedCountries = mutation({
   args: {},
   handler: async (ctx) => {
+    const me = await getCurrentUser(ctx);
+    if (!me) throw new Error("Not authenticated");
     // Check if already seeded
     const existing = await ctx.db.query("countries_to_regions").first();
     if (existing) return { message: "Already seeded" };

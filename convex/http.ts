@@ -49,8 +49,8 @@ http.route({
     try {
       const result = await ctx.runMutation(api.cliAuth.initCLIAuth);
       return jsonResponse(result, request);
-    } catch (err: any) {
-      return errorResponse(err.message ?? "Init failed", request, 500);
+    } catch {
+      return errorResponse("Auth initialization failed", request, 500);
     }
   }),
 });
@@ -75,8 +75,8 @@ http.route({
     try {
       const result = await ctx.runQuery(api.cliAuth.pollCLIAuth, { deviceToken });
       return jsonResponse(result, request);
-    } catch (err: any) {
-      return errorResponse(err.message ?? "Poll failed", request, 500);
+    } catch {
+      return errorResponse("Auth polling failed", request, 500);
     }
   }),
 });
@@ -124,8 +124,10 @@ http.route({
       });
       return jsonResponse(result, request);
     } catch (err: any) {
-      const status = err.message?.includes("Not authenticated") ? 401 : 400;
-      return errorResponse(err.message ?? "Submit failed", request, status);
+      const isAuthError = err.message?.includes("Not authenticated") || err.message?.includes("Token expired");
+      const status = isAuthError ? 401 : 400;
+      const message = isAuthError ? "Authentication failed" : "Usage submission failed";
+      return errorResponse(message, request, status);
     }
   }),
 });

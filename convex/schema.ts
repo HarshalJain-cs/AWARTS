@@ -34,7 +34,7 @@ export default defineSchema({
     models: v.array(v.string()),
     source: v.string(),
     dataHash: v.optional(v.string()),
-    rawData: v.optional(v.any()),
+    rawData: v.optional(v.string()),
     costSource: v.optional(v.string()),
   })
     .index("by_user_date_provider", ["userId", "date", "provider"])
