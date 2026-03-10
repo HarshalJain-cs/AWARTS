@@ -1,23 +1,24 @@
 # AWARTS Comprehensive Audit Report
 
-**Date:** 2026-03-07 (Updated)
-**Previous Audit:** 2026-03-06
+**Date:** 2026-03-10 (Updated)
+**Previous Audits:** 2026-03-06, 2026-03-07
 **Auditor:** Claude Code (Opus 4.6)
-**Scope:** Full-stack audit — CSP, Convex backend, React frontend, infrastructure, SEO, security
+**Scope:** Full-stack audit — security, functionality, SEO, accessibility, production readiness
 
 ---
 
 ## Table of Contents
 
 1. [Executive Summary](#executive-summary)
-2. [CSP & Security Headers Audit (NEW)](#csp-security-headers-audit)
-3. [Backend Audit (Convex)](#backend-audit)
-4. [Frontend Pages Audit](#frontend-pages-audit)
-5. [Frontend Components Audit](#frontend-components-audit)
-6. [Infrastructure & Config Audit](#infrastructure-audit)
-7. [SEO Audit](#seo-audit)
-8. [Feature Recommendations](#feature-recommendations)
-9. [Repo Organization Recommendations](#repo-organization)
+2. [Page-by-Page Audit](#page-by-page-audit)
+3. [Backend Functions Audit](#backend-functions-audit)
+4. [Components Audit](#components-audit)
+5. [Security Audit](#security-audit)
+6. [SEO & Google Visibility Audit](#seo-google-visibility)
+7. [Provider Support Audit](#provider-support-audit)
+8. [Infrastructure Audit](#infrastructure-audit)
+9. [Issues Fixed (March 10)](#issues-fixed-march-10)
+10. [Remaining Recommendations](#remaining-recommendations)
 
 ---
 
@@ -28,949 +29,665 @@
 | Audit | Date | Issues Found | Issues Fixed | Score |
 |-------|------|-------------|--------------|-------|
 | Initial Audit | 2026-03-06 | 99 | 99 | 5.3 -> 10/10 |
-| **CSP & Security Audit** | **2026-03-07** | **8** | **8** | **10/10** |
+| CSP & Security Audit | 2026-03-07 | 12 | 12 | 10/10 |
+| **Full Production Audit** | **2026-03-10** | **18** | **11** | **9.2/10** |
 
-### March 7 CSP & Security Audit — Issues Found & Fixed
+### March 10 Issues Found & Fixed
 
 | # | Severity | Issue | File | Status |
 |---|----------|-------|------|--------|
-| 1 | **CRITICAL** | CSP blocked Clerk scripts — `script-src` missing `*.clerk.accounts.dev` | `vercel.json:15` | **FIXED** |
-| 2 | **HIGH** | `fixUnrealisticCosts` mutation — admin-level operation with no role check | `convex/usage.ts:398` | **FIXED** |
-| 3 | **HIGH** | CSP blocked Clerk scripts — `script-src` missing `*.clerk.com` | `vercel.json:15` | **FIXED** |
-| 4 | **MEDIUM** | CSP blocked mock avatars — `img-src` missing `ui-avatars.com` | `vercel.json:15` | **FIXED** |
-| 5 | **MEDIUM** | CSP missing Vercel Analytics — `script-src`/`connect-src` missing vercel domains | `vercel.json:15` | **FIXED** |
-| 6 | **MEDIUM** | `seedCountries` mutation callable without authentication | `convex/seed.ts:4` | **FIXED** |
-| 7 | **MEDIUM** | HTTP API error messages leak internal Convex error details | `convex/http.ts:53,79,128` | **FIXED** |
-| 8 | **MEDIUM** | `v.any()` on `rawData` field allows arbitrary data injection | `convex/schema.ts:37` | **FIXED** |
-| 9 | **LOW** | `console.error` in ErrorBoundary leaks stack traces in production | `ErrorBoundary.tsx:24` | **FIXED** |
-| 10 | **LOW** | `console.error` in ShareActions exposes error details | `ShareActions.tsx:38` | **FIXED** |
-| 11 | **LOW** | `font-src` missing `data:` for inline font data URIs | `vercel.json:15` | **FIXED** |
-| 12 | **INFO** | Accidental `nul` file in project root (Windows artifact) | `nul` | **DELETED** |
+| 1 | **HIGH** | User posts pagination broken — `fetchNextPage` was a no-op | `use-api.ts:387` | **FIXED** |
+| 2 | **HIGH** | Feed provider filter ignored on "My Sessions" tab | `Feed.tsx:29` | **FIXED** |
+| 3 | **HIGH** | Admin Clerk IDs hardcoded as placeholder `"user_2xYz"` | `convex/usage.ts:398` | **FIXED** |
+| 4 | **HIGH** | CSP `unsafe-eval` in index.html but not in vercel.json — inconsistency | `index.html:169` | **FIXED** |
+| 5 | **MEDIUM** | Onboarding not enforced — users could skip directly to feed | `AppShell.tsx` | **FIXED** |
+| 6 | **MEDIUM** | New users not redirected to onboarding after sign-up | `AuthCallback.tsx:17` | **FIXED** |
+| 7 | **MEDIUM** | Sitemap `lastmod` dates outdated (2026-03-03) | `public/sitemap.xml` | **FIXED** |
+| 8 | **MEDIUM** | Sitemap missing `/prompts` page | `public/sitemap.xml` | **FIXED** |
+| 9 | **MEDIUM** | No user guidance in onboarding (do's and don'ts) | `Onboarding.tsx` | **FIXED** |
+| 10 | **MEDIUM** | Feed doesn't auto-refresh for "My Sessions" tab | `use-api.ts:387` | **FIXED** |
+| 11 | **LOW** | User posts not reactive (Convex subscription not active) | `use-api.ts:387` | **FIXED** |
+| 12 | **MEDIUM** | Fake landing page stats (2,847 devs, 4.2B tokens) | `Landing.tsx:55-57` | **NOTED** |
+| 13 | **MEDIUM** | Account deletion shows toast instead of actual deletion | `Settings.tsx:489` | **NOTED** |
+| 14 | **MEDIUM** | Notification toggles are non-functional placeholders | `Settings.tsx:320-333` | **NOTED** |
+| 15 | **LOW** | No "new posts available" indicator on feed | `Feed.tsx` | **NOTED** |
+| 16 | **LOW** | Provider validation duplicated across 3 files | `convex/usage.ts, users.ts` | **NOTED** |
+| 17 | **LOW** | OG image is PNG but SVG also exists in public/ | `public/` | **NOTED** |
+| 18 | **INFO** | `.env` contains actual API keys (not committed but risky) | `.env` | **NOTED** |
 
 ### Current Scores
 
 | Category | Score | Status |
 |----------|-------|--------|
-| **Content Security Policy** | 10/10 | Fully configured for all app domains |
-| **Backend Security** | 10/10 | Admin guards, auth checks, sanitized errors |
-| **Frontend Security** | 10/10 | No XSS, no data leaks, no console.error |
-| **Data Validation** | 10/10 | Strict validators, no v.any() |
-| **CORS & Headers** | 10/10 | Production-only origins, all security headers |
-| **SEO** | 10/10 | Full meta tags, JSON-LD, OG |
-| **Accessibility** | 10/10 | ARIA attributes, labels |
-| **OVERALL** | **10/10** | **All 111 issues resolved** |
+| **Content Security Policy** | 9.5/10 | Consistent between HTML and vercel.json |
+| **Backend Security** | 9/10 | Auth checks, sanitized errors, admin guard via env var |
+| **Frontend Security** | 9.5/10 | No XSS vectors, no console.error leaks |
+| **Data Validation** | 9/10 | Strict validators, bounded inputs |
+| **CORS & Headers** | 10/10 | Production-only origins, full security headers |
+| **SEO** | 9/10 | Full meta tags, JSON-LD, updated sitemap |
+| **Accessibility** | 8.5/10 | ARIA attributes on tabs, labels on buttons |
+| **Feed & Real-time** | 9/10 | Live Convex subscriptions, pagination working |
+| **Auth & Onboarding** | 9/10 | Enforced onboarding, persistent Clerk sessions |
+| **Provider Support** | 9/10 | All 4 providers working (Claude, Codex, Gemini, Antigravity) |
+| **OVERALL** | **9.2/10** | **11 issues fixed, 7 noted for future** |
 
-### CSP Final Configuration
+---
+
+## Page-by-Page Audit
+
+### 1. Landing Page (`/`) — Rating: 9/10
+
+| Feature | Status | Rating |
+|---------|--------|--------|
+| Hero section with CTA | Working | 10/10 |
+| Terminal demo animation | Working | 9/10 |
+| Animated stat counters | Working | 8/10 |
+| Feature cards (4 pillars) | Working | 9/10 |
+| Testimonials wall | Working | 9/10 |
+| Mobile hamburger menu | Working | 9/10 |
+| Theme toggle (dark/light) | Working | 9/10 |
+| Copy CLI command | Working | 10/10 |
+| SEO meta tags | Present | 9/10 |
+| JSON-LD structured data | Present | 9/10 |
+
+**Notes:**
+- Stats counters show hardcoded numbers (2,847 devs, 4.2B tokens, 48 countries) — consider using real data from Convex or removing
+- Good responsive design with mobile-first approach
+
+---
+
+### 2. Feed Page (`/feed`) — Rating: 9/10
+
+| Feature | Status | Rating |
+|---------|--------|--------|
+| Global feed tab | Working | 9/10 |
+| Following feed tab | Working | 9/10 |
+| My Sessions tab | Working | 9/10 |
+| Provider filter (all/claude/codex/gemini/antigravity) | **FIXED** | 9/10 |
+| Infinite scroll pagination | Working | 9/10 |
+| Real-time updates (Convex reactive) | Working | 9/10 |
+| Back-to-top button | Working | 10/10 |
+| Auth prompt for protected tabs | Working | 9/10 |
+| SEO tags | Present | 8/10 |
+
+**Issues Fixed:**
+- Provider filter now works on all tabs (was ignored on My Sessions)
+- User posts now have full pagination support with live updates
+- Feed auto-refreshes when new sessions are synced (Convex reactive queries)
+
+---
+
+### 3. Login Page (`/login`) — Rating: 9/10
+
+| Feature | Status | Rating |
+|---------|--------|--------|
+| Clerk SignIn component | Working | 9/10 |
+| Theme-aware styling | Working | 9/10 |
+| Redirect after login | Working | 9/10 |
+| Sign-up redirect to onboarding | **FIXED** | 9/10 |
+| Session persistence | Working | 9/10 |
+
+**Login Persistence:**
+Clerk handles session persistence via cookies and localStorage. Sessions persist across browser restarts. Auth tokens refresh automatically. The `ClerkProvider` in `main.tsx` correctly configures `signInFallbackRedirectUrl="/feed"` and `signUpFallbackRedirectUrl="/onboarding"`.
+
+---
+
+### 4. Onboarding Page (`/onboarding`) — Rating: 9/10
+
+| Feature | Status | Rating |
+|---------|--------|--------|
+| Step 1: Username selection | Working | 9/10 |
+| Step 2: Country selection | Working | 9/10 |
+| Step 3: CLI install + guide | **ENHANCED** | 9/10 |
+| Progress indicator | Working | 9/10 |
+| Username availability check | Working | 9/10 |
+| Animated step transitions | Working | 9/10 |
+| Do's and Don'ts guide | **ADDED** | 9/10 |
+
+**Enhancements Applied:**
+- Added "Quick Guide" section with clear do's and don'ts
+- Enforced: users who haven't set country are redirected to onboarding from any app page
+- New sign-ups now properly redirected here via AuthCallback
+
+---
+
+### 5. Profile Page (`/u/:username`) — Rating: 8/10
+
+| Feature | Status | Rating |
+|---------|--------|--------|
+| User info header | Working | 8/10 |
+| Stats grid (spend, tokens, streak) | Working | 8/10 |
+| Contribution heatmap | Working | 8/10 |
+| Achievement badges | Working | 8/10 |
+| Posts list with pagination | **FIXED** | 9/10 |
+| Follow/unfollow button | Working | 9/10 |
+| Privacy check (private profiles) | Working | 8/10 |
+
+---
+
+### 6. Leaderboard Page (`/leaderboard`) — Rating: 8/10
+
+| Feature | Status | Rating |
+|---------|--------|--------|
+| Period filter (daily/weekly/monthly/all-time) | Working | 8/10 |
+| Provider filter | Working | 8/10 |
+| Region filter | Working | 7/10 |
+| Rankings table | Working | 8/10 |
+| Private users excluded | Working | 9/10 |
+
+---
+
+### 7. Search Page (`/search`) — Rating: 8/10
+
+| Feature | Status | Rating |
+|---------|--------|--------|
+| Search input with debounce | Working | 8/10 |
+| User search cards | Working | 8/10 |
+| Follow buttons in results | Working | 8/10 |
+| Empty state | Working | 9/10 |
+
+---
+
+### 8. Settings Page (`/settings`) — Rating: 8/10
+
+| Feature | Status | Rating |
+|---------|--------|--------|
+| Profile tab (name, bio, links) | Working | 9/10 |
+| Privacy tab (public/private toggle) | Working | 9/10 |
+| Notifications tab | Partial | 6/10 |
+| Import tab (JSON/CSV file import) | Working | 9/10 |
+| Account tab | Partial | 6/10 |
+| Avatar upload | Working | 8/10 |
+| CLI sync commands | Working | 9/10 |
+
+**Notes:**
+- Notification granularity toggles marked "coming soon" — non-functional
+- Account deletion shows toast directing to email — no self-service deletion
+
+---
+
+### 9. Docs Page (`/docs`) — Rating: 9/10
+
+| Feature | Status | Rating |
+|---------|--------|--------|
+| 11 documentation sections | Working | 9/10 |
+| Searchable by title and keywords | Working | 8/10 |
+| Code blocks with copy button | Working | 9/10 |
+| Deep-linking via URL hash | Working | 9/10 |
+| Mobile TOC dropdown | Working | 9/10 |
+| Desktop sticky TOC sidebar | Working | 9/10 |
+| Provider setup guides | Present | 9/10 |
+| CLI reference | Present | 9/10 |
+| FAQ section | Present | 9/10 |
+
+---
+
+### 10. Post Detail Page (`/post/:id`) — Rating: 8/10
+
+| Feature | Status | Rating |
+|---------|--------|--------|
+| Post content display | Working | 8/10 |
+| Comment thread | Working | 8/10 |
+| Kudos button | Working | 9/10 |
+| Share button | Working | 8/10 |
+| Edit/delete own posts | Working | 8/10 |
+
+---
+
+### 11. Notifications Page (`/notifications`) — Rating: 7/10
+
+| Feature | Status | Rating |
+|---------|--------|--------|
+| Notification list | Working | 7/10 |
+| Mark all as read | Working | 8/10 |
+| Notification types (kudos, comment, follow) | Working | 7/10 |
+
+---
+
+### 12. Recap Page (`/recap`) — Rating: 8/10
+
+| Feature | Status | Rating |
+|---------|--------|--------|
+| Period selector | Working | 8/10 |
+| Stats visualization | Working | 8/10 |
+| Theme selector (3 themes) | Working | 9/10 |
+| Share card generation | Working | 8/10 |
+| Image export | Working | 8/10 |
+
+---
+
+### 13. Prompts Page (`/prompts`) — Rating: 7/10
+
+| Feature | Status | Rating |
+|---------|--------|--------|
+| Prompt listing | Working | 7/10 |
+| Submit prompt | Working | 8/10 |
+| Vote toggle | Working | 7/10 |
+| Anonymous submission | Working | 7/10 |
+
+---
+
+### 14-16. Static Pages — Rating: 9/10
+
+| Page | Status | Rating |
+|------|--------|--------|
+| Privacy (`/privacy`) | Working | 9/10 |
+| Terms (`/terms`) | Working | 9/10 |
+| CLI Verify (`/cli/verify`) | Working | 8/10 |
+
+---
+
+## Backend Functions Audit
+
+### `convex/schema.ts` — Rating: 9/10
+
+| Table | Indexes | Validation | Rating |
+|-------|---------|------------|--------|
+| `users` | by_clerkId, by_username, by_email | All typed, no v.any() | 9/10 |
+| `daily_usage` | by_user_date_provider, by_user, by_date | Strict types | 9/10 |
+| `posts` | by_user_date, by_user | Strict arrays | 9/10 |
+| `post_daily_usage` | by_post, by_usage | FK references | 9/10 |
+| `comments` | by_post | Content string | 9/10 |
+| `follows` | by_follower, by_following, by_pair | FK refs | 9/10 |
+| `kudos` | by_post, by_user_post | FK refs | 9/10 |
+| `notifications` | by_recipient | Type string | 8/10 |
+| `cli_auth_codes` | by_code, by_device_token, by_jwt | All typed | 8/10 |
+| `user_achievements` | by_user, by_user_slug | Slug string | 9/10 |
+| `prompts` | by_user, by_status | Content + status | 8/10 |
+
+---
+
+### `convex/feed.ts` — Rating: 9/10
+
+| Function | Auth | Privacy | Pagination | Rating |
+|----------|------|---------|------------|--------|
+| `getFeed()` | Optional | Checks `isPublic` | Cursor-based | 9/10 |
+| `getUserPosts()` | Optional | Checks `isPublic` | Cursor-based | 9/10 |
+
+---
+
+### `convex/usage.ts` — Rating: 9/10
+
+| Function | Auth | Validation | Rating |
+|----------|------|------------|--------|
+| `submitUsage()` | Clerk + CLI token | Provider, date, bounds, cost sanitization | 9/10 |
+| `importUsage()` | Clerk only | Same validation + 500 entry limit | 9/10 |
+| `fixUnrealisticCosts()` | Admin (env var) | Admin role check via `ADMIN_CLERK_IDS` env | 9/10 |
+
+---
+
+### `convex/social.ts` — Rating: 8/10
+
+| Function | Auth | Validation | Rating |
+|----------|------|------------|--------|
+| `follow()` | Required | Self-follow prevention, duplicate check | 9/10 |
+| `unfollow()` | Required | Existence check | 9/10 |
+| `giveKudos()` | Required | Post existence, duplicate check | 9/10 |
+| `removeKudos()` | Required | Existence check | 9/10 |
+| `addComment()` | Required | 1-1000 chars, post visibility check | 9/10 |
+| `editComment()` | Required | Ownership check | 9/10 |
+| `deleteComment()` | Required | Ownership check | 9/10 |
+| `getNotifications()` | Required | Capped at 50, batch sender loading | 8/10 |
+
+---
+
+### `convex/users.ts` — Rating: 9/10
+
+| Function | Auth | Validation | Rating |
+|----------|------|------------|--------|
+| `getOrCreateUser()` | Clerk | Username generation, collision handling | 8/10 |
+| `getMe()` | Clerk | Identity-based lookup | 10/10 |
+| `updateMe()` | Clerk | Username rules, URL sanitization, field length limits | 9/10 |
+| `checkUsername()` | None | Format validation, reserved words | 9/10 |
+| `getByUsername()` | Optional | Privacy check, stats computation | 8/10 |
+
+---
+
+### `convex/leaderboard.ts` — Rating: 8/10
+
+| Function | Auth | Filtering | Rating |
+|----------|------|-----------|--------|
+| `getLeaderboard()` | None | Period, provider, region, privacy exclusion | 8/10 |
+
+---
+
+### `convex/http.ts` — Rating: 9/10
+
+| Feature | Implementation | Rating |
+|---------|---------------|--------|
+| CORS | Production-only origins allowlist | 10/10 |
+| Security headers | HSTS, X-Frame-Options, CSP, Referrer-Policy | 10/10 |
+| Input validation | Token length, body parsing, entries array | 9/10 |
+| Error handling | Generic messages, no internal leaks | 9/10 |
+
+---
+
+### `convex/cliAuth.ts` — Rating: 8/10
+
+| Function | Security | Rating |
+|----------|----------|--------|
+| `initCLIAuth()` | 8-char code, 48-byte device token, 10-min expiry | 8/10 |
+| `pollCLIAuth()` | Input length validation, expiry check | 8/10 |
+| `verifyCLIAuth()` | Auth required, code format validation, 90-day tokens | 8/10 |
+
+---
+
+## Components Audit
+
+| Component | Functionality | Security | Accessibility | Rating |
+|-----------|---------------|----------|---------------|--------|
+| `ActivityCard` | Full post display with images, stats, actions | Safe rendering | Image alts | 8/10 |
+| `KudosButton` | Toggle with animation | Auth check | aria-label | 9/10 |
+| `FollowButton` | Toggle with optimistic UI | Auth redirect | Hover states | 9/10 |
+| `CommentThread` | CRUD with ownership checks | Content sanitized server-side | Labels | 8/10 |
+| `ShareCard` | 3 themes, image export | No XSS | aria-label on theme selector | 8/10 |
+| `ContributionGraph` | GitHub-style heatmap | N/A | Color-coded by provider | 8/10 |
+| `AchievementBadge` | 9 achievements | N/A | role="img" | 9/10 |
+| `SEO` | react-helmet-async | JSON-LD serialization | N/A | 9/10 |
+| `ErrorBoundary` | Graceful error handling | No console.error | Retry button | 8/10 |
+| `AppShell` | Layout with onboarding enforcement | Auth check | Responsive | 9/10 |
+| `Navbar` | Navigation with theme toggle | N/A | aria-labels | 8/10 |
+| `BottomNav` | Mobile navigation | N/A | Active states | 8/10 |
+
+---
+
+## Security Audit
+
+### Authentication & Authorization — Rating: 9/10
+
+| Check | Status | Details |
+|-------|--------|---------|
+| Clerk integration | Secure | ClerkProvider with proper config |
+| Session persistence | Working | Cookies + localStorage via Clerk |
+| Sign-up flow | Working | Auto-creates Convex user on first login |
+| CLI auth flow | Secure | Device code flow with 90-day tokens |
+| Auth token validation | Working | Both Clerk JWT and CLI tokens supported |
+| Admin operations | **FIXED** | Admin IDs now from environment variable |
+| Protected routes | Working | AuthGate redirects to /login |
+
+### Content Security Policy — Rating: 9.5/10
+
+| Directive | Status |
+|-----------|--------|
+| `default-src 'self'` | Restrictive default |
+| `script-src` | Self + Clerk + Vercel (no `unsafe-eval`) |
+| `connect-src` | Self + Convex + Clerk + Vercel |
+| `img-src` | Self + Convex + Clerk + ui-avatars |
+| `style-src` | Self + Google Fonts |
+| `font-src` | Self + Google Fonts + data: |
+| `frame-src` | Clerk + Cloudflare only |
+| `worker-src` | Self + blob: |
+
+**Fixed:** Removed `unsafe-eval` from index.html CSP meta tag to match vercel.json headers.
+
+### Data Validation — Rating: 9/10
+
+| Area | Validation |
+|------|-----------|
+| Username | 3-30 chars, lowercase alphanumeric + underscore, reserved words blocked |
+| Bio | Max 160 chars |
+| Display name | Max 50 chars |
+| Comment content | 1-1000 chars |
+| Prompt content | 1-2000 chars |
+| External links | HTTPS only, URL sanitized |
+| GitHub username | Sanitized to alphanumeric + hyphen |
+| Avatar URL | HTTPS only |
+| Usage entries | Provider whitelist, date regex, numeric bounds, cost sanitization |
+
+### CORS Configuration — Rating: 10/10
 
 ```
-default-src 'self';
-script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com https://*.clerk.accounts.dev https://*.clerk.com https://*.vercel-scripts.com;
-connect-src 'self' https://*.convex.cloud wss://*.convex.cloud https://*.clerk.accounts.dev https://*.clerk.com https://*.clerk.dev https://*.vercel-scripts.com https://*.vercel-insights.com;
-img-src 'self' https://*.convex.cloud https://img.clerk.com https://framerusercontent.com https://ui-avatars.com data: blob:;
-style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
-font-src 'self' https://fonts.gstatic.com data:;
-frame-src https://*.clerk.accounts.dev https://*.clerk.com https://challenges.cloudflare.com;
-worker-src 'self' blob:
+Allowed Origins:
+- https://awarts.com
+- https://www.awarts.com
+- https://awarts.vercel.app
 ```
 
-### Fixes Applied (March 7)
-
-**CSP Fixes (5 issues):**
-- Added `https://*.clerk.accounts.dev` and `https://*.clerk.com` to `script-src` — Clerk auth JS was blocked
-- Added `https://*.vercel-scripts.com` to `script-src` — Vercel Analytics script was blocked
-- Added `https://*.vercel-scripts.com` and `https://*.vercel-insights.com` to `connect-src` — Analytics beacons blocked
-- Added `https://ui-avatars.com` to `img-src` — Mock avatar images were blocked
-- Added `data:` to `font-src` — Inline font data URIs were blocked
-
-**Backend Security Fixes (4 issues):**
-- Added admin role check (`ADMIN_CLERK_IDS`) to `fixUnrealisticCosts` — prevented any authenticated user from modifying all users' cost data
-- Added authentication check to `seedCountries` — was publicly callable
-- Replaced raw `err.message` forwarding with generic error messages in all 3 HTTP endpoints
-- Changed `rawData` field from `v.any()` to `v.string()` — prevents arbitrary data injection
-
-**Frontend Fixes (2 issues):**
-- Removed `console.error` in `ErrorBoundary.componentDidCatch` — was leaking component stack traces
-- Removed `console.error` in `ShareActions.generatePng` — was exposing error details
-
-**Cleanup (1 issue):**
-- Deleted accidental `nul` file from project root
+No localhost origins in production. All HTTP endpoints use origin allowlist.
 
 ---
 
-### Original Audit (March 6) — Initial Scores
+## SEO & Google Visibility Audit
 
-| Category | Critical | High | Medium | Low | Score |
-|----------|----------|------|--------|-----|-------|
-| **Security** | 3 | 4 | 5 | 3 | 4/10 |
-| **Data Integrity** | 2 | 3 | 4 | 2 | 5/10 |
-| **Performance** | 1 | 3 | 5 | 4 | 5/10 |
-| **SEO** | 0 | 2 | 4 | 3 | 7/10 |
-| **Accessibility** | 0 | 4 | 6 | 5 | 4/10 |
-| **Code Quality** | 1 | 3 | 5 | 8 | 6/10 |
-| **UX/UI** | 1 | 4 | 8 | 6 | 6/10 |
-| **OVERALL** | **8** | **23** | **37** | **31** | **5.3/10** |
+### Meta Tags — Rating: 9/10
 
-**Total Issues Found: 99 (all fixed in March 6 audit)**
+| Tag | Status | Correctness |
+|-----|--------|-------------|
+| `<title>` | Present on all pages | Dynamic per page |
+| `<meta name="description">` | Present on all pages | Unique per page |
+| `<meta name="keywords">` | Present on major pages | Relevant keywords |
+| `<meta name="robots">` | index,follow on public pages | noindex on private pages |
+| `<meta name="googlebot">` | Present | index, follow |
+| Google Search Console verification | Present | `CqX12VNkbLsavmz0r7oH-US7LG_x2p5tkkc3fgg9Cpg` |
 
----
+### Open Graph Tags — Rating: 9/10
 
-## CSP & Security Headers Audit
+| Tag | Status |
+|-----|--------|
+| `og:type` | website |
+| `og:url` | Canonical URL |
+| `og:title` | Dynamic per page |
+| `og:description` | Unique per page |
+| `og:image` | `/og-image.png` (1200x630) |
+| `og:site_name` | AWARTS |
+| `og:locale` | en_US |
 
-### CSP Directive Analysis
+### Twitter Card Tags — Rating: 9/10
 
-| Directive | Domains Allowed | Rating | Notes |
-|-----------|----------------|--------|-------|
-| `default-src` | `'self'` | 10/10 | Restrictive default |
-| `script-src` | `'self'`, `'unsafe-inline'`, Cloudflare, Clerk, Vercel | 8/10 | `'unsafe-inline'` needed for Clerk SDK |
-| `connect-src` | `'self'`, Convex (HTTP+WS), Clerk, Vercel | 10/10 | All API endpoints covered |
-| `img-src` | `'self'`, Convex, Clerk, Framer, ui-avatars, `data:`, `blob:` | 10/10 | All image sources covered |
-| `style-src` | `'self'`, `'unsafe-inline'`, Google Fonts | 9/10 | `'unsafe-inline'` needed for CSS-in-JS |
-| `font-src` | `'self'`, Google Fonts (gstatic), `data:` | 10/10 | Covers Google Fonts and inline data URIs |
-| `frame-src` | Clerk, Cloudflare Challenges | 10/10 | Only auth-related iframes |
-| `worker-src` | `'self'`, `blob:` | 10/10 | For web workers |
+| Tag | Status |
+|-----|--------|
+| `twitter:card` | summary_large_image |
+| `twitter:title` | Dynamic |
+| `twitter:description` | Unique |
+| `twitter:image` | Present |
 
-### Security Headers Assessment
+### Structured Data (JSON-LD) — Rating: 9/10
 
-| Header | Value | Rating |
-|--------|-------|--------|
-| `Strict-Transport-Security` | `max-age=63072000; includeSubDomains; preload` | 10/10 |
-| `X-Content-Type-Options` | `nosniff` | 10/10 |
-| `X-Frame-Options` | `DENY` | 10/10 |
-| `Referrer-Policy` | `strict-origin-when-cross-origin` | 10/10 |
-| `Permissions-Policy` | `camera=(), microphone=(), geolocation=()` | 10/10 |
-| `Content-Security-Policy` | Full policy (see above) | 9/10 |
+| Schema | Present | Pages |
+|--------|---------|-------|
+| `WebApplication` | Yes | index.html |
+| `Organization` | Yes | index.html |
+| `FAQPage` | Yes | index.html |
+| `BreadcrumbList` | Yes | index.html |
+| `CollectionPage` | Yes | Feed |
+| Per-page schemas | Via SEO component | All pages |
 
-### Browser Extension Noise (Not Our Issues)
+### Sitemap — Rating: 9/10 (FIXED)
 
-The following CSP violations are caused by **browser extensions**, not by AWARTS:
-- `r2cdn.perplexity.ai` fonts — Perplexity browser extension
-- `data:font/woff` and `data:font/woff2` inline fonts — Various extensions
-- `detect.js`, `frame_start.js`, `inject.bundle.js` — Extension content scripts
-- `Unchecked runtime.lastError` — Chrome extension messaging
+Updated `lastmod` dates to 2026-03-10. Added missing `/prompts` page.
 
-These are expected in development and do not affect production users.
+Pages included: `/`, `/feed`, `/leaderboard`, `/search`, `/docs`, `/prompts`, `/login`, `/recap`, `/privacy`, `/terms`
 
-### API Security Headers (convex/http.ts)
+### robots.txt — Rating: 9/10
 
-| Header | Value | Rating |
-|--------|-------|--------|
-| `Content-Security-Policy` | `default-src 'none'; frame-ancestors 'none'` | 10/10 |
-| `Access-Control-Allow-Origin` | Allowlist: `awarts.com`, `www.awarts.com`, `awarts.vercel.app` | 10/10 |
-| `Access-Control-Allow-Methods` | `POST, OPTIONS` | 10/10 |
-| All other headers | Same as frontend | 10/10 |
+Properly configured:
+- All crawlers allowed on public pages
+- Private pages blocked (settings, cli/verify, onboarding, notifications, post/new)
+- Sitemap URL included
 
----
+### Google Visibility Recommendations
 
-### Fixes Applied (Summary — March 6)
+To rank first for "AWARTS":
+1. **Google Search Console** verification is already set up
+2. **Sitemap** is submitted and up to date
+3. **Structured data** includes FAQPage, BreadcrumbList, WebApplication schemas
+4. **Canonical URLs** properly set on all pages
+5. **Page speed** — Vite builds with code splitting, lazy loading all routes
+6. **Mobile-friendly** — Responsive design with bottom nav on mobile
 
-**Security (15 issues fixed):**
-- Privacy check on `getUserPosts()` — prevented private users' posts from leaking
-- Post visibility check on `addComment()` — blocked comments on unpublished/private posts
-- Post existence check on `giveKudos()` — validated post exists before writing
-- Leaderboard DoS cap — capped memory at 1000 users for region filter
-- Private users excluded from leaderboard
-- CORS localhost removed — production-only origins
-- Source parameter validation in HTTP router
-- Auth config uses environment variable instead of hardcoded Clerk domain
-- Upload `contentType` validation — reject files with missing MIME type
-- URL sanitization on user profile `externalLink`
-- GitHub username sanitization
-- Avatar URL restricted to HTTPS only
-- Username reserved words list
-- Input length limits on all user-facing fields
-
-**Data Integrity (11 issues fixed):**
-- Leaderboard rank calculation — filter first, then assign ranks
-- Prompts pagination — switched from broken cursor-based to offset-based
-- Username TOCTOU race condition — Convex transactional mutations
-- Duplicate kudos/follows prevention via index lookups
-- Notification `senderId` null safety
-- Comment length validation (1-1000 chars)
-- Prompt content length validation (1-2000 chars)
-
-**Performance (13 issues fixed):**
-- N+1 batch loading in `getComments()` — deduplicated author fetches
-- N+1 batch loading in `getNotifications()` — deduplicated sender fetches
-- N+1 batch loading in `getPrompts()` — votes loaded via Set lookup
-- Leaderboard memory cap prevents unbounded allocation
-- Prompts use offset pagination instead of collecting all records
-- Removed duplicate `ctx.db.get(postId)` calls in mutations
-
-**SEO (9 issues fixed):**
-- JSON-LD structured data on all 6 major pages (Feed, Profile, Leaderboard, Prompts, Privacy, Terms)
-- Open Graph image on Profile page
-- Keywords meta tags on all pages
-- Canonical URLs on all pages
-
-**Accessibility (15 issues fixed):**
-- `role="tablist"` and `role="tab"` with `aria-selected` on Feed and Follows tabs
-- `aria-label` on Search input
-- `aria-label` on all 3 Leaderboard select triggers
-- `role="img"` and `aria-label` on AchievementBadge
-- `role="progressbar"` with `aria-valuenow/min/max` on Onboarding progress
-- `aria-label` and `aria-pressed` on Recap theme selector
-- `aria-label="Toggle theme"` on Navbar theme button
-- `aria-label="Copy code"` on Docs CodeBlock copy button
-
-**Code Quality (17 issues fixed):**
-- ErrorBoundary `componentDidCatch` logging
-- Navbar localStorage null check (`saved !== null`)
-- `useIsMobile` hydration — initialized with computed value instead of `undefined`
-- RightSidebar loading skeleton
-- Removed lock files from git tracking
-- Added `.claude/settings.local.json`, `.lovable/`, `coverage/`, `.pnpm-store/` to `.gitignore`
-- Created `.env.example` for documentation
-
-**UX/UI (19 issues fixed):**
-- AuthCallback timeout with error UI and retry button
-- Follows page missing `tabs` constant
-- NotificationPanel null actor safety
-- ShareActions fetch error handling
-- Docs search now works (keyword-based instead of broken JSX search)
-- Docs CodeBlock copy-to-clipboard button
-- Docs deep-linking via URL hash
-- PromptCard shows "You (anonymous)" for own anonymous prompts
-- Leaderboard empty state message
-- Loading skeletons on Leaderboard, Prompts, RightSidebar
+**Additional recommendations for better ranking:**
+- Add backlinks from GitHub README, npm package page, social media
+- Create blog posts about AI coding productivity
+- Get listed on Product Hunt, Hacker News
+- Add social share buttons on recap cards and profile pages
+- Consider acquiring `awarts.com` domain (currently on `awarts.vercel.app`)
 
 ---
 
-## Backend Audit
-
-### File: `convex/schema.ts` — Rating: 6/10
-
-| Feature | Status | Rating | Notes |
-|---------|--------|--------|-------|
-| Table definitions | Working | 7/10 | All tables defined with proper types |
-| Indexes | Partial | 6/10 | Good coverage but missing uniqueness constraints |
-| `by_email` index | Issue | 5/10 | Email is optional — NULL lookups may behave unexpectedly |
-
-**Issues:**
-- **[HIGH]** No UNIQUE constraint on `users.clerkId` — could create duplicate accounts per Clerk user
-- **[HIGH]** No UNIQUE constraint on `users.username` — race condition allows duplicates
-- **[MEDIUM]** No UNIQUE constraint on `follows (followerId + followingId)` — allows duplicate follows
-- **[MEDIUM]** No UNIQUE constraint on `kudos (userId + postId)` — allows multiple kudos per user/post
-- **[MEDIUM]** No UNIQUE constraint on `prompt_votes (userId + promptId)` — allows duplicate votes
-- **[LOW]** No soft-delete support on any table — permanent deletion, no audit trail
-
----
-
-### File: `convex/feed.ts` — Rating: 6/10
-
-| Function | Status | Rating | Notes |
-|----------|--------|--------|-------|
-| `getFeed()` | Working | 7/10 | Cursor-based pagination works, privacy check present |
-| `getUserPosts()` | **BUG** | 3/10 | **Missing privacy check for private profiles** |
-| `batchLoadUsers()` | Working | 8/10 | Good batch loading pattern |
-
-**Issues:**
-- **[CRITICAL] `getUserPosts()` (line 127-202):** Does NOT check if `target.isPublic` is false. Any user can enumerate all posts from ANY user (including private profiles) by knowing their username. The `getFeed()` function correctly checks `author.isPublic` at line 64 but `getUserPosts()` skips this entirely.
-- **[MEDIUM] Pagination over-fetch (line 50):** `candidates = await query.take(safeLimit * 5)` fetches 5x the needed posts. If heavy filtering removes most, could return incomplete pages.
-- **[LOW]** Each post hydration still does 3 parallel queries (kudos, comments, usage links) — N+1 within the batch.
-
----
-
-### File: `convex/social.ts` — Rating: 7/10
-
-| Function | Status | Rating | Notes |
-|----------|--------|--------|-------|
-| `follow()` | Working | 8/10 | Duplicate check present, self-follow prevented |
-| `unfollow()` | Working | 8/10 | Safe delete pattern |
-| `giveKudos()` | Working | 8/10 | Duplicate check present, notification created |
-| `removeKudos()` | Working | 8/10 | Safe delete pattern |
-| `getComments()` | Working | 6/10 | N+1 author loading |
-| `addComment()` | **Issue** | 5/10 | No post visibility check |
-| `editComment()` | Working | 8/10 | Ownership check present |
-| `deleteComment()` | Working | 8/10 | Ownership check present |
-| `getNotifications()` | Working | 6/10 | N+1 sender loading |
-| `markNotificationsRead()` | Working | 5/10 | Sequential updates, should batch |
-
-**Issues:**
-- **[HIGH] `addComment()` (line 135-168):** Does not verify the post is published or the post's author has a public profile. Users can comment on private users' unpublished posts.
-- **[MEDIUM] `getComments()` (line 112-133):** N+1 query — each comment loads its author individually. Should batch load.
-- **[MEDIUM] `markNotificationsRead()` (line 234-251):** Sequential `ctx.db.patch()` for each notification. With 100 unread notifications, this is 100 database operations.
-- **[MEDIUM] `getNotifications()` (line 208-232):** N+1 query — each notification loads its sender individually.
-
----
-
-### File: `convex/users.ts` — Rating: 7/10
-
-| Function | Status | Rating | Notes |
-|----------|--------|--------|-------|
-| `getOrCreateUser()` | Working | 7/10 | TOCTOU race on username |
-| `getMe()` | Working | 9/10 | Simple, correct |
-| `updateMe()` | Working | 7/10 | Good validation, TOCTOU race |
-| `checkUsername()` | Working | 8/10 | Proper validation |
-| `getByUsername()` | Working | 6/10 | Heavy query, leaks some data |
-| `getFollowers()` | Working | 6/10 | N+1 loading |
-| `getFollowing()` | Working | 6/10 | N+1 loading |
-
-**Issues:**
-- **[HIGH] Username TOCTOU race (line 139-149):** In `updateMe()`, checks if username is taken then updates — another concurrent request could claim it between check and update.
-- **[MEDIUM] `getByUsername()` (line 205-339):** For public profiles, loads ALL usage entries unbounded. Heavy profiles with years of data will slow down.
-- **[MEDIUM] Private profile still returns `displayName` and `avatarUrl` (line 218-228):** This leaks identity info even when user chose to be private.
-- **[LOW]** `getOrCreateUser()` (line 92): Sets `githubUsername` from `identity.nickname` which may not always be the GitHub username.
-
----
-
-### File: `convex/leaderboard.ts` — Rating: 4/10
-
-| Function | Status | Rating | Notes |
-|----------|--------|--------|-------|
-| `getLeaderboard()` | **Issues** | 4/10 | Multiple problems |
-
-**Issues:**
-- **[CRITICAL] Memory DoS with region filter (line 68-69):** `const sliceEnd = region ? sorted.length : safeOffset + safeLimit` — when region filter is used, loads ALL users into memory before filtering. With 100K+ users, causes memory exhaustion and server crash.
-- **[HIGH] Shows private users (line 79-98):** No check for `user.isPublic`. Private users' usernames, avatars, countries, and regions are exposed on the leaderboard.
-- **[HIGH] Rank miscalculation (line 85, 103):** Calculates rank BEFORE filtering private users and region, then re-ranks. The initial rank index is wrong because it includes filtered-out entries.
-- **[MEDIUM] All-time query loads 10K entries (line 44):** `await ctx.db.query("daily_usage").take(10000)` — arbitrary limit that either misses data or loads too much.
-
----
-
-### File: `convex/http.ts` — Rating: 6/10
-
-| Feature | Status | Rating | Notes |
-|---------|--------|--------|-------|
-| CORS handling | Partial | 5/10 | Localhost in production |
-| Security headers | Good | 8/10 | HSTS, X-Frame-Options, CSP present |
-| Input validation | Good | 7/10 | Token length check, body parsing |
-
-**Issues:**
-- **[HIGH] Localhost in CORS (line 11-12):** `http://localhost:5173` and `http://localhost:3000` in production CORS whitelist. Should use environment-based configuration.
-- **[MEDIUM] Source parameter not validated (line 118):** `source: body.source ?? "cli"` trusts user input without validation. Could store arbitrary strings.
-- **[LOW]** Error matching uses string includes (line 124) — fragile pattern.
-
----
-
-### File: `convex/auth.config.ts` — Rating: 3/10
-
-**Issues:**
-- **[HIGH] Hardcoded Clerk domain (line 4):** `domain: "https://adjusted-elk-93.clerk.accounts.dev"` — should use environment variable. Cannot change Clerk instance without code change.
-
----
-
-### File: `convex/posts.ts` — Rating: 7/10
-
-**Issues:**
-- **[MEDIUM]** URL validation is weak — accepts malformed URLs.
-- **[LOW]** `captionGeneratedBy` field accepts any string without validation.
-
----
-
-### File: `convex/usage.ts` — Rating: 6/10
-
-**Issues:**
-- **[HIGH] Race condition (line ~102-107):** Concurrent submissions with same (userId, date, provider) can both create entries, violating uniqueness.
-- **[MEDIUM]** Provider whitelist duplicated across multiple files instead of centralized.
-
----
-
-### File: `convex/prompts.ts` — Rating: 5/10
-
-**Issues:**
-- **[HIGH] Broken pagination:** Paginates by creation time but sorts by vote count. Results in duplicated/skipped items across pages.
-- **[MEDIUM] N+1 vote loading:** Each prompt individually queries vote count and user vote status.
-
----
-
-### File: `convex/cliAuth.ts` — Rating: 5/10
-
-**Issues:**
-- **[HIGH] CLI tokens stored in plaintext:** JWT tokens saved unencrypted in database. Database breach = all CLI tokens exposed.
-- **[MEDIUM]** No token revocation mechanism.
-
----
-
-### File: `convex/ai.ts` — Rating: 6/10
-
-**Issues:**
-- **[MEDIUM]** User stats embedded directly in OpenAI prompt — potential prompt injection.
-- **[MEDIUM]** OpenAI response not validated before returning to client.
-- **[LOW]** Typo: "Cation" instead of "Caption".
-
----
-
-## Frontend Pages Audit
-
-### Page: `Feed.tsx` — Rating: 7/10
-
-| Section/Feature | Status | Rating | Notes |
-|-----------------|--------|--------|-------|
-| Global tab | Working | 8/10 | Correctly shows all public posts |
-| Following tab | Working | 7/10 | Auth prompt for unauthenticated users |
-| Provider filters | Working | 7/10 | Filter persists when switching tabs (may confuse) |
-| Infinite scroll | Working | 7/10 | Sentinel-based IntersectionObserver |
-| Back to top button | Working | 9/10 | Accessible, correct |
-| SEO meta tags | Present | 8/10 | Title, description, canonical, keywords |
-
-**Issues:**
-- **[MEDIUM] Multi-user data issue:** The core feed query (`getFeed`) works correctly for data isolation — it checks `author.isPublic` and filters properly. However, `getUserPosts()` called from Profile does NOT check privacy.
-- **[MEDIUM]** No "pull to refresh" or "check for new posts" indicator
-- **[LOW]** Provider filter persists across tab switches
-- **[LOW]** Tab buttons missing `role="tab"` and `aria-selected` attributes
-
-**SEO Status:**
-- Title: "Feed -- AI Coding Activity | AWARTS"
-- Description: Present and descriptive
-- Keywords: Present
-- Canonical: `/feed`
-- JSON-LD: Not present (should add ItemList schema)
-
----
-
-### Page: `Profile.tsx` — Rating: 6/10
-
-| Section/Feature | Status | Rating | Notes |
-|-----------------|--------|--------|-------|
-| User info header | Working | 7/10 | Shows avatar, name, bio, links |
-| Stats grid | Working | 7/10 | Tokens, cost, streak, days |
-| Heatmap | Working | 6/10 | Activity visualization |
-| Posts list | **Issue** | 4/10 | Shows private user posts (backend bug) |
-| Follow button | Working | 8/10 | Correct behavior |
-| Edit profile | Working | 7/10 | Form with validation |
-| Achievements | Working | 7/10 | Badge display |
-
-**Issues:**
-- **[CRITICAL]** Backend `getUserPosts()` returns posts for private profiles — Profile page displays them
-- **[MEDIUM]** `isOwnProfile` could be undefined if user data hasn't loaded yet, making private profile check unreliable
-- **[MEDIUM]** No error state if posts list fails to load
-- **[LOW]** Activities count uses inconsistent source (`stats.posts` vs `posts.length`)
-
-**SEO Status:**
-- Title: Dynamic "@username -- Profile | AWARTS"
-- Description: Dynamic per user
-- Canonical: `/u/{username}`
-- JSON-LD: Should add Person schema
-- OG Image: Should use user's avatar
-
----
-
-### Page: `Leaderboard.tsx` — Rating: 5/10
-
-| Section/Feature | Status | Rating | Notes |
-|-----------------|--------|--------|-------|
-| Period selector | Working | 7/10 | Daily/Weekly/Monthly/All-time |
-| Provider filter | Working | 7/10 | Filter by AI provider |
-| Region filter | **Issue** | 3/10 | Unusable, causes backend DoS |
-| Rankings table | Partial | 5/10 | Shows private users |
-| Loading state | Working | 7/10 | Skeleton shown |
-
-**Issues:**
-- **[CRITICAL]** Region filter causes backend memory exhaustion (loads all users)
-- **[HIGH]** Shows private users on leaderboard
-- **[HIGH]** Country selector has 200+ options with NO search — practically unusable
-- **[MEDIUM]** No pagination — all entries loaded at once
-- **[LOW]** Select triggers have no aria-labels
-
-**SEO Status:**
-- Title: Present
-- Description: Present
-- JSON-LD: Should add RankingCollection schema
-
----
-
-### Page: `Search.tsx` — Rating: 7/10
-
-| Section/Feature | Status | Rating | Notes |
-|-----------------|--------|--------|-------|
-| Search input | Working | 7/10 | 300ms debounce, min 2 chars |
-| Results display | Working | 7/10 | User cards with follow buttons |
-| Empty state | Working | 8/10 | Clear messaging |
-| Loading state | Working | 7/10 | Skeleton shown |
-
-**Issues:**
-- **[MEDIUM]** Input lacks associated `<label>` element (accessibility)
-- **[MEDIUM]** Error state exists but error message not displayed
-- **[LOW]** Loading spinner shows for invalid queries (<2 chars)
-- **[LOW]** 300ms debounce not communicated to user
-
-**SEO Status:**
-- Title: Present
-- Canonical: `/search`
-- noindex: Correctly set
-
----
-
-### Page: `Follows.tsx` — Rating: 5/10
-
-| Section/Feature | Status | Rating | Notes |
-|-----------------|--------|--------|-------|
-| Followers tab | Working | 6/10 | Lists followers with follow buttons |
-| Following tab | Working | 6/10 | Lists followed users |
-| Tab switching | Working | 6/10 | TypeScript issue with `tabs` |
-| Error handling | Working | 7/10 | Error state and retry |
-
-**Issues:**
-- **[HIGH]** `typeof tabs[number]` references undefined `tabs` variable — TypeScript type issue (compiles due to `strict: false`)
-- **[MEDIUM]** Tab counts show during loading with potentially stale data
-- **[MEDIUM]** FollowButton state not synced across tabs
-- **[LOW]** Missing `role="tab"` and `aria-selected`
-
-**SEO Status:**
-- Title: Dynamic
-- noindex: Correctly set (user-specific page)
-
----
-
-### Page: `PostNew.tsx` — Rating: 6/10
-
-| Section/Feature | Status | Rating | Notes |
-|-----------------|--------|--------|-------|
-| Title input | Working | 7/10 | Character limit enforced |
-| Description editor | Working | 7/10 | Character limit enforced |
-| Image upload | Partial | 5/10 | No progress indicator |
-| AI caption | Working | 7/10 | Generate from stats |
-| Publish toggle | Working | 8/10 | Clear toggle |
-
-**Issues:**
-- **[HIGH]** File upload shows NO progress indicator
-- **[MEDIUM]** Multiple files uploaded sequentially — if file 5 fails, files 1-4 already uploaded with no rollback
-- **[MEDIUM]** Memory leak — creates DOM input elements without cleanup
-- **[LOW]** Title character limit (100) has no visual warning at 80/90%
-
-**SEO Status:**
-- noindex: Correctly set (editing page)
-
----
-
-### Page: `Onboarding.tsx` — Rating: 7/10
-
-| Section/Feature | Status | Rating | Notes |
-|-----------------|--------|--------|-------|
-| Username step | Working | 7/10 | Validation present |
-| Profile step | Working | 7/10 | Optional fields |
-| Setup complete | Working | 8/10 | CLI setup instructions |
-
-**Issues:**
-- **[MEDIUM]** Username validation silently removes invalid characters without feedback
-- **[LOW]** No estimated time for 3-step process
-
----
-
-### Page: `Docs.tsx` — Rating: 6/10
-
-| Section/Feature | Status | Rating | Notes |
-|-----------------|--------|--------|-------|
-| Section listing | Working | 7/10 | 12 documentation sections |
-| Section search | Partial | 5/10 | Only searches titles, not content |
-| Code blocks | Partial | 4/10 | No copy button, no syntax highlighting |
-
-**Issues:**
-- **[MEDIUM]** Search only searches section TITLES, not content
-- **[MEDIUM]** Code blocks have no copy-to-clipboard functionality
-- **[MEDIUM]** Sections not deep-linkable (can't share URL to specific section)
-- **[LOW]** No syntax highlighting on code blocks
-
-**SEO Status:**
-- Title: Present
-- Description: Present
-- JSON-LD: FAQPage schema (good)
-
----
-
-### Page: `Prompts.tsx` — Rating: 6/10
-
-| Section/Feature | Status | Rating | Notes |
-|-----------------|--------|--------|-------|
-| Prompt listing | Working | 6/10 | Pagination issues from backend |
-| Submit prompt | Working | 7/10 | Form with validation |
-| Vote toggle | Working | 7/10 | Optimistic UI |
-| Anonymous submit | **Issue** | 5/10 | Shows username even when anonymous |
-
-**Issues:**
-- **[MEDIUM]** Backend pagination is broken (sorts by votes but paginates by time)
-- **[MEDIUM]** Shows username even when "submit as anonymous" is checked
-- **[LOW]** `err.message` might not exist — could show "undefined"
-
----
-
-### Page: `Recap.tsx` — Rating: 6/10
-
-| Section/Feature | Status | Rating | Notes |
-|-----------------|--------|--------|-------|
-| Period selector | Working | 7/10 | Weekly/Monthly/Yearly |
-| Stats display | Working | 7/10 | Usage visualization |
-| Share card | Working | 7/10 | Social sharing |
-
-**Issues:**
-- **[MEDIUM]** No error state if profile fetch fails
-- **[LOW]** Period selector has no label text
-
----
-
-### Page: `AuthCallback.tsx` — Rating: 4/10
-
-| Section/Feature | Status | Rating | Notes |
-|-----------------|--------|--------|-------|
-| Auth redirect | Working | 5/10 | Shows spinner while loading |
-| Error handling | **Missing** | 2/10 | No timeout, no error state |
-
-**Issues:**
-- **[HIGH]** No timeout handling — spinner shows forever if Clerk hangs
-- **[MEDIUM]** No error boundary for authentication failures
-
----
-
-### Pages: `Privacy.tsx`, `Terms.tsx` — Rating: 8/10
-
-These are simple static pages with proper SEO. No significant issues.
-
----
-
-## Frontend Components Audit
-
-### Component: `ActivityCard.tsx` — Rating: 7/10
-
-| Feature | Status | Rating | Notes |
-|---------|--------|--------|-------|
-| Post display | Working | 7/10 | Shows usage data, images, actions |
-| Image grid | Working | 7/10 | Grid layout with lightbox |
-| Kudos button | Working | 8/10 | Optimistic toggle |
-| Comment link | Working | 8/10 | Links to post detail |
-
-**Issues:**
-- **[MEDIUM]** Nested ImageGrid/ImageLightbox functions recreated on every render — should memoize
-- **[LOW]** Division by zero edge case when totalCost is 0
-
----
-
-### Component: `FollowButton.tsx` — Rating: 8/10
-
-| Feature | Status | Rating | Notes |
-|---------|--------|--------|-------|
-| Follow toggle | Working | 8/10 | Correct logic verified |
-| Hover state | Working | 8/10 | Shows "Unfollow" on hover |
-| Auth redirect | Working | 9/10 | Redirects to login |
-| Optimistic UI | Working | 8/10 | Immediate state update |
-
-The follow/unfollow logic is actually **correct** — the component sends the OLD state to the hook, and the hook's logic (`data.isFollowing ? unfollow() : follow()`) correctly interprets it. No bug here despite the confusing naming.
-
----
-
-### Component: `KudosButton.tsx` — Rating: 8/10
-
-| Feature | Status | Rating | Notes |
-|---------|--------|--------|-------|
-| Kudos toggle | Working | 8/10 | Correct logic verified |
-| Animation | Working | 8/10 | Spring animation on toggle |
-| Count display | Working | 8/10 | Optimistic count update |
-
-Same as FollowButton — the logic is correct. OLD state is sent, hook interprets correctly.
-
----
-
-### Component: `CommentThread.tsx` — Rating: 6/10
-
-| Feature | Status | Rating | Notes |
-|---------|--------|--------|-------|
-| Comment display | Working | 6/10 | XSS risk from user content |
-| Add comment | Working | 7/10 | Form with validation |
-| Edit comment | Working | 7/10 | Inline editing |
-| Delete comment | Working | 7/10 | Confirmation dialog |
-
-**Issues:**
-- **[HIGH]** User comments rendered as `<p>{comment.content}</p>` without sanitization. If backend ever fails to sanitize, XSS is possible.
-- **[MEDIUM]** No optimistic UI for comments (waits for server response)
-
----
-
-### Component: `NotificationPanel.tsx` — Rating: 6/10
-
-**Issues:**
-- **[MEDIUM]** Accesses `n.actor.username` without null check — should use `n.actor?.username`
-
----
-
-### Component: `LeaderboardTable.tsx` — Rating: 6/10
-
-**Issues:**
-- **[MEDIUM]** Unsafe `(user as any)._id` type cast — violates type safety
-
----
-
-### Component: `SEO.tsx` — Rating: 8/10
-
-| Feature | Status | Rating | Notes |
-|---------|--------|--------|-------|
-| Meta tags | Working | 8/10 | Title, description, OG, Twitter |
-| JSON-LD | Working | 7/10 | Serialized without validation |
-| Canonical URL | Working | 8/10 | Base URL + path |
-
-**Issues:**
-- **[LOW]** `jsonLd` prop serialized without validation — but since it's always defined in source code (not from user input), risk is minimal.
-
----
-
-### Component: `ErrorBoundary.tsx` — Rating: 7/10
-
-**Issues:**
-- **[LOW]** No error logging/reporting — errors only shown to user
-
----
-
-### Component: `ShareActions.tsx` — Rating: 6/10
-
-**Issues:**
-- **[MEDIUM]** No `res.ok` check before calling `.blob()` on fetch response
-
----
-
-### Layout Components — Rating: 7/10
-
-| Component | Rating | Notes |
-|-----------|--------|-------|
-| `AppShell.tsx` | 7/10 | Good responsive layout |
-| `Navbar.tsx` | 7/10 | "/" keyboard shortcut undiscoverable |
-| `LeftSidebar.tsx` | 7/10 | Navigation links |
-| `RightSidebar.tsx` | 6/10 | Shows "0d" stats during loading |
-| `BottomNav.tsx` | 8/10 | Mobile navigation |
-
----
-
-### Hooks — Rating: 7/10
-
-| Hook | Rating | Notes |
-|------|--------|-------|
-| `use-api.ts` | 8/10 | Clean Convex hook wrappers |
-| `use-debounce.ts` | 8/10 | Standard debounce |
-| `use-mobile.tsx` | 6/10 | Potential hydration mismatch |
-| `use-toast.ts` | 6/10 | Long timeouts (1000000ms) not cleared |
-
----
-
-### Libraries — Rating: 7/10
-
-| File | Rating | Notes |
-|------|--------|-------|
-| `utils.ts` | 9/10 | Standard cn() utility |
-| `format.ts` | 8/10 | Good formatting functions |
-| `types.ts` | 7/10 | Type definitions |
-| `transformers.ts` | 7/10 | Handles legacy + Convex formats |
-| `mock-data.ts` | N/A | Test data only |
+## Provider Support Audit
+
+### Provider Matrix — Rating: 9/10
+
+| Provider | CLI Adapter | Backend Support | Frontend Display | Color | Status |
+|----------|------------|-----------------|-----------------|-------|--------|
+| **Claude** | `claude.ts` — reads `~/.claude/stats-cache.json` | Validated in usage.ts | Orange `#E87A35` | Working |
+| **Codex** | `codex.ts` — reads `~/.codex/usage/` + OpenAI Costs API | Validated | Green `#22C55E` | Working |
+| **Gemini** | `gemini.ts` — reads `~/.gemini/usage/` with cost estimation | Validated | Blue `#3B82F6` | Working |
+| **Antigravity** | `antigravity.ts` — reads `~/.antigravity/usage/` | Validated | Purple `#A855F7` | Working |
+
+### Session Tracking Flow
+
+```
+1. User codes with AI tool (Claude/Codex/Gemini/Antigravity)
+2. AI tool writes usage data to local files
+3. CLI `awarts sync` detects and reads local files
+4. CLI submits to AWARTS API via HTTP action
+5. Backend validates, sanitizes cost, creates/updates daily_usage
+6. Backend auto-creates post for the usage date
+7. Feed query reactively updates via Convex subscriptions
+8. All connected clients see the new post in real-time
+```
+
+### Why Sessions May Not Appear
+
+1. **No local files**: AI tool hasn't created usage files yet
+2. **Wrong directory**: Usage files in non-standard location
+3. **CLI not authenticated**: Run `awarts login` first
+4. **Token expired**: Re-authenticate after 90 days
+5. **Network issue**: Can't reach AWARTS API
+
+### Debugging
+
+```bash
+# Check which providers are detected
+awarts sync --verbose
+
+# Check auth status
+awarts whoami
+
+# Re-authenticate if needed
+awarts login
+```
 
 ---
 
 ## Infrastructure Audit
 
-### `index.html` — Rating: 8/10
+### Build & Deploy — Rating: 9/10
 
-Good SEO foundation with comprehensive meta tags, JSON-LD schemas, Google Search Console verification.
+| Item | Status | Rating |
+|------|--------|--------|
+| Vite build | Passes, 6.35s build time | 9/10 |
+| Code splitting | All pages lazy-loaded | 9/10 |
+| Vercel deployment | Configured via vercel.json | 9/10 |
+| Security headers | HSTS, X-Frame-Options, CSP | 10/10 |
+| Cache headers | Immutable for assets, no-cache for HTML | 9/10 |
+| SPA fallback | Rewrite rule in vercel.json | 9/10 |
 
-**Issues:**
-- **[LOW]** Missing font preload hints for performance
+### Bundle Analysis
 
----
+| Chunk | Size | gzip |
+|-------|------|------|
+| clerk | 218.88 kB | 64.64 kB |
+| motion (framer-motion) | 128.42 kB | 41.21 kB |
+| index (React framework) | 105.03 kB | 33.16 kB |
+| ui (shadcn components) | 91.50 kB | 30.15 kB |
+| convex | 70.63 kB | 19.35 kB |
+| Docs page | 40.07 kB | 12.50 kB |
+| Landing page | 27.18 kB | 8.49 kB |
 
-### `vercel.json` — Rating: 7/10
+### Dependencies — Rating: 8/10
 
-Good security headers (HSTS, X-Frame-Options, Referrer-Policy).
-
-**Issues:**
-- **[MEDIUM]** CSP uses `'unsafe-inline'` for scripts — weakens XSS protection (may be needed for Clerk)
-
----
-
-### `.gitignore` — Rating: 6/10
-
-**Issues:**
-- **[HIGH]** `.claude/settings.local.json` is staged for commit — should be gitignored
-- **[MEDIUM]** `.lovable/` directory should be added to `.gitignore`
-- **[LOW]** Missing entries: `coverage/`, `.pnpm-store/`
-
----
-
-### Lock Files — Rating: 4/10
-
-**Issues:**
-- **[HIGH]** Three lock files exist: `pnpm-lock.yaml`, `package-lock.json`, `bun.lockb`. Should standardize on pnpm only.
-
----
-
-### TypeScript Config — Rating: 5/10
-
-**Issues:**
-- **[HIGH]** `strict: false` in `tsconfig.app.json` — disables all strict checks (`noImplicitAny`, `strictNullChecks`, etc.). This is why bugs like the `tabs` reference compile without error.
+| Category | Libraries |
+|----------|-----------|
+| Framework | React 18, React Router DOM 6 |
+| Backend | Convex (real-time database) |
+| Auth | Clerk (OAuth, email) |
+| UI | Radix UI, shadcn/ui, Tailwind CSS |
+| Animation | Framer Motion |
+| Analytics | Vercel Analytics + Speed Insights |
+| Charting | Recharts |
+| Image export | html-to-image |
+| Validation | Zod |
 
 ---
 
-### `.env` / `.env.local` — Rating: 7/10
+## Issues Fixed (March 10)
 
-Both files are correctly in `.gitignore`.
+### 1. User Posts Pagination (HIGH)
+**File:** `src/hooks/use-api.ts`
+**Before:** `fetchNextPage` was a no-op — users couldn't load more posts
+**After:** Full cursor-based pagination with Convex reactive subscriptions, matching the feed implementation
 
-**Issues:**
-- **[MEDIUM]** No `.env.example` file for developer reference
+### 2. Feed Provider Filter (HIGH)
+**File:** `src/pages/Feed.tsx`
+**Before:** Provider filter was ignored when on "My Sessions" tab
+**After:** Provider filter now applies correctly to all feed tabs
 
----
+### 3. Admin ID Placeholder (HIGH)
+**File:** `convex/usage.ts`
+**Before:** Admin IDs hardcoded as `["user_2xYz"]`
+**After:** Admin IDs read from `ADMIN_CLERK_IDS` environment variable, with empty-check failsafe
 
-### Repository Organization — Rating: 6/10
+### 4. CSP Inconsistency (HIGH)
+**File:** `index.html`
+**Before:** CSP meta tag included `'unsafe-eval'` but vercel.json did not
+**After:** Removed `'unsafe-eval'` from index.html to match vercel.json
 
-**Issues:**
-- **[MEDIUM]** `/plans/` directory contains ~240 KB of planning docs — should be in wiki/docs repo
-- **[MEDIUM]** `/backend/` directory is empty — unclear purpose
-- **[MEDIUM]** `/e2e/` directory has test infrastructure but no actual tests
-- **[LOW]** `dist/` should be gitignored (it appears to be built output)
+### 5. Onboarding Enforcement (MEDIUM)
+**File:** `src/components/layout/AppShell.tsx`
+**Added:** Redirect to `/onboarding` for signed-in users who haven't set their country
 
----
+### 6. Auth Callback Redirect (MEDIUM)
+**File:** `src/pages/AuthCallback.tsx`
+**Before:** Redirected to `/onboarding` only if username was missing (auto-generated usernames bypassed this)
+**After:** Redirects to `/onboarding` if country is not set (more reliable indicator of incomplete onboarding)
 
-## SEO Audit
+### 7-8. Sitemap Update (MEDIUM)
+**File:** `public/sitemap.xml`
+**Updated:** All `lastmod` dates to 2026-03-10, added missing `/prompts` page
 
-### Current SEO Implementation — Rating: 7/10
+### 9. Onboarding Guidance (MEDIUM)
+**File:** `src/pages/Onboarding.tsx`
+**Added:** "Quick Guide" section with do's and don'ts on step 3
 
-**Strengths:**
-- SEO component with reusable meta tags
-- Open Graph and Twitter Card tags on all pages
-- Canonical URLs properly set
-- `noindex` correctly applied to user-specific/editing pages
-- JSON-LD schemas in `index.html` (WebApplication, Organization, BreadcrumbList)
-- Google Search Console verification present
-- robots.txt and sitemap.xml configured
-
-### Missing SEO Per Page:
-
-| Page | Title | Description | Keywords | Canonical | JSON-LD | OG Image | Rating |
-|------|-------|-------------|----------|-----------|---------|----------|--------|
-| Feed | Yes | Yes | Yes | Yes | **Missing** | Default | 7/10 |
-| Profile | Dynamic | Dynamic | **Missing** | Yes | **Missing Person** | **Should use avatar** | 6/10 |
-| Leaderboard | Yes | Yes | **Missing** | Yes | **Missing** | Default | 6/10 |
-| Search | Yes | Yes | **Missing** | Yes | N/A (noindex) | Default | 7/10 |
-| Follows | Dynamic | Dynamic | N/A | N/A | N/A (noindex) | N/A | 7/10 |
-| PostNew | N/A | N/A | N/A | N/A (noindex) | N/A | N/A | 8/10 |
-| Onboarding | Yes | Yes | N/A | N/A (noindex) | N/A | N/A | 7/10 |
-| Docs | Yes | Yes | Yes | Yes | Yes (FAQ) | Default | 8/10 |
-| Privacy | Yes | Yes | **Missing** | Yes | **Missing** | Default | 6/10 |
-| Terms | Yes | Yes | **Missing** | Yes | **Missing** | Default | 6/10 |
-| Recap | Yes | Yes | N/A | N/A (noindex) | N/A | N/A | 7/10 |
-| Prompts | Yes | Yes | **Missing** | Yes | **Missing** | Default | 6/10 |
-
-### Recommended JSON-LD Additions:
-1. **Feed page:** `ItemList` schema for recent posts
-2. **Profile page:** `Person` schema with social links
-3. **Leaderboard page:** `ItemList` schema for rankings
-4. **Prompts page:** `ItemList` schema for prompts
-5. **Privacy/Terms pages:** `WebPage` schema
+### 10-11. Feed Real-time Updates (MEDIUM/LOW)
+**File:** `src/hooks/use-api.ts`
+**Before:** User posts used a single `useQuery` with no real-time subscription
+**After:** User posts use the same dual-subscription pattern as the main feed — first page always reactive, pagination via cursor
 
 ---
 
-## Feature Recommendations
+## Remaining Recommendations
 
-### Advanced Features to Add:
+### Production Readiness Checklist
 
-1. **Real-time feed updates** — Show "X new posts" banner when new posts arrive (Convex supports this natively)
-2. **Post bookmarks/saves** — Let users save posts for later
-3. **User badges/achievements system** — Schema exists (`user_achievements`) but UI is minimal
-4. **Weekly email digest** — Users already have `emailNotificationsEnabled` setting
-5. **AI-powered recap insights** — Use the existing AI integration for weekly/monthly summaries
-6. **Post reactions** — Beyond kudos, add emoji reactions
-7. **Direct messaging** — Between users (with privacy controls)
-8. **Provider comparison charts** — Compare cost/usage across providers over time
-9. **Team/Organization accounts** — Group tracking for teams
-10. **API rate limiting** — Prevent abuse on all HTTP endpoints
-11. **Webhook integrations** — Send notifications to Discord/Slack
-12. **Data export** — Let users export their usage data (GDPR compliance)
-13. **Two-factor authentication** — Via Clerk (already supports it)
-14. **Content moderation** — Automated + manual review for comments/prompts
-15. **PWA support** — Service worker for offline access
+| Item | Status | Priority |
+|------|--------|----------|
+| Custom domain (awarts.com) | Not configured | High |
+| Rate limiting on HTTP actions | Platform-level only | Medium |
+| Account self-service deletion | Not implemented | Medium |
+| Email notification sending | Not implemented | Medium |
+| Notification granularity | Placeholder UI | Low |
+| Landing page real stats | Hardcoded numbers | Low |
+| Error tracking (Sentry/etc) | Not configured | Medium |
+| Automated E2E tests | Empty test directory | Medium |
+| CI/CD pipeline | Vercel auto-deploy only | Low |
+| Database backups | Convex-managed | Low |
 
-### Quick Wins:
-1. Add skeleton loading to RightSidebar
-2. Add search to country selector on Leaderboard
-3. Add copy-to-clipboard on code blocks in Docs
-4. Add file upload progress indicator
-5. Add "check for new posts" button on Feed
+### Future Features for Production
 
----
-
-## Repo Organization
-
-### Current Structure:
-```
-/
-  backend/          (empty - remove or use)
-  cli/              (CLI auth tool)
-  convex/           (Convex backend)
-  dist/             (build output - should gitignore)
-  e2e/              (empty tests - remove or implement)
-  plans/            (planning docs - move to wiki)
-  public/           (static assets)
-  src/
-    components/
-      layout/       (AppShell, Navbar, Sidebars, BottomNav)
-      ui/           (shadcn/ui components)
-      [components]  (custom components mixed at root)
-    context/        (AuthContext)
-    hooks/          (custom hooks)
-    lib/            (utils, types, transformers)
-    pages/          (route pages)
-    test/           (test setup)
-  .lovable/         (should gitignore)
-```
-
-### Recommended Structure:
-```
-/
-  convex/           (Convex backend - keep as-is)
-  cli/              (CLI tool - keep as-is)
-  public/           (static assets - keep as-is)
-  src/
-    components/
-      layout/       (layout components)
-      ui/           (shadcn/ui)
-      feed/         (ActivityCard, SkeletonCard)
-      social/       (FollowButton, KudosButton, CommentThread)
-      profile/      (StatsGrid, AchievementBadge, ShareCard)
-      common/       (ErrorState, ErrorBoundary, SEO, NavLink)
-    context/        (keep as-is)
-    hooks/          (keep as-is)
-    lib/            (keep as-is)
-    pages/          (keep as-is)
-    test/           (keep as-is)
-  docs/             (move plans/ content here or to wiki)
-```
-
-### Files to Clean Up:
-1. Remove `backend/` (empty directory)
-2. Remove `e2e/` or implement tests
-3. Move `plans/` to separate docs repo or wiki
-4. Add `.lovable/` to `.gitignore`
-5. Add `dist/` to `.gitignore` (if not already)
-6. Remove `package-lock.json` and `bun.lockb`
-7. Add `"packageManager": "pnpm@latest"` to `package.json`
+1. **Progressive Web App** — Service worker for offline access
+2. **Email notifications** — Weekly digest, real-time alerts
+3. **Team/Org accounts** — Group leaderboards
+4. **Webhook integrations** — Discord/Slack notifications
+5. **Self-hosted provider support** — OpenAI-compatible endpoints
+6. **API documentation** — Interactive Swagger/OpenAPI docs
+7. **Rate limiting** — Custom rate limits per user
+8. **Content moderation** — Automated comment/prompt review
+9. **Data export (GDPR)** — Full data download button
+10. **Two-factor authentication** — Via Clerk MFA
 
 ---
 
-## Priority Fix Order
-
-### Week 1 (Critical):
-1. Fix `getUserPosts()` privacy check
-2. Fix `addComment()` post visibility check
-3. Fix leaderboard region filter DoS
-4. Fix leaderboard private user exposure
-5. Add `tabs` constant to Follows.tsx
-6. Add AuthCallback timeout handling
-7. Move Clerk domain to environment variable
-
-### Week 2 (High):
-8. Fix username TOCTOU race condition
-9. Fix usage submission race condition
-10. Fix prompts pagination
-11. Remove localhost from production CORS
-12. Clean up lock files
-13. Enable TypeScript strict mode
-14. Add `.env.example`
-
-### Week 3 (Medium):
-15. Add missing JSON-LD schemas
-16. Add missing keywords meta tags
-17. Fix N+1 queries in social.ts
-18. Add file upload progress
-19. Fix NotificationPanel null checks
-20. Add search to country selector
-21. Add copy-to-clipboard on code blocks
-
-### Week 4 (Low):
-22. Add ARIA attributes to tabs
-23. Add form labels for accessibility
-24. Reorganize component directories
-25. Add error logging
-26. Implement skeleton for RightSidebar
-27. Add deep-linking to Docs sections
+*End of audit. Generated by Claude Code (Opus 4.6) on 2026-03-10.*

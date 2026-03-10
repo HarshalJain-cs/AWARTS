@@ -27,7 +27,7 @@ export default function Feed() {
 
   const feedResult = useFeed(
     isMySessionsTab ? 'global' : feedType,
-    isMySessionsTab ? undefined : providerParam
+    providerParam
   );
   const myPostsResult = useUserPosts(isMySessionsTab && user ? user.username : '');
 

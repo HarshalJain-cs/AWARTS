@@ -1,14 +1,27 @@
-import { ReactNode } from 'react';
+import { ReactNode, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Navbar } from './Navbar';
 import { LeftSidebar } from './LeftSidebar';
 import { RightSidebar } from './RightSidebar';
 import { BottomNav } from './BottomNav';
+import { useAuth } from '@/context/AuthContext';
 
 interface AppShellProps {
   children: ReactNode;
 }
 
 export function AppShell({ children }: AppShellProps) {
+  const { user, isSignedIn } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Redirect to onboarding if signed in but hasn't completed setup
+  useEffect(() => {
+    if (isSignedIn && user && !user.country && location.pathname !== '/onboarding' && location.pathname !== '/settings') {
+      navigate('/onboarding', { replace: true });
+    }
+  }, [isSignedIn, user, location.pathname, navigate]);
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />

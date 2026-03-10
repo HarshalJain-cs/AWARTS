@@ -162,6 +162,27 @@ export default function Onboarding() {
                   {copiedDaemon ? <Check className="h-4 w-4 text-primary" /> : <Copy className="h-4 w-4" />}
                 </button>
               </div>
+
+              {/* Quick guide - what to do and what not to do */}
+              <div className="rounded-lg border border-border bg-muted/20 p-4 space-y-3">
+                <p className="text-sm font-semibold text-foreground">Quick Guide</p>
+                <div className="space-y-1.5 text-xs text-muted-foreground">
+                  <p className="text-primary font-medium">What to do:</p>
+                  <ul className="list-disc list-inside space-y-0.5 ml-1">
+                    <li>Use Claude, Codex, Gemini, or Antigravity as usual</li>
+                    <li>Run <code className="bg-muted px-1 rounded">awarts sync</code> to push sessions</li>
+                    <li>Start the daemon for auto-sync every 5 minutes</li>
+                    <li>Follow other devs and give kudos</li>
+                  </ul>
+                  <p className="text-destructive font-medium mt-2">What NOT to do:</p>
+                  <ul className="list-disc list-inside space-y-0.5 ml-1">
+                    <li>Don't share your CLI auth token with others</li>
+                    <li>Don't manually edit local provider files</li>
+                    <li>Don't submit fake usage data</li>
+                  </ul>
+                </div>
+              </div>
+
               <div className="flex gap-3">
                 <Button variant="outline" onClick={() => setStep(2)}>
                   <ArrowLeft className="mr-2 h-4 w-4" /> Back

@@ -395,7 +395,11 @@ export const importUsage = mutation({
 });
 
 // ─── Fix unrealistic costs in existing data (admin only) ────────────
-const ADMIN_CLERK_IDS = ["user_2xYz"]; // Replace with real admin Clerk IDs
+function getAdminClerkIds(): string[] {
+  const ids = process.env.ADMIN_CLERK_IDS;
+  if (!ids) return [];
+  return ids.split(",").map((id) => id.trim()).filter(Boolean);
+}
 
 export const fixUnrealisticCosts = mutation({
   args: {},
@@ -404,7 +408,8 @@ export const fixUnrealisticCosts = mutation({
     if (!me) throw new Error("Not authenticated");
 
     // Only allow admins to run this mutation
-    if (!ADMIN_CLERK_IDS.includes(me.clerkId)) {
+    const adminIds = getAdminClerkIds();
+    if (adminIds.length === 0 || !adminIds.includes(me.clerkId)) {
       throw new Error("Forbidden: admin access required");
     }
 

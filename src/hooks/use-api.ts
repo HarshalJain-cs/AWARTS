@@ -385,14 +385,68 @@ export function useDeletePost() {
 // ─── User Posts ───────────────────────────────────────────────────────
 
 export function useUserPosts(username: string) {
-  const result = useQuery(api.feed.getUserPosts, username ? { username } : "skip");
+  const [cursors, setCursors] = useState<string[]>([]);
+  const [pages, setPages] = useState<any[]>([]);
+  const [isFetchingNext, setIsFetchingNext] = useState(false);
+
+  const currentCursor = cursors.length > 0 ? cursors[cursors.length - 1] : undefined;
+
+  // Always subscribe to first page for live updates
+  const firstPage = useQuery(
+    api.feed.getUserPosts,
+    username ? { username, cursor: undefined } : "skip"
+  );
+  const paginatedResult = useQuery(
+    api.feed.getUserPosts,
+    username && currentCursor ? { username, cursor: currentCursor } : "skip"
+  );
+
+  // Keep first page always up to date (real-time)
+  useEffect(() => {
+    if (firstPage) {
+      setPages((prev) => {
+        const next = [...prev];
+        next[0] = firstPage;
+        return next;
+      });
+    }
+  }, [firstPage]);
+
+  // Sync paginated pages beyond page 0
+  useEffect(() => {
+    if (paginatedResult && cursors.length > 0) {
+      setPages((prev) => {
+        const pageIndex = cursors.length;
+        const next = [...prev];
+        next[pageIndex] = paginatedResult;
+        return next;
+      });
+      setIsFetchingNext(false);
+    }
+  }, [paginatedResult, cursors.length]);
+
+  // Reset when username changes
+  useEffect(() => {
+    setCursors([]);
+    setPages([]);
+  }, [username]);
+
+  const latestPage = pages[pages.length - 1];
+  const hasNextPage = latestPage?.nextCursor != null;
+
+  const fetchNextPage = useCallback(() => {
+    if (!hasNextPage || isFetchingNext) return;
+    setIsFetchingNext(true);
+    setCursors((prev) => [...prev, latestPage.nextCursor]);
+  }, [hasNextPage, isFetchingNext, latestPage]);
+
   return {
-    data: result ? { pages: [result] } : undefined,
-    isLoading: result === undefined,
+    data: pages.length > 0 ? { pages } : undefined,
+    isLoading: firstPage === undefined && pages.length === 0,
     error: null,
-    hasNextPage: result?.nextCursor != null,
-    fetchNextPage: () => {},
-    isFetchingNextPage: false,
+    hasNextPage,
+    fetchNextPage,
+    isFetchingNextPage: isFetchingNext,
   };
 }
 

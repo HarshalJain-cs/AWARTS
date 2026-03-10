@@ -14,7 +14,9 @@ export default function AuthCallback() {
   useEffect(() => {
     if (!isLoaded) return;
     if (isSignedIn) {
-      navigate(user?.username ? "/feed" : "/onboarding", { replace: true });
+      // Redirect to onboarding if user doesn't have a country set (incomplete setup)
+      const needsOnboarding = !user?.country;
+      navigate(needsOnboarding ? "/onboarding" : "/feed", { replace: true });
     } else {
       navigate("/login", { replace: true });
     }
