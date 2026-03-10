@@ -13,10 +13,11 @@ import { SkeletonProfile } from '@/components/SkeletonProfile';
 import { SkeletonCard } from '@/components/SkeletonCard';
 import { ErrorState } from '@/components/ErrorState';
 import { formatNumber } from '@/lib/format';
-import { MapPin, Calendar, BadgeCheck, Flame, Lock, Github, ExternalLink } from 'lucide-react';
+import { MapPin, Calendar, BadgeCheck, Flame, Lock, Github, ExternalLink, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { SEO } from '@/components/SEO';
+import { SocialShareMenu } from '@/components/SocialShareMenu';
 
 export default function Profile() {
   const { username } = useParams<{ username: string }>();
@@ -141,12 +142,29 @@ export default function Profile() {
               </div>
             )}
           </div>
-          <div className="shrink-0">
+          <div className="shrink-0 flex flex-col gap-2">
             {isOwn ? (
               <Button variant="outline" size="sm" asChild><Link to="/settings">Edit Profile</Link></Button>
             ) : (
               <FollowButton targetUserId={raw._id} isFollowing={raw.isFollowing} username={user.username} />
             )}
+            <SocialShareMenu
+              data={{
+                type: 'profile',
+                username: user.username,
+                url: `${window.location.origin}/u/${user.username}`,
+                totalCost: raw.stats?.total_cost_usd ?? 0,
+                totalDays: raw.stats?.total_days ?? 0,
+                streak: raw.stats?.current_streak ?? 0,
+                followers: user.followers,
+              }}
+              trigger={
+                <Button variant="ghost" size="sm" className="gap-1.5">
+                  <Share2 className="h-4 w-4" />
+                  Share
+                </Button>
+              }
+            />
           </div>
         </div>
 

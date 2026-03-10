@@ -3,6 +3,7 @@ import { SignIn } from "@clerk/clerk-react";
 import { useAuth } from "@/context/AuthContext";
 import { useEffect, useMemo } from "react";
 import { SEO } from '@/components/SEO';
+import { toast } from '@/hooks/use-toast';
 
 /** Read a CSS variable from :root and convert HSL triplet to a full hsl() string */
 function getCssHsl(varName: string): string {
@@ -60,6 +61,7 @@ export default function Login() {
 
   useEffect(() => {
     if (isLoaded && isSignedIn) {
+      toast({ title: 'You are already logged in!', description: 'Redirecting to your feed...' });
       navigate("/feed", { replace: true });
     }
   }, [isLoaded, isSignedIn, navigate]);

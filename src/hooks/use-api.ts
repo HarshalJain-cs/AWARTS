@@ -538,3 +538,9 @@ export function useCheckUsername(username: string) {
     error: null,
   };
 }
+
+// ─── Account Deletion ────────────────────────────────────────────────
+
+export function useDeleteAccount() {
+  return useMutationWithPending<Record<string, never>, any>(api.users.deleteAccount);
+}

@@ -122,7 +122,7 @@ function RecapContent() {
         </div>
 
         {/* Export actions */}
-        <ShareActions cardRef={cardRef} username={username} />
+        <ShareActions cardRef={cardRef} username={username} stats={{ totalCost, totalDays, streak }} />
       </div>
     </AppShell>
   );

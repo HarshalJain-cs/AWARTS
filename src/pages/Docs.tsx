@@ -185,12 +185,10 @@ awarts sync  # detects Claude automatically`}</CodeBlock>
             <div className={cn('h-3 w-3 rounded-full', PROVIDERS.codex.dotClass)} />
             <h3 className="text-lg font-semibold text-foreground">Codex (OpenAI)</h3>
           </div>
-          <Para>Reads daily usage files from <code className="font-mono bg-muted px-1 rounded text-foreground">~/.codex/usage/</code>. Optionally, store an OpenAI API key for real billing data (not required — local files work without it).</Para>
-          <CodeBlock title="Optional: real billing data">{`# Works without API key (reads local files)
-awarts sync
-
-# Optional: add OpenAI key for exact billing data
-awarts keys set openai sk-your-openai-key`}</CodeBlock>
+          <Para>Reads daily usage files from <code className="font-mono bg-muted px-1 rounded text-foreground">~/.codex/usage/</code>. If you use the OpenAI Codex CLI, it creates these files automatically. Costs are estimated from token counts using published pricing.</Para>
+          <InfoBox>
+            <strong>No sessions showing for Codex?</strong> Make sure you're using the <a href="https://github.com/openai/codex" className="text-primary underline" target="_blank" rel="noopener noreferrer">OpenAI Codex CLI</a> (not the web UI). The CLI stores usage data locally at <code className="font-mono bg-muted px-1 rounded">~/.codex/usage/</code>. If no files exist there yet, complete a coding session with Codex first.
+          </InfoBox>
         </div>
 
         <div className="my-4">
@@ -198,7 +196,10 @@ awarts keys set openai sk-your-openai-key`}</CodeBlock>
             <div className={cn('h-3 w-3 rounded-full', PROVIDERS.gemini.dotClass)} />
             <h3 className="text-lg font-semibold text-foreground">Gemini</h3>
           </div>
-          <Para>Reads from <code className="font-mono bg-muted px-1 rounded text-foreground">~/.gemini/usage/</code> or <code className="font-mono bg-muted px-1 rounded text-foreground">~/.config/gemini/usage/</code>. Costs are estimated from token counts using published pricing when not provided.</Para>
+          <Para>Reads from <code className="font-mono bg-muted px-1 rounded text-foreground">~/.gemini/usage/</code> or <code className="font-mono bg-muted px-1 rounded text-foreground">~/.config/gemini/usage/</code>. Costs are estimated from token counts using published pricing.</Para>
+          <InfoBox>
+            <strong>No sessions showing for Gemini?</strong> AWARTS reads from local Gemini CLI usage files. If you only use Gemini through the web app or API without a local CLI tool, you can manually import sessions from Settings → Import using a CSV or JSON file.
+          </InfoBox>
         </div>
 
         <div className="my-4">
@@ -207,7 +208,15 @@ awarts keys set openai sk-your-openai-key`}</CodeBlock>
             <h3 className="text-lg font-semibold text-foreground">Antigravity</h3>
           </div>
           <Para>Reads from <code className="font-mono bg-muted px-1 rounded text-foreground">~/.antigravity/usage/</code>. Costs are estimated from token counts when not provided in usage files.</Para>
+          <InfoBox>
+            <strong>No sessions showing for Antigravity?</strong> Make sure the Antigravity CLI stores usage data at <code className="font-mono bg-muted px-1 rounded">~/.antigravity/usage/</code>. If it stores data elsewhere, you can import sessions manually from Settings → Import.
+          </InfoBox>
         </div>
+
+        <Heading3>Can't find local files? Use manual import</Heading3>
+        <Para>
+          If your provider doesn't create local usage files (e.g., you only use it via web), you can always import sessions manually from the <strong>Settings → Import</strong> tab using a JSON or CSV file with your usage data.
+        </Para>
 
         <Heading3>Multi-Provider Sessions</Heading3>
         <Para>

@@ -52,9 +52,7 @@ export default function Landing() {
     return document.documentElement.classList.contains('dark');
   });
 
-  const devs = useCounter(2847);
-  const tokens = useCounter(42); // 4.2B displayed as "4.2B" with counter for the integer part
-  const countries = useCounter(48);
+  const countries = useCounter(195);
 
   const toggleTheme = () => {
     const next = !isDark;
@@ -68,13 +66,6 @@ export default function Landing() {
     setCopied(true);
     toast({ title: 'Copied!', description: 'CLI command copied to clipboard.' });
     setTimeout(() => setCopied(false), 2000);
-  };
-
-  const formatCounter = (value: number, suffix: string) => {
-    if (suffix === 'B') {
-      return `${(value / 10).toFixed(1)}${suffix}`;
-    }
-    return value.toLocaleString();
   };
 
   return (
@@ -148,34 +139,35 @@ export default function Landing() {
       </header>
 
       {/* Hero */}
-      <section className="relative z-10 mx-auto max-w-6xl px-4 pt-20 pb-16 text-center">
+      <section className="relative z-10 mx-auto max-w-6xl px-4 pt-20 pb-16 text-center overflow-hidden">
         <motion.p
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
           className="font-mono text-sm uppercase tracking-widest text-primary mb-4"
         >
           STRAVA FOR CLAUDE, CODEX, GEMINI & ANTIGRAVITY
         </motion.p>
         <motion.h1
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
+          transition={{ duration: 0.5, delay: 0.05 }}
           className="text-4xl sm:text-6xl lg:text-7xl font-extrabold text-foreground leading-tight"
         >
           Every AI coding session counts.
         </motion.h1>
         <motion.p
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
           className="mt-4 text-lg text-muted-foreground max-w-xl mx-auto"
         >
           The Strava for AI-assisted coding. Track sessions across Claude, Codex, Gemini & Antigravity. No API keys needed — reads from your local files. Compete on leaderboards worldwide.
         </motion.p>
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
+          transition={{ duration: 0.5, delay: 0.15 }}
           className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4"
         >
           <Button asChild size="lg" className="text-base px-8">
@@ -196,29 +188,29 @@ export default function Landing() {
 
       {/* Terminal Demo */}
       <motion.section
-        initial={{ opacity: 0, y: 40 }}
+        initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: '-80px' }}
-        transition={{ duration: 0.6 }}
+        viewport={{ once: true, margin: '-40px' }}
+        transition={{ duration: 0.5 }}
         className="relative z-10 mx-auto max-w-2xl px-4 pb-20"
       >
         <TerminalDemo />
       </motion.section>
 
-      {/* Live Stats with animated counters */}
+      {/* Platform highlights */}
       <section className="relative z-10 border-y border-border bg-muted/20 py-12">
         <div className="mx-auto max-w-4xl grid grid-cols-3 gap-8 text-center">
           <div ref={devs.ref}>
-            <p className="font-mono text-3xl font-bold text-foreground">{devs.count.toLocaleString()}</p>
-            <p className="text-sm text-muted-foreground mt-1">developers logging daily</p>
+            <p className="font-mono text-3xl font-bold text-foreground">4</p>
+            <p className="text-sm text-muted-foreground mt-1">AI providers supported</p>
           </div>
           <div ref={tokens.ref}>
-            <p className="font-mono text-3xl font-bold text-foreground">{formatCounter(tokens.count, 'B')}</p>
-            <p className="text-sm text-muted-foreground mt-1">tokens tracked</p>
+            <p className="font-mono text-3xl font-bold text-foreground">100%</p>
+            <p className="text-sm text-muted-foreground mt-1">free & open source</p>
           </div>
           <div ref={countries.ref}>
-            <p className="font-mono text-3xl font-bold text-foreground">{countries.count}</p>
-            <p className="text-sm text-muted-foreground mt-1">countries</p>
+            <p className="font-mono text-3xl font-bold text-foreground">{countries.count}+</p>
+            <p className="text-sm text-muted-foreground mt-1">countries supported</p>
           </div>
         </div>
       </section>
@@ -226,10 +218,10 @@ export default function Landing() {
       {/* Sessions Visualized */}
       <section className="relative z-10 mx-auto max-w-6xl px-4 py-20">
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 15 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-60px' }}
-          transition={{ duration: 0.5 }}
+          viewport={{ once: true, margin: '-40px' }}
+          transition={{ duration: 0.4 }}
         >
           <h2 className="text-3xl font-bold text-foreground text-center mb-4">Sessions visualized</h2>
           <p className="text-muted-foreground text-center mb-10 max-w-lg mx-auto">
@@ -254,10 +246,10 @@ export default function Landing() {
           ].map((f, i) => (
             <motion.div
               key={f.title}
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: 15 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: '-40px' }}
-              transition={{ duration: 0.5, delay: i * 0.12 }}
+              viewport={{ once: true, margin: '-20px' }}
+              transition={{ duration: 0.4, delay: i * 0.08 }}
               className="rounded-lg border border-border bg-card p-6 space-y-3"
             >
               <f.icon className="h-8 w-8 text-primary" />
@@ -271,10 +263,10 @@ export default function Landing() {
       {/* Wall of Love */}
       <section className="relative z-10 mx-auto max-w-6xl px-4 py-16">
         <motion.h2
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 10 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
+          transition={{ duration: 0.4 }}
           className="text-3xl font-bold text-foreground text-center mb-10"
         >
           Wall of Love
@@ -283,10 +275,10 @@ export default function Landing() {
           {mockTestimonials.map((t, i) => (
             <motion.div
               key={t.id}
-              initial={{ opacity: 0, scale: 0.95 }}
+              initial={{ opacity: 0, scale: 0.97 }}
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.4, delay: i * 0.06 }}
+              transition={{ duration: 0.3, delay: i * 0.04 }}
             >
               <TestimonialCard author={t.author} handle={t.handle} content={t.content} provider={t.provider} />
             </motion.div>
@@ -296,10 +288,10 @@ export default function Landing() {
 
       {/* CTA */}
       <motion.section
-        initial={{ opacity: 0, y: 30 }}
+        initial={{ opacity: 0, y: 15 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
-        transition={{ duration: 0.6 }}
+        transition={{ duration: 0.4 }}
         className="relative z-10 mx-auto max-w-6xl px-4 py-20 text-center"
       >
         <h2 className="text-4xl sm:text-5xl font-extrabold text-foreground mb-6">Your move.</h2>

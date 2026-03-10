@@ -5,12 +5,12 @@ import { formatDate } from '@/lib/format';
 import { ProviderChip } from './ProviderChip';
 import { StatsGrid } from './StatsGrid';
 import { KudosButton } from './KudosButton';
+import { SocialShareMenu } from './SocialShareMenu';
 import { MessageCircle, Share2, ChevronDown, BadgeCheck, ShieldCheck, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { formatCost, formatTokens } from '@/lib/format';
 import { PROVIDERS } from '@/lib/constants';
 import { motion } from 'framer-motion';
-import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
 interface ActivityCardProps {
@@ -265,21 +265,23 @@ export function ActivityCard({ post, index = 0, showInlineComments = false }: Ac
             <MessageCircle className="h-4 w-4" />
             {post.commentCount}
           </Link>
-          <button
-            onClick={async () => {
-              const url = `${window.location.origin}/post/${post.id}`;
-              if (navigator.share) {
-                await navigator.share({ title: post.title, url });
-              } else {
-                await navigator.clipboard.writeText(url);
-                toast({ title: 'Link copied!', description: 'Post link copied to clipboard.' });
-              }
+          <SocialShareMenu
+            data={{
+              type: 'session',
+              username: post.user.username,
+              url: `${window.location.origin}/post/${post.id}`,
+              cost: post.stats.cost,
+              tokens: (post.stats.outputTokens ?? 0) + (post.stats.inputTokens ?? 0),
+              providers: post.providers,
+              date: post.createdAt,
             }}
-            className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors ml-auto"
-          >
-            <Share2 className="h-4 w-4" />
-            Share
-          </button>
+            trigger={
+              <span className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors ml-auto cursor-pointer">
+                <Share2 className="h-4 w-4" />
+                Share
+              </span>
+            }
+          />
         </div>
       </motion.article>
 

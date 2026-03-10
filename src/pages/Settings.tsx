@@ -3,7 +3,7 @@ import { AppShell } from '@/components/layout/AppShell';
 import { AuthGate } from '@/components/AuthGate';
 import { useAuth } from '@/context/AuthContext';
 import { useUser } from '@clerk/clerk-react';
-import { useCurrentUser, useUpdateProfile, useUploadAvatar, useImportUsage } from '@/hooks/use-api';
+import { useCurrentUser, useUpdateProfile, useUploadAvatar, useImportUsage, useDeleteAccount } from '@/hooks/use-api';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -104,6 +104,9 @@ function SettingsContent() {
   const updateProfile = useUpdateProfile();
   const uploadAvatar = useUploadAvatar();
   const importUsage = useImportUsage();
+  const deleteAccount = useDeleteAccount();
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
 
   const [displayName, setDisplayName] = useState('');
   const [bio, setBio] = useState('');
@@ -317,18 +320,19 @@ function SettingsContent() {
                 }}
               />
             </div>
+            <p className="text-xs text-muted-foreground mt-2">In-app notifications for the following are always enabled:</p>
             {[
               { label: 'Kudos', desc: 'When someone gives you kudos', checked: notifKudos, set: setNotifKudos },
               { label: 'Comments', desc: 'When someone comments on your post', checked: notifComments, set: setNotifComments },
               { label: 'Mentions', desc: 'When someone mentions you', checked: notifMentions, set: setNotifMentions },
               { label: 'Follows', desc: 'When someone follows you', checked: notifFollows, set: setNotifFollows },
             ].map((n) => (
-              <div key={n.label} className="flex items-center justify-between rounded-lg border border-border p-4 opacity-60">
+              <div key={n.label} className="flex items-center justify-between rounded-lg border border-border p-4">
                 <div>
-                  <p className="font-medium text-foreground">{n.label} <span className="text-xs text-muted-foreground font-normal">(coming soon)</span></p>
+                  <p className="font-medium text-foreground">{n.label}</p>
                   <p className="text-sm text-muted-foreground">{n.desc}</p>
                 </div>
-                <Switch checked={n.checked} onCheckedChange={n.set} disabled />
+                <Switch checked={n.checked} onCheckedChange={n.set} />
               </div>
             ))}
           </TabsContent>
@@ -482,18 +486,48 @@ function SettingsContent() {
               <Label>Email</Label>
               <Input value={authUser?.email ?? ''} disabled />
             </div>
-            <div className="pt-4 border-t border-border">
-              <Button
-                variant="destructive"
-                onClick={() => {
-                  toast({
-                    title: 'Account deletion',
-                    description: 'Please contact support@awarts.com to delete your account.',
-                  });
-                }}
-              >
-                Delete Account
-              </Button>
+            <div className="pt-4 border-t border-border space-y-3">
+              <p className="text-sm text-destructive font-medium">Danger Zone</p>
+              {!showDeleteConfirm ? (
+                <Button variant="destructive" onClick={() => setShowDeleteConfirm(true)}>
+                  Delete Account
+                </Button>
+              ) : (
+                <div className="rounded-lg border border-destructive/50 bg-destructive/5 p-4 space-y-3">
+                  <p className="text-sm text-foreground font-medium">Are you sure? This action cannot be undone.</p>
+                  <p className="text-xs text-muted-foreground">All your sessions, posts, comments, follows, and achievements will be permanently deleted.</p>
+                  <div className="space-y-2">
+                    <Label className="text-xs">Type <strong>DELETE</strong> to confirm:</Label>
+                    <Input
+                      value={deleteConfirmText}
+                      onChange={(e) => setDeleteConfirmText(e.target.value)}
+                      placeholder="DELETE"
+                      className="max-w-xs"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      disabled={deleteConfirmText !== 'DELETE' || deleteAccount.isPending}
+                      onClick={async () => {
+                        try {
+                          await deleteAccount.mutateAsync({} as any);
+                          toast({ title: 'Account deleted', description: 'Your account has been permanently deleted.' });
+                          window.location.href = '/';
+                        } catch {
+                          toast({ title: 'Deletion failed', variant: 'destructive' });
+                        }
+                      }}
+                    >
+                      {deleteAccount.isPending ? 'Deleting...' : 'Permanently Delete'}
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => { setShowDeleteConfirm(false); setDeleteConfirmText(''); }}>
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           </TabsContent>
         </Tabs>

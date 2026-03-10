@@ -343,6 +343,57 @@ function getPreviousDate(dateStr: string): string {
   return d.toISOString().split("T")[0];
 }
 
+// DELETE /users/me — delete account and all associated data
+export const deleteAccount = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const user = await requireUser(ctx);
+
+    // Delete all user data: usage, posts, comments, follows, kudos, notifications, achievements
+    const usage = await ctx.db.query("daily_usage").withIndex("by_user", (q) => q.eq("userId", user._id)).collect();
+    for (const u of usage) await ctx.db.delete(u._id);
+
+    const posts = await ctx.db.query("posts").withIndex("by_user", (q) => q.eq("userId", user._id)).collect();
+    for (const p of posts) {
+      // Delete post links
+      const links = await ctx.db.query("post_daily_usage").withIndex("by_post", (q) => q.eq("postId", p._id)).collect();
+      for (const l of links) await ctx.db.delete(l._id);
+      // Delete comments on post
+      const comments = await ctx.db.query("comments").withIndex("by_post", (q) => q.eq("postId", p._id)).collect();
+      for (const c of comments) await ctx.db.delete(c._id);
+      // Delete kudos on post
+      const kudos = await ctx.db.query("kudos").withIndex("by_post", (q) => q.eq("postId", p._id)).collect();
+      for (const k of kudos) await ctx.db.delete(k._id);
+      await ctx.db.delete(p._id);
+    }
+
+    // Delete follows (both directions)
+    const followsAsFollower = await ctx.db.query("follows").withIndex("by_follower", (q) => q.eq("followerId", user._id)).collect();
+    for (const f of followsAsFollower) await ctx.db.delete(f._id);
+    const followsAsFollowing = await ctx.db.query("follows").withIndex("by_following", (q) => q.eq("followingId", user._id)).collect();
+    for (const f of followsAsFollowing) await ctx.db.delete(f._id);
+
+    // Delete notifications
+    const notifications = await ctx.db.query("notifications").withIndex("by_recipient", (q) => q.eq("recipientId", user._id)).collect();
+    for (const n of notifications) await ctx.db.delete(n._id);
+
+    // Delete achievements
+    const achievements = await ctx.db.query("user_achievements").withIndex("by_user", (q) => q.eq("userId", user._id)).collect();
+    for (const a of achievements) await ctx.db.delete(a._id);
+
+    // Delete CLI auth tokens
+    const authCodes = await ctx.db.query("cli_auth_codes").collect();
+    for (const code of authCodes) {
+      if (code.userId === user._id) await ctx.db.delete(code._id);
+    }
+
+    // Finally delete the user
+    await ctx.db.delete(user._id);
+
+    return { success: true };
+  },
+});
+
 // GET /users/:username/followers
 export const getFollowers = query({
   args: { username: v.string() },
