@@ -117,9 +117,9 @@ export function SocialShareMenu({ data, trigger, className }: SocialShareMenuPro
     if (!ref.current) return null;
     try {
       // First pass for fonts to load
-      await toPng(ref.current, { quality: 1, pixelRatio: 2 });
+      await toPng(ref.current, { quality: 1, pixelRatio: 2, skipFonts: true });
       // Second pass for actual capture
-      const dataUrl = await toPng(ref.current, { quality: 1, pixelRatio: 2 });
+      const dataUrl = await toPng(ref.current, { quality: 1, pixelRatio: 2, skipFonts: true });
       return dataUrl;
     } catch {
       return null;

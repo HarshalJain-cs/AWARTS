@@ -51,7 +51,7 @@ function XCard({ data }: { data: PlatformCardData }) {
         flexDirection: 'column',
         justifyContent: 'space-between',
         padding: 64,
-        fontFamily: "'Inter', 'system-ui', sans-serif",
+        fontFamily: "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
         position: 'relative',
         overflow: 'hidden',
       }}
@@ -133,7 +133,7 @@ function InstagramCard({ data }: { data: PlatformCardData }) {
         alignItems: 'center',
         justifyContent: 'center',
         padding: 80,
-        fontFamily: "'Inter', 'system-ui', sans-serif",
+        fontFamily: "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
         position: 'relative',
         overflow: 'hidden',
       }}
@@ -227,7 +227,7 @@ function LinkedInCard({ data }: { data: PlatformCardData }) {
         height: 627,
         background: 'linear-gradient(135deg, #0a1628 0%, #1e293b 60%, #0f172a 100%)',
         display: 'flex',
-        fontFamily: "'Inter', 'system-ui', sans-serif",
+        fontFamily: "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
         position: 'relative',
         overflow: 'hidden',
       }}
@@ -316,7 +316,7 @@ function WhatsAppCard({ data }: { data: PlatformCardData }) {
         flexDirection: 'column',
         justifyContent: 'space-between',
         padding: 56,
-        fontFamily: "'Inter', 'system-ui', sans-serif",
+        fontFamily: "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
         position: 'relative',
         overflow: 'hidden',
       }}

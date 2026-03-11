@@ -137,7 +137,7 @@ export const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
       <div
         ref={ref}
         className={cn('w-[480px] rounded-2xl p-6 space-y-5', s.card, `border ${s.border}`)}
-        style={{ fontFamily: "'Inter', 'system-ui', sans-serif" }}
+        style={{ fontFamily: "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" }}
       >
         {/* Header with branding */}
         <div className="flex items-center justify-between">

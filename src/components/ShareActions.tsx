@@ -49,8 +49,8 @@ export function ShareActions({ cardRef, username, avatarUrl, providers, stats }:
     const ref = platformRefs[platform];
     if (!ref.current) return null;
     try {
-      await toPng(ref.current, { quality: 1, pixelRatio: 2 });
-      return await toPng(ref.current, { quality: 1, pixelRatio: 2 });
+      await toPng(ref.current, { quality: 1, pixelRatio: 2, skipFonts: true });
+      return await toPng(ref.current, { quality: 1, pixelRatio: 2, skipFonts: true });
     } catch {
       return null;
     }
@@ -114,8 +114,8 @@ export function ShareActions({ cardRef, username, avatarUrl, providers, stats }:
   async function generatePng(): Promise<string | null> {
     if (!cardRef.current) return null;
     try {
-      await toPng(cardRef.current, { quality: 1, pixelRatio: 2 });
-      const dataUrl = await toPng(cardRef.current, { quality: 1, pixelRatio: 2 });
+      await toPng(cardRef.current, { quality: 1, pixelRatio: 2, skipFonts: true });
+      const dataUrl = await toPng(cardRef.current, { quality: 1, pixelRatio: 2, skipFonts: true });
       return dataUrl;
     } catch {
       return null;
