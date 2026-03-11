@@ -270,6 +270,7 @@ export function ActivityCard({ post, index = 0, showInlineComments = false }: Ac
               type: 'session',
               username: post.user.username,
               url: `${window.location.origin}/post/${post.id}`,
+              avatarUrl: post.user.avatar,
               cost: post.stats.cost,
               tokens: (post.stats.outputTokens ?? 0) + (post.stats.inputTokens ?? 0),
               providers: post.providers,

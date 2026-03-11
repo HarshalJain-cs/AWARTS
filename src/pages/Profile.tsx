@@ -153,10 +153,12 @@ export default function Profile() {
                 type: 'profile',
                 username: user.username,
                 url: `${window.location.origin}/u/${user.username}`,
+                avatarUrl: user.avatar,
                 totalCost: raw.stats?.total_cost_usd ?? 0,
                 totalDays: raw.stats?.total_days ?? 0,
                 streak: raw.stats?.current_streak ?? 0,
                 followers: user.followers,
+                providers: user.providers,
               }}
               trigger={
                 <Button variant="ghost" size="sm" className="gap-1.5">
