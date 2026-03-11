@@ -44,7 +44,7 @@ export function FollowButton({ targetUserId, isFollowing: initial, username, onT
       onMouseEnter={() => setHovering(true)}
       onMouseLeave={() => setHovering(false)}
       className={cn(
-        'min-w-[90px] transition-colors',
+        'min-w-[90px] transition-all duration-200 hover:scale-105 active:scale-95',
         following && hovering && 'border-destructive bg-destructive/10 text-destructive hover:bg-destructive/20'
       )}
     >

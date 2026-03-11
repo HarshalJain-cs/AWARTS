@@ -135,7 +135,7 @@ export function ActivityCard({ post, index = 0, showInlineComments = false }: Ac
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: '-50px' }}
         transition={{ duration: 0.35, delay: index * 0.08 }}
-        className="rounded-lg border border-border bg-card p-5 space-y-3.5"
+        className="rounded-lg border border-border bg-card p-5 space-y-3.5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/5 hover:border-primary/20"
       >
         {/* Header */}
         <div className="flex items-center gap-3">

@@ -1,4 +1,4 @@
-import { forwardRef } from 'react';
+import { forwardRef, useEffect, useState } from 'react';
 
 export type SharePlatform = 'x' | 'instagram' | 'linkedin' | 'whatsapp';
 
@@ -38,8 +38,84 @@ function formatTokensVal(n?: number): string {
   return n.toString();
 }
 
+/** Convert external URL to base64 data URL to avoid CORS issues with html-to-image */
+function useDataUrl(url?: string): string | undefined {
+  const [dataUrl, setDataUrl] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    if (!url) { setDataUrl(undefined); return; }
+    // Already a data URL
+    if (url.startsWith('data:')) { setDataUrl(url); return; }
+
+    let cancelled = false;
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      if (cancelled) return;
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+        ctx.drawImage(img, 0, 0);
+        setDataUrl(canvas.toDataURL('image/png'));
+      } catch {
+        setDataUrl(undefined);
+      }
+    };
+    img.onerror = () => { if (!cancelled) setDataUrl(undefined); };
+    img.src = url;
+
+    return () => { cancelled = true; };
+  }, [url]);
+
+  return dataUrl;
+}
+
+// ── Avatar component with fallback ───────────────────────────────────────
+
+function CardAvatar({ url, username, size, border }: { url?: string; username: string; size: number; border: string }) {
+  if (url) {
+    return (
+      <img
+        src={url}
+        alt=""
+        style={{
+          width: size,
+          height: size,
+          borderRadius: '50%',
+          border,
+          objectFit: 'cover',
+        }}
+      />
+    );
+  }
+  // Fallback: colored circle with initial
+  const initial = (username[0] ?? '?').toUpperCase();
+  return (
+    <div
+      style={{
+        width: size,
+        height: size,
+        borderRadius: '50%',
+        border,
+        background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: '#fff',
+        fontSize: size * 0.4,
+        fontWeight: 800,
+      }}
+    >
+      {initial}
+    </div>
+  );
+}
+
 // --- X Card: Dark, cinematic landscape ---
-function XCard({ data }: { data: PlatformCardData }) {
+function XCard({ data }: { data: PlatformCardData & { resolvedAvatar?: string } }) {
   const isSession = data.type === 'session';
   return (
     <div
@@ -54,20 +130,19 @@ function XCard({ data }: { data: PlatformCardData }) {
         fontFamily: "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
         position: 'relative',
         overflow: 'hidden',
+        color: '#fff',
       }}
     >
-      {/* Background accent */}
+      {/* Background accents */}
       <div style={{ position: 'absolute', top: -100, right: -100, width: 400, height: 400, borderRadius: '50%', background: 'radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%)' }} />
       <div style={{ position: 'absolute', bottom: -80, left: -80, width: 300, height: 300, borderRadius: '50%', background: 'radial-gradient(circle, rgba(168,85,247,0.1) 0%, transparent 70%)' }} />
 
-      {/* Top: Branding + User */}
+      {/* Top: User + Branding */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', position: 'relative', zIndex: 1 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          {data.avatarUrl && (
-            <img src={data.avatarUrl} alt="" style={{ width: 72, height: 72, borderRadius: '50%', border: '3px solid rgba(255,255,255,0.2)', objectFit: 'cover' }} />
-          )}
+          <CardAvatar url={data.resolvedAvatar} username={data.username} size={72} border="3px solid rgba(255,255,255,0.2)" />
           <div>
-            <div style={{ color: '#fff', fontSize: 32, fontWeight: 700 }}>@{data.username}</div>
+            <div style={{ fontSize: 32, fontWeight: 700 }}>@{data.username}</div>
             <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 16, marginTop: 4 }}>
               {isSession ? `Session ${data.date ? `· ${data.date}` : ''}` : 'AI Coding Profile'}
             </div>
@@ -75,7 +150,7 @@ function XCard({ data }: { data: PlatformCardData }) {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <div style={{ width: 20, height: 28, background: '#fff', clipPath: 'polygon(15% 0%, 100% 0%, 85% 100%, 0% 100%)' }} />
-          <span style={{ color: '#fff', fontFamily: 'monospace', fontSize: 18, fontWeight: 700, letterSpacing: 3 }}>AWARTS</span>
+          <span style={{ fontFamily: 'monospace', fontSize: 18, fontWeight: 700, letterSpacing: 3 }}>AWARTS</span>
         </div>
       </div>
 
@@ -99,7 +174,7 @@ function XCard({ data }: { data: PlatformCardData }) {
 
       {/* Bottom: Providers + URL */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', position: 'relative', zIndex: 1 }}>
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' as const }}>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
           {(data.providers ?? []).map((p) => (
             <span key={p} style={{
               background: 'rgba(255,255,255,0.08)',
@@ -109,7 +184,7 @@ function XCard({ data }: { data: PlatformCardData }) {
               color: 'rgba(255,255,255,0.8)',
               fontSize: 14,
               fontWeight: 500,
-              textTransform: 'capitalize' as const,
+              textTransform: 'capitalize',
             }}>{p}</span>
           ))}
         </div>
@@ -120,7 +195,7 @@ function XCard({ data }: { data: PlatformCardData }) {
 }
 
 // --- Instagram Card: Bold square with gradient ---
-function InstagramCard({ data }: { data: PlatformCardData }) {
+function InstagramCard({ data }: { data: PlatformCardData & { resolvedAvatar?: string } }) {
   const isSession = data.type === 'session';
   return (
     <div
@@ -136,6 +211,7 @@ function InstagramCard({ data }: { data: PlatformCardData }) {
         fontFamily: "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
         position: 'relative',
         overflow: 'hidden',
+        color: '#fff',
       }}
     >
       {/* Decorative rings */}
@@ -145,37 +221,24 @@ function InstagramCard({ data }: { data: PlatformCardData }) {
       {/* Branding */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 40, position: 'relative', zIndex: 1 }}>
         <div style={{ width: 18, height: 26, background: '#fff', clipPath: 'polygon(15% 0%, 100% 0%, 85% 100%, 0% 100%)' }} />
-        <span style={{ color: '#fff', fontFamily: 'monospace', fontSize: 20, fontWeight: 700, letterSpacing: 4 }}>AWARTS</span>
+        <span style={{ fontFamily: 'monospace', fontSize: 20, fontWeight: 700, letterSpacing: 4 }}>AWARTS</span>
       </div>
 
       {/* Avatar */}
-      {data.avatarUrl && (
-        <img
-          src={data.avatarUrl}
-          alt=""
-          style={{
-            width: 120,
-            height: 120,
-            borderRadius: '50%',
-            border: '4px solid rgba(255,255,255,0.2)',
-            objectFit: 'cover',
-            marginBottom: 20,
-            position: 'relative',
-            zIndex: 1,
-          }}
-        />
-      )}
+      <div style={{ marginBottom: 20, position: 'relative', zIndex: 1 }}>
+        <CardAvatar url={data.resolvedAvatar} username={data.username} size={120} border="4px solid rgba(255,255,255,0.2)" />
+      </div>
 
       {/* Username */}
-      <div style={{ color: '#fff', fontSize: 40, fontWeight: 800, textAlign: 'center' as const, marginBottom: 8, position: 'relative', zIndex: 1 }}>
+      <div style={{ fontSize: 40, fontWeight: 800, textAlign: 'center', marginBottom: 8, position: 'relative', zIndex: 1 }}>
         @{data.username}
       </div>
       <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 18, marginBottom: 48, position: 'relative', zIndex: 1 }}>
         {isSession ? 'AI Coding Session' : 'AI Coding Stats'}
       </div>
 
-      {/* Stats (centered 2x2 grid for profile, row for session) */}
-      <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 20, justifyContent: 'center', maxWidth: 600, position: 'relative', zIndex: 1 }}>
+      {/* Stats */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 20, justifyContent: 'center', maxWidth: 600, position: 'relative', zIndex: 1 }}>
         {isSession ? (
           <>
             <IGStatBox label="Cost" value={formatCostVal(data.cost)} />
@@ -194,7 +257,7 @@ function InstagramCard({ data }: { data: PlatformCardData }) {
 
       {/* Providers */}
       {(data.providers ?? []).length > 0 && (
-        <div style={{ display: 'flex', gap: 12, marginTop: 36, flexWrap: 'wrap' as const, justifyContent: 'center', position: 'relative', zIndex: 1 }}>
+        <div style={{ display: 'flex', gap: 12, marginTop: 36, flexWrap: 'wrap', justifyContent: 'center', position: 'relative', zIndex: 1 }}>
           {(data.providers ?? []).map((p) => (
             <span key={p} style={{
               background: 'rgba(255,255,255,0.1)',
@@ -203,7 +266,7 @@ function InstagramCard({ data }: { data: PlatformCardData }) {
               color: 'rgba(255,255,255,0.9)',
               fontSize: 16,
               fontWeight: 600,
-              textTransform: 'capitalize' as const,
+              textTransform: 'capitalize',
             }}>{p}</span>
           ))}
         </div>
@@ -218,7 +281,7 @@ function InstagramCard({ data }: { data: PlatformCardData }) {
 }
 
 // --- LinkedIn Card: Professional, clean landscape ---
-function LinkedInCard({ data }: { data: PlatformCardData }) {
+function LinkedInCard({ data }: { data: PlatformCardData & { resolvedAvatar?: string } }) {
   const isSession = data.type === 'session';
   return (
     <div
@@ -230,6 +293,7 @@ function LinkedInCard({ data }: { data: PlatformCardData }) {
         fontFamily: "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
         position: 'relative',
         overflow: 'hidden',
+        color: '#fff',
       }}
     >
       {/* Left accent bar */}
@@ -240,7 +304,7 @@ function LinkedInCard({ data }: { data: PlatformCardData }) {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <div style={{ width: 18, height: 26, background: '#fff', clipPath: 'polygon(15% 0%, 100% 0%, 85% 100%, 0% 100%)' }} />
-            <span style={{ color: '#fff', fontFamily: 'monospace', fontSize: 16, fontWeight: 700, letterSpacing: 3 }}>AWARTS</span>
+            <span style={{ fontFamily: 'monospace', fontSize: 16, fontWeight: 700, letterSpacing: 3 }}>AWARTS</span>
             <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 14, marginLeft: 8 }}>The Strava for AI Coding</span>
           </div>
           <div style={{ color: 'rgba(255,255,255,0.3)', fontSize: 13, fontFamily: 'monospace' }}>awarts.com</div>
@@ -249,18 +313,15 @@ function LinkedInCard({ data }: { data: PlatformCardData }) {
         {/* Middle: User + Stats */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 40 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 20, minWidth: 280 }}>
-            {data.avatarUrl && (
-              <img src={data.avatarUrl} alt="" style={{ width: 80, height: 80, borderRadius: '50%', border: '3px solid rgba(255,255,255,0.15)', objectFit: 'cover' }} />
-            )}
+            <CardAvatar url={data.resolvedAvatar} username={data.username} size={80} border="3px solid rgba(255,255,255,0.15)" />
             <div>
-              <div style={{ color: '#fff', fontSize: 28, fontWeight: 700 }}>@{data.username}</div>
+              <div style={{ fontSize: 28, fontWeight: 700 }}>@{data.username}</div>
               <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 15, marginTop: 4 }}>
                 {isSession ? 'Session Report' : 'Developer Profile'}
               </div>
             </div>
           </div>
 
-          {/* Stats row */}
           <div style={{ display: 'flex', gap: 20, flex: 1 }}>
             {isSession ? (
               <>
@@ -290,7 +351,7 @@ function LinkedInCard({ data }: { data: PlatformCardData }) {
                 color: 'rgba(255,255,255,0.75)',
                 fontSize: 13,
                 fontWeight: 500,
-                textTransform: 'capitalize' as const,
+                textTransform: 'capitalize',
               }}>{p}</span>
             ))}
           </div>
@@ -304,7 +365,7 @@ function LinkedInCard({ data }: { data: PlatformCardData }) {
 }
 
 // --- WhatsApp Card: Friendly square with green accent ---
-function WhatsAppCard({ data }: { data: PlatformCardData }) {
+function WhatsAppCard({ data }: { data: PlatformCardData & { resolvedAvatar?: string } }) {
   const isSession = data.type === 'session';
   return (
     <div
@@ -319,6 +380,7 @@ function WhatsAppCard({ data }: { data: PlatformCardData }) {
         fontFamily: "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
         position: 'relative',
         overflow: 'hidden',
+        color: '#fff',
       }}
     >
       {/* Green accent stripe */}
@@ -328,25 +390,22 @@ function WhatsAppCard({ data }: { data: PlatformCardData }) {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <div style={{ width: 16, height: 24, background: '#22c55e', clipPath: 'polygon(15% 0%, 100% 0%, 85% 100%, 0% 100%)' }} />
-          <span style={{ color: '#fff', fontFamily: 'monospace', fontSize: 16, fontWeight: 700, letterSpacing: 3 }}>AWARTS</span>
+          <span style={{ fontFamily: 'monospace', fontSize: 16, fontWeight: 700, letterSpacing: 3 }}>AWARTS</span>
         </div>
         <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 13 }}>{isSession ? 'Session' : 'Profile'}</span>
       </div>
 
       {/* Center: Avatar + User + Stats */}
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 24 }}>
-        {data.avatarUrl && (
-          <img src={data.avatarUrl} alt="" style={{ width: 96, height: 96, borderRadius: '50%', border: '3px solid rgba(34,197,94,0.3)', objectFit: 'cover' }} />
-        )}
-        <div style={{ textAlign: 'center' as const }}>
-          <div style={{ color: '#fff', fontSize: 30, fontWeight: 700 }}>@{data.username}</div>
+        <CardAvatar url={data.resolvedAvatar} username={data.username} size={96} border="3px solid rgba(34,197,94,0.3)" />
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: 30, fontWeight: 700 }}>@{data.username}</div>
           <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 15, marginTop: 4 }}>
             {isSession ? `Coded with AI ${data.date ? `· ${data.date}` : ''}` : 'AI Coding Journey'}
           </div>
         </div>
 
-        {/* Stats */}
-        <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 16, justifyContent: 'center' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, justifyContent: 'center' }}>
           {isSession ? (
             <>
               <WAStatBox label="Cost" value={formatCostVal(data.cost)} />
@@ -365,7 +424,7 @@ function WhatsAppCard({ data }: { data: PlatformCardData }) {
 
       {/* Bottom: Providers + URL */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const }}>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           {(data.providers ?? []).map((p) => (
             <span key={p} style={{
               background: 'rgba(34,197,94,0.1)',
@@ -375,7 +434,7 @@ function WhatsAppCard({ data }: { data: PlatformCardData }) {
               color: 'rgba(255,255,255,0.8)',
               fontSize: 13,
               fontWeight: 500,
-              textTransform: 'capitalize' as const,
+              textTransform: 'capitalize',
             }}>{p}</span>
           ))}
         </div>
@@ -411,9 +470,9 @@ function IGStatBox({ label, value }: { label: string; value: string }) {
       border: '1px solid rgba(255,255,255,0.1)',
       borderRadius: 20,
       padding: '20px 28px',
-      textAlign: 'center' as const,
+      textAlign: 'center',
     }}>
-      <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 14, fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: 1.5, marginBottom: 8 }}>{label}</div>
+      <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 14, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 8 }}>{label}</div>
       <div style={{ color: '#fff', fontSize: 36, fontWeight: 800, fontFamily: 'monospace' }}>{value}</div>
     </div>
   );
@@ -428,7 +487,7 @@ function LIStatBox({ label, value }: { label: string; value: string }) {
       borderRadius: 12,
       padding: '16px 20px',
     }}>
-      <div style={{ color: 'rgba(255,255,255,0.45)', fontSize: 11, fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: 1.5, marginBottom: 6 }}>{label}</div>
+      <div style={{ color: 'rgba(255,255,255,0.45)', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 6 }}>{label}</div>
       <div style={{ color: '#fff', fontSize: 30, fontWeight: 800, fontFamily: 'monospace' }}>{value}</div>
     </div>
   );
@@ -442,9 +501,9 @@ function WAStatBox({ label, value }: { label: string; value: string }) {
       border: '1px solid rgba(34,197,94,0.15)',
       borderRadius: 16,
       padding: '16px 24px',
-      textAlign: 'center' as const,
+      textAlign: 'center',
     }}>
-      <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12, fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: 1.5, marginBottom: 6 }}>{label}</div>
+      <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 6 }}>{label}</div>
       <div style={{ color: '#fff', fontSize: 28, fontWeight: 800, fontFamily: 'monospace' }}>{value}</div>
     </div>
   );
@@ -460,23 +519,24 @@ interface PlatformShareCardProps {
 export const PlatformShareCard = forwardRef<HTMLDivElement, PlatformShareCardProps>(
   ({ platform, data }, ref) => {
     const size = PLATFORM_SIZE[platform];
+    // Convert avatar to data URL to avoid CORS issues during capture
+    const resolvedAvatar = useDataUrl(data.avatarUrl);
+    const enrichedData = { ...data, resolvedAvatar };
+
     return (
       <div
         ref={ref}
         style={{
           width: size.w,
           height: size.h,
-          position: 'absolute',
-          left: -9999,
-          top: -9999,
-          zIndex: -1,
-          pointerEvents: 'none',
+          overflow: 'hidden',
+          flexShrink: 0,
         }}
       >
-        {platform === 'x' && <XCard data={data} />}
-        {platform === 'instagram' && <InstagramCard data={data} />}
-        {platform === 'linkedin' && <LinkedInCard data={data} />}
-        {platform === 'whatsapp' && <WhatsAppCard data={data} />}
+        {platform === 'x' && <XCard data={enrichedData} />}
+        {platform === 'instagram' && <InstagramCard data={enrichedData} />}
+        {platform === 'linkedin' && <LinkedInCard data={enrichedData} />}
+        {platform === 'whatsapp' && <WhatsAppCard data={enrichedData} />}
       </div>
     );
   }

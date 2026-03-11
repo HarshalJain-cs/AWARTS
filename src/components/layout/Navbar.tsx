@@ -129,7 +129,7 @@ export function Navbar() {
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className="rounded-full ring-2 ring-transparent hover:ring-primary/50 transition-all">
+                  <button className="rounded-full ring-2 ring-transparent hover:ring-primary/60 transition-all duration-200 hover:scale-105">
                     <Avatar className="h-8 w-8">
                       <AvatarImage src={user.avatarUrl ?? ''} alt={user.displayName ?? user.username ?? ''} />
                       <AvatarFallback>{(user.displayName ?? user.username ?? user.email ?? '?')[0]}</AvatarFallback>

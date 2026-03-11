@@ -17,6 +17,28 @@ interface ShareActionsProps {
   };
 }
 
+/** Convert data URL to Blob */
+async function dataUrlToBlob(dataUrl: string): Promise<Blob> {
+  const res = await fetch(dataUrl);
+  return res.blob();
+}
+
+/** Try native Web Share API with image file */
+async function tryNativeShare(imageDataUrl: string, text: string, url: string, filename: string): Promise<boolean> {
+  if (!navigator.share || !navigator.canShare) return false;
+  try {
+    const blob = await dataUrlToBlob(imageDataUrl);
+    const file = new File([blob], filename, { type: 'image/png' });
+    const shareData = { text, url, files: [file] };
+    if (!navigator.canShare(shareData)) return false;
+    await navigator.share(shareData);
+    return true;
+  } catch (err) {
+    if (err instanceof Error && err.name === 'AbortError') return true;
+    return false;
+  }
+}
+
 export function ShareActions({ cardRef, username, avatarUrl, providers, stats }: ShareActionsProps) {
   const [copying, setCopying] = useState(false);
   const [downloadingPng, setDownloadingPng] = useState(false);
@@ -49,30 +71,43 @@ export function ShareActions({ cardRef, username, avatarUrl, providers, stats }:
     const ref = platformRefs[platform];
     if (!ref.current) return null;
     try {
-      await toPng(ref.current, { quality: 1, pixelRatio: 2, skipFonts: true });
-      return await toPng(ref.current, { quality: 1, pixelRatio: 2, skipFonts: true });
+      await toPng(ref.current, { quality: 1, pixelRatio: 2, skipFonts: true, cacheBust: true });
+      return await toPng(ref.current, { quality: 1, pixelRatio: 2, skipFonts: true, cacheBust: true });
     } catch {
       return null;
     }
   }, [platformRefs]);
 
-  const downloadPlatformImage = useCallback(async (platform: SharePlatform) => {
-    const dataUrl = await generatePlatformImage(platform);
-    if (!dataUrl) return;
-    const link = document.createElement('a');
-    link.download = `awarts-${username}-${platform}.png`;
-    link.href = dataUrl;
-    link.click();
-    return dataUrl;
-  }, [generatePlatformImage, username]);
-
   const handlePlatformShare = useCallback(async (platform: SharePlatform) => {
     setGenerating(platform);
     try {
-      await downloadPlatformImage(platform);
-      await navigator.clipboard.writeText(`${shareText}\n${profileUrl}`);
+      const dataUrl = await generatePlatformImage(platform);
+      if (!dataUrl) {
+        toast({ title: 'Failed to generate image', variant: 'destructive' });
+        return;
+      }
 
-      const encoded = encodeURIComponent(`${shareText}\n${profileUrl}`);
+      const filename = `awarts-${username}-${platform}.png`;
+      const fullText = `${shareText}\n${profileUrl}`;
+
+      // Try native share API first (mobile)
+      const shared = await tryNativeShare(dataUrl, fullText, profileUrl, filename);
+      if (shared) {
+        toast({ title: 'Shared!', description: 'Your AWARTS card was shared.' });
+        return;
+      }
+
+      // Fallback: download + copy + open platform
+      const link = document.createElement('a');
+      link.download = filename;
+      link.href = dataUrl;
+      link.click();
+
+      await navigator.clipboard.writeText(fullText).catch(() => {});
+
+      const platformName = platform === 'x' ? 'X' : platform === 'instagram' ? 'Instagram' : platform === 'linkedin' ? 'LinkedIn' : 'WhatsApp';
+      const encoded = encodeURIComponent(fullText);
+
       switch (platform) {
         case 'x':
           window.open(`https://x.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(profileUrl)}`, '_blank', 'noopener,noreferrer');
@@ -88,17 +123,17 @@ export function ShareActions({ cardRef, username, avatarUrl, providers, stats }:
       }
 
       toast({
-        title: `${platform === 'x' ? 'X' : platform === 'instagram' ? 'Instagram' : platform === 'linkedin' ? 'LinkedIn' : 'WhatsApp'} card downloaded!`,
+        title: `${platformName} card downloaded!`,
         description: platform === 'instagram'
           ? 'Image saved! Open Instagram and share it as a post or story.'
-          : 'Image saved! Attach it to your post for a visual card.',
+          : 'Image saved & caption copied! Attach the image to your post.',
       });
     } catch {
       toast({ title: 'Something went wrong', variant: 'destructive' });
     } finally {
       setGenerating(null);
     }
-  }, [downloadPlatformImage, shareText, profileUrl]);
+  }, [generatePlatformImage, shareText, profileUrl, username]);
 
   async function handleCopyLink() {
     try {
@@ -114,9 +149,8 @@ export function ShareActions({ cardRef, username, avatarUrl, providers, stats }:
   async function generatePng(): Promise<string | null> {
     if (!cardRef.current) return null;
     try {
-      await toPng(cardRef.current, { quality: 1, pixelRatio: 2, skipFonts: true });
-      const dataUrl = await toPng(cardRef.current, { quality: 1, pixelRatio: 2, skipFonts: true });
-      return dataUrl;
+      await toPng(cardRef.current, { quality: 1, pixelRatio: 2, skipFonts: true, cacheBust: true });
+      return await toPng(cardRef.current, { quality: 1, pixelRatio: 2, skipFonts: true, cacheBust: true });
     } catch {
       return null;
     }
@@ -127,9 +161,7 @@ export function ShareActions({ cardRef, username, avatarUrl, providers, stats }:
     try {
       const dataUrl = await generatePng();
       if (!dataUrl) throw new Error('Failed to generate image');
-      const res = await fetch(dataUrl);
-      if (!res.ok) throw new Error('Failed to convert image');
-      const blob = await res.blob();
+      const blob = await dataUrlToBlob(dataUrl);
       await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
       toast({ title: 'Image copied!', description: 'Paste it anywhere to share.' });
     } catch {
@@ -158,11 +190,26 @@ export function ShareActions({ cardRef, username, avatarUrl, providers, stats }:
 
   return (
     <>
-      {/* Hidden platform cards for image generation */}
-      <PlatformShareCard ref={xRef} platform="x" data={cardData} />
-      <PlatformShareCard ref={igRef} platform="instagram" data={cardData} />
-      <PlatformShareCard ref={liRef} platform="linkedin" data={cardData} />
-      <PlatformShareCard ref={waRef} platform="whatsapp" data={cardData} />
+      {/* Hidden container for platform cards */}
+      <div
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: 1,
+          height: 1,
+          overflow: 'hidden',
+          pointerEvents: 'none',
+          opacity: 0,
+          zIndex: -9999,
+        }}
+        aria-hidden
+      >
+        <PlatformShareCard ref={xRef} platform="x" data={cardData} />
+        <PlatformShareCard ref={igRef} platform="instagram" data={cardData} />
+        <PlatformShareCard ref={liRef} platform="linkedin" data={cardData} />
+        <PlatformShareCard ref={waRef} platform="whatsapp" data={cardData} />
+      </div>
 
       <div className="flex gap-2 flex-wrap">
         <Button variant="outline" size="sm" onClick={handleCopyLink} className="flex-1 min-w-[120px]">
@@ -178,49 +225,25 @@ export function ShareActions({ cardRef, username, avatarUrl, providers, stats }:
           {downloadingPng ? 'Saving...' : 'Download PNG'}
         </Button>
 
-        {/* Platform-specific share buttons with image cards */}
+        {/* Platform-specific share buttons */}
         <div className="w-full pt-2">
           <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider mb-2">Share with photo card</p>
           <div className="flex gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => handlePlatformShare('x')}
-              disabled={generating !== null}
-              className="flex-1 gap-1.5 text-xs"
-            >
+            <Button variant="ghost" size="sm" onClick={() => handlePlatformShare('x')} disabled={generating !== null} className="flex-1 gap-1.5 text-xs">
               {generating === 'x' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : (
                 <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
               )}
               X Card
             </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => handlePlatformShare('whatsapp')}
-              disabled={generating !== null}
-              className="flex-1 gap-1.5 text-xs"
-            >
+            <Button variant="ghost" size="sm" onClick={() => handlePlatformShare('whatsapp')} disabled={generating !== null} className="flex-1 gap-1.5 text-xs">
               {generating === 'whatsapp' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <MessageCircle className="h-3.5 w-3.5" />}
               WhatsApp
             </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => handlePlatformShare('instagram')}
-              disabled={generating !== null}
-              className="flex-1 gap-1.5 text-xs"
-            >
+            <Button variant="ghost" size="sm" onClick={() => handlePlatformShare('instagram')} disabled={generating !== null} className="flex-1 gap-1.5 text-xs">
               {generating === 'instagram' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Instagram className="h-3.5 w-3.5" />}
               Instagram
             </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => handlePlatformShare('linkedin')}
-              disabled={generating !== null}
-              className="flex-1 gap-1.5 text-xs"
-            >
+            <Button variant="ghost" size="sm" onClick={() => handlePlatformShare('linkedin')} disabled={generating !== null} className="flex-1 gap-1.5 text-xs">
               {generating === 'linkedin' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Linkedin className="h-3.5 w-3.5" />}
               LinkedIn
             </Button>

@@ -25,7 +25,18 @@
       "Bash(node dist/index.js:*)",
       "Bash(npm install:*)",
       "Bash(npx convex:*)",
-      "Bash(wc:*)"
+      "Bash(wc:*)",
+      "Bash(git status:*)",
+      "Bash(gh repo view:*)",
+      "Bash(where:*)",
+      "Bash(dir:*)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:api.github.com)",
+      "Bash(done)",
+      "Bash(grep:*)",
+      "WebFetch(domain:developers.openai.com)",
+      "WebFetch(domain:ai.google.dev)"
     ]
   }
 }

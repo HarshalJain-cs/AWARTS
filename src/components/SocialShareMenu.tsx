@@ -71,6 +71,29 @@ function formatTokensShort(n: number): string {
   return n.toString();
 }
 
+/** Convert data URL to Blob */
+async function dataUrlToBlob(dataUrl: string): Promise<Blob> {
+  const res = await fetch(dataUrl);
+  return res.blob();
+}
+
+/** Try native Web Share API with image file */
+async function tryNativeShare(imageDataUrl: string, text: string, url: string, filename: string): Promise<boolean> {
+  if (!navigator.share || !navigator.canShare) return false;
+  try {
+    const blob = await dataUrlToBlob(imageDataUrl);
+    const file = new File([blob], filename, { type: 'image/png' });
+    const shareData = { text, url, files: [file] };
+    if (!navigator.canShare(shareData)) return false;
+    await navigator.share(shareData);
+    return true;
+  } catch (err) {
+    // User cancelled or not supported
+    if (err instanceof Error && err.name === 'AbortError') return true; // user cancelled is still "handled"
+    return false;
+  }
+}
+
 interface SocialShareMenuProps {
   data: ShareData;
   trigger?: React.ReactNode;
@@ -81,7 +104,7 @@ export function SocialShareMenu({ data, trigger, className }: SocialShareMenuPro
   const [open, setOpen] = useState(false);
   const [template, setTemplate] = useState<ShareTemplate>('flex');
   const [copied, setCopied] = useState(false);
-  const [generating, setGenerating] = useState<SharePlatform | null>(null);
+  const [generating, setGenerating] = useState<SharePlatform | 'all' | null>(null);
 
   // Refs for platform-specific hidden cards
   const xRef = useRef<HTMLDivElement>(null);
@@ -116,10 +139,9 @@ export function SocialShareMenu({ data, trigger, className }: SocialShareMenuPro
     const ref = platformRefs[platform];
     if (!ref.current) return null;
     try {
-      // First pass for fonts to load
-      await toPng(ref.current, { quality: 1, pixelRatio: 2, skipFonts: true });
-      // Second pass for actual capture
-      const dataUrl = await toPng(ref.current, { quality: 1, pixelRatio: 2, skipFonts: true });
+      // Double render: first pass warms up, second captures
+      await toPng(ref.current, { quality: 1, pixelRatio: 2, skipFonts: true, cacheBust: true });
+      const dataUrl = await toPng(ref.current, { quality: 1, pixelRatio: 2, skipFonts: true, cacheBust: true });
       return dataUrl;
     } catch {
       return null;
@@ -142,14 +164,33 @@ export function SocialShareMenu({ data, trigger, className }: SocialShareMenuPro
   const handlePlatformShare = useCallback(async (platform: SharePlatform) => {
     setGenerating(platform);
     try {
-      // Generate and download the image
-      await downloadImage(platform);
+      const dataUrl = await generateImage(platform);
+      if (!dataUrl) {
+        toast({ title: 'Failed to generate image', variant: 'destructive' });
+        return;
+      }
 
-      // Copy caption text to clipboard
-      await navigator.clipboard.writeText(text);
+      // Try native share API first (mobile — shares image directly to app)
+      const filename = `awarts-${data.username}-${platform}.png`;
+      const shared = await tryNativeShare(dataUrl, text, data.url, filename);
 
-      // Open the platform share URL
+      if (shared) {
+        toast({ title: 'Shared!', description: 'Your AWARTS card was shared.' });
+        setOpen(false);
+        return;
+      }
+
+      // Fallback: download image + copy caption + open platform URL
+      const link = document.createElement('a');
+      link.download = filename;
+      link.href = dataUrl;
+      link.click();
+
+      await navigator.clipboard.writeText(text).catch(() => {});
+
+      const platformName = platform === 'x' ? 'X' : platform === 'instagram' ? 'Instagram' : platform === 'linkedin' ? 'LinkedIn' : 'WhatsApp';
       const encoded = encodeURIComponent(text);
+
       switch (platform) {
         case 'x':
           window.open(`https://x.com/intent/tweet?text=${encoded}`, '_blank', 'noopener,noreferrer');
@@ -161,15 +202,14 @@ export function SocialShareMenu({ data, trigger, className }: SocialShareMenuPro
           window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(data.url)}`, '_blank', 'noopener,noreferrer');
           break;
         case 'instagram':
-          // Instagram doesn't support direct web share — just download + copy
           break;
       }
 
       toast({
-        title: `${platform === 'x' ? 'X' : platform === 'instagram' ? 'Instagram' : platform === 'linkedin' ? 'LinkedIn' : 'WhatsApp'} card downloaded!`,
+        title: `${platformName} card downloaded!`,
         description: platform === 'instagram'
           ? 'Image saved! Open Instagram and share it as a post or story.'
-          : 'Image saved! Attach it to your post for a visual card.',
+          : 'Image saved & caption copied! Attach the image to your post.',
       });
 
       if (platform !== 'instagram') {
@@ -180,10 +220,10 @@ export function SocialShareMenu({ data, trigger, className }: SocialShareMenuPro
     } finally {
       setGenerating(null);
     }
-  }, [downloadImage, text, data.url]);
+  }, [generateImage, text, data.url, data.username]);
 
   const handleDownloadAll = useCallback(async () => {
-    setGenerating('x'); // show loading state
+    setGenerating('all');
     for (const platform of ['x', 'instagram', 'linkedin', 'whatsapp'] as SharePlatform[]) {
       await downloadImage(platform);
     }
@@ -213,11 +253,26 @@ export function SocialShareMenu({ data, trigger, className }: SocialShareMenuPro
 
   return (
     <>
-      {/* Hidden platform-specific cards for image generation */}
-      <PlatformShareCard ref={xRef} platform="x" data={cardData} />
-      <PlatformShareCard ref={igRef} platform="instagram" data={cardData} />
-      <PlatformShareCard ref={liRef} platform="linkedin" data={cardData} />
-      <PlatformShareCard ref={waRef} platform="whatsapp" data={cardData} />
+      {/* Hidden container for platform cards — uses overflow:hidden to clip while keeping cards renderable */}
+      <div
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: 1,
+          height: 1,
+          overflow: 'hidden',
+          pointerEvents: 'none',
+          opacity: 0,
+          zIndex: -9999,
+        }}
+        aria-hidden
+      >
+        <PlatformShareCard ref={xRef} platform="x" data={cardData} />
+        <PlatformShareCard ref={igRef} platform="instagram" data={cardData} />
+        <PlatformShareCard ref={liRef} platform="linkedin" data={cardData} />
+        <PlatformShareCard ref={waRef} platform="whatsapp" data={cardData} />
+      </div>
 
       <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 animate-in fade-in" onClick={() => setOpen(false)}>
         <div
@@ -227,7 +282,7 @@ export function SocialShareMenu({ data, trigger, className }: SocialShareMenuPro
           {/* Header */}
           <div className="flex items-center justify-between">
             <h3 className="font-semibold text-foreground">Share {data.type === 'session' ? 'Session' : 'Profile'}</h3>
-            <button onClick={() => setOpen(false)} className="text-muted-foreground hover:text-foreground">
+            <button onClick={() => setOpen(false)} className="text-muted-foreground hover:text-foreground transition-colors">
               <X className="h-5 w-5" />
             </button>
           </div>
@@ -257,7 +312,7 @@ export function SocialShareMenu({ data, trigger, className }: SocialShareMenuPro
             <pre className="text-xs text-foreground whitespace-pre-wrap font-sans leading-relaxed">{text}</pre>
           </div>
 
-          {/* Platform share buttons — each generates image + opens platform */}
+          {/* Platform share buttons */}
           <div>
             <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider mb-2">Share with photo card</p>
             <div className="grid grid-cols-2 gap-2">
@@ -315,7 +370,7 @@ export function SocialShareMenu({ data, trigger, className }: SocialShareMenuPro
               disabled={generating !== null}
               className="flex-1 gap-2 text-xs"
             >
-              {generating !== null ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+              {generating === 'all' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
               Download All Cards
             </Button>
             <Button

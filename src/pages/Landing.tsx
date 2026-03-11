@@ -52,6 +52,8 @@ export default function Landing() {
     return document.documentElement.classList.contains('dark');
   });
 
+  const devs = useCounter(4);
+  const tokens = useCounter(100);
   const countries = useCounter(195);
 
   const toggleTheme = () => {
@@ -250,7 +252,8 @@ export default function Landing() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: '-20px' }}
               transition={{ duration: 0.4, delay: i * 0.08 }}
-              className="rounded-lg border border-border bg-card p-6 space-y-3"
+              className="rounded-lg border border-border bg-card p-6 space-y-3 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 cursor-default"
+              whileHover={{ y: -4, scale: 1.02 }}
             >
               <f.icon className="h-8 w-8 text-primary" />
               <h3 className="font-semibold text-foreground">{f.title}</h3>
@@ -279,6 +282,7 @@ export default function Landing() {
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
               transition={{ duration: 0.3, delay: i * 0.04 }}
+              whileHover={{ y: -2, scale: 1.01 }}
             >
               <TestimonialCard author={t.author} handle={t.handle} content={t.content} provider={t.provider} />
             </motion.div>

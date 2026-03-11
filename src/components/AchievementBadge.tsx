@@ -14,9 +14,9 @@ export function AchievementBadge({ achievement }: AchievementBadgeProps) {
           role="img"
           aria-label={achievement.name}
           className={cn(
-            'flex h-12 w-12 items-center justify-center rounded-xl text-xl transition-all',
+            'flex h-12 w-12 items-center justify-center rounded-xl text-xl transition-all duration-200 cursor-default',
             achievement.earned
-              ? 'bg-primary/10 border border-primary/20 hover:scale-110'
+              ? 'bg-primary/10 border border-primary/20 hover:scale-110 hover:shadow-md hover:shadow-primary/20 cursor-pointer'
               : 'bg-muted/30 opacity-40 grayscale'
           )}
         >

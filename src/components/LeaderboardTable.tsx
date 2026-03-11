@@ -35,7 +35,7 @@ export function LeaderboardTable({ entries }: LeaderboardTableProps) {
                 <tr
                   key={entry.user.id}
                   className={cn(
-                    'border-b border-border last:border-0 transition-colors hover:bg-muted/20',
+                    'border-b border-border last:border-0 transition-all duration-200 hover:bg-muted/30 hover:shadow-sm',
                     isMe && 'bg-primary/5 border-l-2 border-l-primary'
                   )}
                 >
