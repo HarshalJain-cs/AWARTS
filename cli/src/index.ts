@@ -20,6 +20,7 @@ import { loginCommand, loginForceCommand } from './commands/login.js';
 import { pushCommand } from './commands/push.js';
 import { statusCommand } from './commands/status.js';
 import { syncCommand } from './commands/sync.js';
+import { seedCommand } from './commands/seed.js';
 import {
   daemonStartCommand,
   daemonStopCommand,
@@ -79,6 +80,26 @@ program
   .action(async () => {
     try {
       await syncCommand();
+    } catch (err) {
+      out.error(err instanceof Error ? err.message : String(err));
+      process.exit(1);
+    }
+  });
+
+// ─── seed ────────────────────────────────────────────────────────────────
+program
+  .command('seed')
+  .description('Generate sample usage data for providers with no data (Codex, Gemini, Antigravity)')
+  .option('-p, --provider <name>', 'Only seed a specific provider (codex, gemini, antigravity)')
+  .option('-d, --days <count>', 'Number of days of sample data to generate', '7')
+  .option('--force', 'Overwrite existing usage data')
+  .action(async (opts: { provider?: string; days?: string; force?: boolean }) => {
+    try {
+      await seedCommand({
+        provider: opts.provider,
+        days: Number(opts.days) || 7,
+        force: opts.force,
+      });
     } catch (err) {
       out.error(err instanceof Error ? err.message : String(err));
       process.exit(1);

@@ -245,6 +245,80 @@ async function readLocalFiles(): Promise<UsageEntry[]> {
   return entries;
 }
 
+// ── SQLite fallback: read Codex state_5.sqlite threads table ────────────
+
+const SQLITE_PATHS = [
+  path.join(HOME, '.codex', 'state_5.sqlite'),
+  ...(IS_WIN ? [
+    path.join(LOCALAPPDATA, 'codex', 'state_5.sqlite'),
+    path.join(APPDATA, 'codex', 'state_5.sqlite'),
+  ] : []),
+];
+
+async function findSqliteDb(): Promise<string | null> {
+  for (const p of SQLITE_PATHS) {
+    try {
+      await fs.access(p);
+      return p;
+    } catch { /* not found */ }
+  }
+  return null;
+}
+
+async function readSqliteThreads(): Promise<UsageEntry[]> {
+  const dbPath = await findSqliteDb();
+  if (!dbPath) return [];
+
+  // Use the system sqlite3 CLI to query — avoids native module dependency
+  try {
+    const query = `SELECT date(created_at/1000000000, 'unixepoch') as day, tokens_used, model_provider FROM threads WHERE tokens_used > 0 ORDER BY created_at;`;
+    const result = execSync(`sqlite3 "${dbPath}" "${query}"`, {
+      timeout: 5000,
+      encoding: 'utf-8',
+      stdio: ['pipe', 'pipe', 'pipe'],
+    }).trim();
+
+    if (!result) return [];
+
+    // Group by date
+    const dayMap = new Map<string, { tokens: number; models: Set<string> }>();
+    for (const line of result.split('\n')) {
+      const [day, tokensStr, model] = line.split('|');
+      if (!day) continue;
+      const tokens = Number(tokensStr) || 0;
+      if (!dayMap.has(day)) dayMap.set(day, { tokens: 0, models: new Set() });
+      const entry = dayMap.get(day)!;
+      entry.tokens += tokens;
+      if (model) entry.models.add(model);
+    }
+
+    const entries: UsageEntry[] = [];
+    for (const [date, { tokens, models }] of dayMap) {
+      // Codex threads track total tokens (not split input/output), estimate 40% input 60% output
+      const inputTokens = Math.round(tokens * 0.4);
+      const outputTokens = Math.round(tokens * 0.6);
+      const modelName = [...models][0] ?? 'openai-codex';
+      const pricing = CODEX_PRICING[modelName] || DEFAULT_PRICING;
+      const cost = (inputTokens * pricing.input + outputTokens * pricing.output) / 1_000_000;
+
+      entries.push({
+        date,
+        provider: 'codex',
+        cost_usd: cost,
+        input_tokens: inputTokens,
+        output_tokens: outputTokens,
+        models: [...models].length > 0 ? [...models] : ['openai-codex'],
+        cost_source: 'estimated',
+      });
+    }
+
+    return entries;
+  } catch {
+    // sqlite3 not available or query failed — that's fine
+    return [];
+  }
+}
+
 // ── Adapter export ──────────────────────────────────────────────────────
 
 export const codexAdapter: Adapter = {
@@ -257,6 +331,8 @@ export const codexAdapter: Adapter = {
     if (apiKey) return true;
     // Or local usage dir exists
     if ((await findUsageDir()) !== null) return true;
+    // Or SQLite database exists
+    if ((await findSqliteDb()) !== null) return true;
     // Or any config dir exists
     for (const dir of CONFIG_DIRS) {
       if (await dirExists(dir)) return true;
@@ -274,7 +350,11 @@ export const codexAdapter: Adapter = {
       if (apiEntries.length > 0) return apiEntries;
     }
 
-    // Fall back to local files
-    return readLocalFiles();
+    // Fall back to local JSON files
+    const localEntries = await readLocalFiles();
+    if (localEntries.length > 0) return localEntries;
+
+    // Fall back to SQLite threads database
+    return readSqliteThreads();
   },
 };

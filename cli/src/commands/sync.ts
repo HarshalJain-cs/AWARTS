@@ -57,7 +57,11 @@ export async function syncCommand(): Promise<void> {
     try {
       const entries = await adapter.read();
       if (entries.length === 0) {
-        spin.info(chalk.dim(`${adapter.displayName} -- no usage data found (use manual import on awarts.com or add usage files)`));
+        spin.info(chalk.dim(`${adapter.displayName} -- no usage data found`));
+        if (adapter.name !== 'claude') {
+          out.dim(`    Run ${chalk.cyan(`awarts seed -p ${adapter.name}`)} to generate sample data`);
+          out.dim(`    Or create usage files manually — see ${chalk.cyan('awarts.com/docs')}`);
+        }
       } else {
         allEntries.push(...entries);
         const totalCost = entries.reduce((s, e) => s + e.cost_usd, 0);
@@ -77,6 +81,9 @@ export async function syncCommand(): Promise<void> {
 
   if (allEntries.length === 0) {
     out.warn('No usage data found across any provider.');
+    console.log();
+    out.info(`Try ${chalk.cyan('awarts seed')} to generate sample data for detected providers.`);
+    out.dim('Or visit awarts.com/docs for manual import instructions.');
     console.log();
     return;
   }
