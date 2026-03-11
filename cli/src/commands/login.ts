@@ -13,6 +13,7 @@ import { postUnauthenticated } from '../lib/api.js';
 import { saveAuth, loadAuth, clearAuth } from '../lib/auth-store.js';
 import * as out from '../lib/output.js';
 import type { InitResponse, PollResponse } from '../types.js';
+import { readPid, isProcessRunning, DEFAULT_INTERVAL_MS, spawnDaemon } from '../lib/daemon.js';
 
 const POLL_INTERVAL_MS = 2_000;
 const MAX_POLLS = 300; // 10-minute timeout at 2 s intervals
@@ -119,7 +120,22 @@ async function startDeviceAuth(): Promise<void> {
         out.kv('User ID', user_id);
         out.success('Token saved to ~/.awarts/auth.json');
         console.log();
-        out.dim('You can now run  awarts push  or  awarts sync');
+
+        // Auto-start daemon for continuous sync
+        try {
+          const existingPid = await readPid();
+          const isRunning = existingPid ? isProcessRunning(existingPid) : false;
+          if (!isRunning) {
+            const pid = await spawnDaemon(DEFAULT_INTERVAL_MS);
+            out.success(`Auto-sync daemon started (PID ${pid}, every 5 min)`);
+            out.dim('Your usage data will sync automatically in the background.');
+            out.dim('Manage with:  awarts daemon status | stop | logs');
+          } else {
+            out.dim('Auto-sync daemon is already running.');
+          }
+        } catch {
+          out.dim('Run  awarts daemon start  to enable auto-sync.');
+        }
         console.log();
         return;
       }

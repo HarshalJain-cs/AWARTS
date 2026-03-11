@@ -14,6 +14,8 @@ import { detectAll } from '../lib/detect.js';
 import { hashEntries } from '../lib/hash.js';
 import * as out from '../lib/output.js';
 import type { UsageEntry, SubmitResponse } from '../types.js';
+import { readPid, isProcessRunning, DEFAULT_INTERVAL_MS } from '../lib/daemon.js';
+import { spawnDaemon } from '../lib/daemon.js';
 
 export async function syncCommand(): Promise<void> {
   out.banner();
@@ -55,7 +57,7 @@ export async function syncCommand(): Promise<void> {
     try {
       const entries = await adapter.read();
       if (entries.length === 0) {
-        spin.info(chalk.dim(`${adapter.displayName} -- no usage data found`));
+        spin.info(chalk.dim(`${adapter.displayName} -- no usage data found (use manual import on awarts.com or add usage files)`));
       } else {
         allEntries.push(...entries);
         const totalCost = entries.reduce((s, e) => s + e.cost_usd, 0);
@@ -133,6 +135,20 @@ export async function syncCommand(): Promise<void> {
     console.log();
     out.success('Your usage data is now live on AWARTS.');
     console.log();
+
+    // ── Auto-start daemon if not already running ────────────────────────
+    try {
+      const existingPid = await readPid();
+      const isRunning = existingPid ? isProcessRunning(existingPid) : false;
+      if (!isRunning) {
+        const pid = await spawnDaemon(DEFAULT_INTERVAL_MS);
+        out.dim(`Auto-sync daemon started (PID ${pid}, every 5 min)`);
+        out.dim('Manage with:  awarts daemon status | stop | logs');
+        console.log();
+      }
+    } catch {
+      // Non-critical -- don't fail the sync over daemon issues
+    }
   } catch (err) {
     submitSpin.fail('Could not reach the AWARTS server.');
     out.error(err instanceof Error ? err.message : String(err));

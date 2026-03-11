@@ -17,7 +17,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 export function Navbar() {
-  const { user, signOut, isSignedIn, isUserLoading } = useAuth();
+  const { user, signOut, isSignedIn, isUserLoading, isLoaded } = useAuth();
   const [showNotifs, setShowNotifs] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isDark, setIsDark] = useState(() => {
@@ -151,7 +151,7 @@ export function Navbar() {
                 </DropdownMenuContent>
               </DropdownMenu>
             </>
-          ) : (isSignedIn || isUserLoading) ? (
+          ) : (!isLoaded || isSignedIn || isUserLoading) ? (
             <div className="flex items-center gap-2">
               <div className="h-5 w-5 rounded-md bg-muted animate-pulse" />
               <div className="h-8 w-8 rounded-full bg-muted animate-pulse" />

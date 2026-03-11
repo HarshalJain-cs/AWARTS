@@ -1,39 +1,63 @@
 /**
- * Gemini adapter -- reads local usage data or estimates costs from Google AI API key.
+ * Gemini adapter -- reads local usage data from Gemini CLI.
  *
- * Primary: Local file reading from ~/.gemini/usage/ (Gemini CLI)
- * Secondary: Google AI Studio API for token usage (requires API key)
- * Fallback: Token-based cost estimation using pricing table
+ * Primary: Local file reading from ~/.gemini/usage/ (Gemini CLI usage JSON)
+ * Secondary: Google AI Studio API (requires API key)
+ *
+ * Note: Gemini CLI stores conversation data as protobuf in ~/.gemini/ but
+ * doesn't expose token counts in a readable format. Usage files must exist
+ * in ~/.gemini/usage/ as YYYY-MM-DD.json files for data to be reported.
  */
 
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
+import { execSync } from 'node:child_process';
 import type { Adapter, UsageEntry } from '../types.js';
 import { getKey } from '../lib/keys.js';
 
 const HOME = os.homedir();
+const IS_WIN = process.platform === 'win32';
+const LOCALAPPDATA = process.env.LOCALAPPDATA ?? path.join(HOME, 'AppData', 'Local');
 
 const LOCAL_DIRS = [
   path.join(HOME, '.gemini', 'usage'),
   path.join(HOME, '.config', 'gemini', 'usage'),
+  ...(IS_WIN ? [
+    path.join(LOCALAPPDATA, 'gemini', 'usage'),
+  ] : []),
+];
+
+// Directories that indicate Gemini CLI is installed
+const DETECT_DIRS = [
   path.join(HOME, '.gemini'),
+  path.join(HOME, '.config', 'gemini'),
+  ...(IS_WIN ? [
+    path.join(LOCALAPPDATA, 'gemini'),
+  ] : []),
 ];
 
 // ── Gemini Pricing (per million tokens, USD) ────────────────────────────
-// Source: Google AI pricing as of 2025
+// Updated: March 2026 — https://ai.google.dev/gemini-api/docs/pricing
 const GEMINI_PRICING: Record<string, { input: number; output: number }> = {
-  'gemini-2.5-pro':        { input: 1.25, output: 10.00 },
-  'gemini-2.5-flash':      { input: 0.15, output: 0.60 },
-  'gemini-2.0-flash':      { input: 0.10, output: 0.40 },
-  'gemini-2.0-flash-lite': { input: 0.075, output: 0.30 },
-  'gemini-1.5-pro':        { input: 1.25, output: 5.00 },
-  'gemini-1.5-flash':      { input: 0.075, output: 0.30 },
-  'gemini-1.5-flash-8b':   { input: 0.0375, output: 0.15 },
+  // Latest production models
+  'gemini-2.5-pro':          { input: 1.25,  output: 10.00 },
+  'gemini-2.5-flash':        { input: 0.30,  output: 2.50 },
+  'gemini-2.5-flash-lite':   { input: 0.10,  output: 0.40 },
+  // Preview models
+  'gemini-3.1-pro':          { input: 2.00,  output: 12.00 },
+  'gemini-3.1-flash-lite':   { input: 0.25,  output: 1.50 },
+  'gemini-3-flash':          { input: 0.50,  output: 3.00 },
+  // Older models
+  'gemini-2.0-flash':        { input: 0.10,  output: 0.40 },
+  'gemini-2.0-flash-lite':   { input: 0.075, output: 0.30 },
+  'gemini-1.5-pro':          { input: 1.25,  output: 5.00 },
+  'gemini-1.5-flash':        { input: 0.075, output: 0.30 },
+  'gemini-1.5-flash-8b':     { input: 0.0375, output: 0.15 },
 };
-const DEFAULT_PRICING = { input: 0.15, output: 0.60 }; // Flash pricing as default
+const DEFAULT_PRICING = { input: 0.30, output: 2.50 }; // 2.5 Flash as default
 
-function estimateCost(
+function calculateCost(
   inputTokens: number,
   outputTokens: number,
   model?: string
@@ -78,6 +102,15 @@ async function findUsageDir(): Promise<string | null> {
   return null;
 }
 
+function commandExists(cmd: string): boolean {
+  try {
+    execSync(IS_WIN ? `where ${cmd}` : `which ${cmd}`, { stdio: 'ignore' });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 async function readLocalFiles(): Promise<UsageEntry[]> {
   const entries: UsageEntry[] = [];
   const dir = await findUsageDir();
@@ -106,11 +139,11 @@ async function readLocalFiles(): Promise<UsageEntry[]> {
       const outputTokens = Number(data.output_tokens ?? 0) || 0;
       const model = data.model ?? (data.models?.[0]);
 
-      // If we have tokens but no cost, estimate
+      // Use real cost if provided; calculate from real token counts if not
       let finalCost = Number(costUsd) || 0;
       let costSource: 'real' | 'estimated' = finalCost > 0 ? 'real' : 'estimated';
       if (finalCost === 0 && (inputTokens > 0 || outputTokens > 0)) {
-        finalCost = estimateCost(inputTokens, outputTokens, model);
+        finalCost = calculateCost(inputTokens, outputTokens, model);
         costSource = 'estimated';
       }
 
@@ -140,20 +173,20 @@ export const geminiAdapter: Adapter = {
   displayName: 'Gemini',
 
   async detect(): Promise<boolean> {
-    // Detected if API key exists OR local files exist
+    // Detected if API key exists
     const apiKey = await getKey('google');
     if (apiKey) return true;
-    return (await findUsageDir()) !== null;
+    // Or any known Gemini dir exists
+    for (const dir of DETECT_DIRS) {
+      if (await dirExists(dir)) return true;
+    }
+    // Or the gemini CLI command is available
+    if (commandExists('gemini')) return true;
+    return false;
   },
 
   async read(): Promise<UsageEntry[]> {
-    // Read local files (primary source for Gemini since there's no billing API)
-    const localEntries = await readLocalFiles();
-    if (localEntries.length > 0) return localEntries;
-
-    // If we have an API key but no local files, we can't fetch usage history
-    // from Google AI Studio (no billing API equivalent exists).
-    // Return empty — user should use web import for historical data.
-    return [];
+    // Read structured usage files (only source of real data)
+    return readLocalFiles();
   },
 };

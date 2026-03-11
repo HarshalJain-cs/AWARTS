@@ -1,11 +1,11 @@
 /**
- * Antigravity adapter -- reads local usage data with token-based cost estimation.
+ * Antigravity adapter -- reads local usage data with real token/cost data only.
  *
- * Primary: Local file reading from ~/.antigravity/usage/
- * Fallback: Token-based cost estimation using pricing table
+ * Primary: Local file reading from ~/.antigravity/usage/ or ~/.gemini/antigravity/usage/
  *
- * Antigravity is a newer tool without a public billing API, so we rely on
- * local files and estimate costs from token counts when costs aren't provided.
+ * Antigravity stores session data in ~/.gemini/antigravity/ as protobuf but
+ * doesn't expose token counts in a readable format. Usage files must exist
+ * as YYYY-MM-DD.json files for data to be reported.
  */
 
 import fs from 'node:fs/promises';
@@ -15,21 +15,38 @@ import type { Adapter, UsageEntry } from '../types.js';
 import { getKey } from '../lib/keys.js';
 
 const HOME = os.homedir();
+const IS_WIN = process.platform === 'win32';
+const LOCALAPPDATA = process.env.LOCALAPPDATA ?? path.join(HOME, 'AppData', 'Local');
 
+// Usage file dirs (structured JSON with real data)
 const LOCAL_DIRS = [
   path.join(HOME, '.antigravity', 'usage'),
   path.join(HOME, '.antigravity'),
+  path.join(HOME, '.gemini', 'antigravity', 'usage'),
+  ...(IS_WIN ? [
+    path.join(LOCALAPPDATA, 'antigravity', 'usage'),
+    path.join(LOCALAPPDATA, 'antigravity'),
+  ] : []),
+];
+
+// Detection dirs
+const DETECT_DIRS = [
+  path.join(HOME, '.antigravity'),
+  path.join(HOME, '.gemini', 'antigravity'),
+  ...(IS_WIN ? [
+    path.join(LOCALAPPDATA, 'antigravity'),
+  ] : []),
 ];
 
 // ── Antigravity Pricing (per million tokens, USD) ───────────────────────
-// Estimated pricing based on comparable models
 const ANTIGRAVITY_PRICING: Record<string, { input: number; output: number }> = {
   'antigravity-1':   { input: 3.00, output: 15.00 },
   'antigravity-1.5': { input: 3.00, output: 15.00 },
+  'antigravity-2':   { input: 3.00, output: 15.00 },
 };
 const DEFAULT_PRICING = { input: 3.00, output: 15.00 };
 
-function estimateCost(
+function calculateCost(
   inputTokens: number,
   outputTokens: number,
   model?: string
@@ -102,11 +119,11 @@ async function readLocalFiles(): Promise<UsageEntry[]> {
       const outputTokens = Number(data.output_tokens ?? 0) || 0;
       const model = data.model ?? (data.models?.[0]);
 
-      // If we have tokens but no cost, estimate
+      // Use real cost; calculate from real token counts if cost not provided
       let finalCost = Number(costUsd) || 0;
       let costSource: 'real' | 'estimated' = finalCost > 0 ? 'real' : 'estimated';
       if (finalCost === 0 && (inputTokens > 0 || outputTokens > 0)) {
-        finalCost = estimateCost(inputTokens, outputTokens, model);
+        finalCost = calculateCost(inputTokens, outputTokens, model);
         costSource = 'estimated';
       }
 
@@ -136,14 +153,18 @@ export const antigravityAdapter: Adapter = {
   displayName: 'Antigravity',
 
   async detect(): Promise<boolean> {
-    // Detected if API key exists OR local files exist
+    // Detected if API key exists
     const apiKey = await getKey('antigravity');
     if (apiKey) return true;
-    return (await findUsageDir()) !== null;
+    // Or any known Antigravity dir exists
+    for (const dir of DETECT_DIRS) {
+      if (await dirExists(dir)) return true;
+    }
+    return false;
   },
 
   async read(): Promise<UsageEntry[]> {
-    // Read local files (primary and only source for Antigravity)
+    // Only read structured usage files (real data)
     return readLocalFiles();
   },
 };

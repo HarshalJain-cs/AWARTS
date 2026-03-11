@@ -49,7 +49,7 @@ interface StatsCache {
 }
 
 // ── Pricing per million tokens (USD) ─────────────────────────────────────
-// Used to estimate cost when stats-cache.json reports costUSD = 0.
+// Updated: March 2026 — https://platform.claude.com/docs/en/about-claude/pricing
 
 interface ModelPricing {
   input: number;
@@ -59,14 +59,28 @@ interface ModelPricing {
 }
 
 const MODEL_PRICING: Record<string, ModelPricing> = {
-  'claude-opus-4-6':    { input: 15,  output: 75,  cacheRead: 1.875, cacheWrite: 18.75 },
-  'claude-opus-4':      { input: 15,  output: 75,  cacheRead: 1.875, cacheWrite: 18.75 },
+  // Opus 4.6 / 4.5 — $5 input, $25 output
+  'claude-opus-4-6':    { input: 5,   output: 25,  cacheRead: 0.50,  cacheWrite: 6.25  },
+  'claude-opus-4-5':    { input: 5,   output: 25,  cacheRead: 0.50,  cacheWrite: 6.25  },
+  // Opus 4.1 / 4 / 3 — $15 input, $75 output
+  'claude-opus-4-1':    { input: 15,  output: 75,  cacheRead: 1.50,  cacheWrite: 18.75 },
+  'claude-opus-4':      { input: 15,  output: 75,  cacheRead: 1.50,  cacheWrite: 18.75 },
+  'claude-opus-3':      { input: 15,  output: 75,  cacheRead: 1.50,  cacheWrite: 18.75 },
+  // Sonnet 4.6 / 4.5 / 4 / 3.7 — $3 input, $15 output
+  'claude-sonnet-4-6':  { input: 3,   output: 15,  cacheRead: 0.30,  cacheWrite: 3.75  },
+  'claude-sonnet-4-5':  { input: 3,   output: 15,  cacheRead: 0.30,  cacheWrite: 3.75  },
   'claude-sonnet-4':    { input: 3,   output: 15,  cacheRead: 0.30,  cacheWrite: 3.75  },
+  'claude-sonnet-3-7':  { input: 3,   output: 15,  cacheRead: 0.30,  cacheWrite: 3.75  },
   'claude-sonnet-3-5':  { input: 3,   output: 15,  cacheRead: 0.30,  cacheWrite: 3.75  },
+  // Haiku 4.5 — $1 input, $5 output
+  'claude-haiku-4-5':   { input: 1,   output: 5,   cacheRead: 0.10,  cacheWrite: 1.25  },
+  // Haiku 3.5 — $0.80 input, $4 output
   'claude-haiku-3-5':   { input: 0.80, output: 4,  cacheRead: 0.08,  cacheWrite: 1.0   },
+  // Haiku 3 — $0.25 input, $1.25 output
+  'claude-haiku-3':     { input: 0.25, output: 1.25, cacheRead: 0.03, cacheWrite: 0.30 },
 };
 
-// Fallback pricing if we don't recognize the model
+// Fallback: Sonnet-tier pricing
 const DEFAULT_PRICING: ModelPricing = { input: 3, output: 15, cacheRead: 0.30, cacheWrite: 3.75 };
 
 function getPricing(model: string): ModelPricing {
