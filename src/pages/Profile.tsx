@@ -8,6 +8,7 @@ import { FollowButton } from '@/components/FollowButton';
 import { ContributionGraph } from '@/components/ContributionGraph';
 import { AchievementBadge } from '@/components/AchievementBadge';
 import { StatsGrid } from '@/components/StatsGrid';
+import { ACHIEVEMENTS } from '@/lib/constants';
 import { ActivityCard } from '@/components/ActivityCard';
 import { SkeletonProfile } from '@/components/SkeletonProfile';
 import { SkeletonCard } from '@/components/SkeletonCard';
@@ -61,7 +62,11 @@ export default function Profile() {
   const user = transformUser(raw);
   const isOwn = raw.isOwnProfile ?? (authUser ? raw._id === authUser._id : false);
   const heatmap = raw.heatmap ? transformHeatmap(raw.heatmap) : [];
-  const achievements = (raw.achievements ?? []).map(transformAchievement);
+  const earnedAchievements = (raw.achievements ?? []).map(transformAchievement);
+  const achievements = ACHIEVEMENTS.map((a) => {
+    const earned = earnedAchievements.find((e) => e.id === a.id);
+    return earned ?? { ...a, earned: false };
+  });
   const posts = postsData?.pages.flatMap((page) => page.posts.map(transformFeedPost)) ?? [];
 
   const totalInput = raw.stats?.total_input_tokens ?? 0;
@@ -194,14 +199,15 @@ export default function Profile() {
         )}
 
         {/* Achievements */}
-        {achievements.length > 0 && (
-          <div className="space-y-3">
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-foreground">Achievements</h2>
-            <div className="grid grid-cols-6 sm:grid-cols-8 gap-2">
-              {achievements.map((a) => <AchievementBadge key={a.id} achievement={a} />)}
-            </div>
+            <span className="text-xs text-muted-foreground">{earnedAchievements.length}/{ACHIEVEMENTS.length} unlocked</span>
           </div>
-        )}
+          <div className="grid grid-cols-5 sm:grid-cols-9 gap-2">
+            {achievements.map((a) => <AchievementBadge key={a.id} achievement={a} />)}
+          </div>
+        </div>
 
         {/* Recent Posts */}
         <div className="space-y-3">

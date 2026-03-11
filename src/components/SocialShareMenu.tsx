@@ -23,6 +23,9 @@ interface ShareData {
   totalCost?: number;
   totalDays?: number;
   followers?: number;
+  // Optional enrichment
+  topModel?: string;
+  rank?: number;
 }
 
 const TEMPLATES: { id: ShareTemplate; label: string; desc: string }[] = [
@@ -133,6 +136,8 @@ export function SocialShareMenu({ data, trigger, className }: SocialShareMenuPro
     totalCost: data.totalCost,
     totalDays: data.totalDays,
     followers: data.followers,
+    topModel: data.topModel,
+    rank: data.rank,
   };
 
   const generateImage = useCallback(async (platform: SharePlatform): Promise<string | null> => {

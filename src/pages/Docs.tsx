@@ -100,7 +100,7 @@ const sections: DocSection[] = [
           AWARTS (AI Workflow Activity & Runtime Tracking System) is the social fitness tracker for AI-assisted coding. Think Strava, but for your Claude, Codex, Gemini, and Antigravity sessions. Track tokens, costs, streaks, and compete with developers worldwide.
         </Para>
 
-        <Heading3>Quick Start (3 Steps)</Heading3>
+        <Heading3>Quick Start (4 Steps)</Heading3>
         <div className="space-y-3 my-3">
           <div className="flex gap-3 items-start">
             <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">1</span>
@@ -113,6 +113,21 @@ const sections: DocSection[] = [
           <div className="flex gap-3 items-start">
             <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">3</span>
             <div><p className="text-sm font-medium text-foreground">Sync your sessions</p><p className="text-xs text-muted-foreground">Run <code className="font-mono bg-muted px-1 rounded text-foreground">npx awarts@latest sync</code> to auto-detect and upload your Claude, Codex, Gemini, or Antigravity usage from local files.</p></div>
+          </div>
+          <div className="flex gap-3 items-start">
+            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">4</span>
+            <div><p className="text-sm font-medium text-foreground">Start auto-sync (recommended)</p><p className="text-xs text-muted-foreground">Run <code className="font-mono bg-muted px-1 rounded text-foreground">npx awarts@latest daemon start</code> to sync automatically every 5 minutes in the background. Never miss a streak!</p></div>
+          </div>
+        </div>
+
+        <div className="rounded-md border-2 border-primary/30 bg-primary/5 p-4 my-4 flex items-start gap-3">
+          <TerminalSquare className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+          <div>
+            <p className="text-sm font-semibold text-foreground">Pro tip: Always run the background daemon</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              The daemon auto-syncs every 5 minutes so your sessions appear in real-time and your streak never gets missed. It runs silently in the background.
+            </p>
+            <CodeBlock title="Terminal">{`npx awarts@latest daemon start`}</CodeBlock>
           </div>
         </div>
 
@@ -187,8 +202,42 @@ awarts sync  # detects Claude automatically`}</CodeBlock>
           </div>
           <Para>Reads daily usage files from <code className="font-mono bg-muted px-1 rounded text-foreground">~/.codex/usage/</code>. If you use the OpenAI Codex CLI, it creates these files automatically. Costs are estimated from token counts using published pricing.</Para>
           <InfoBox>
-            <strong>No sessions showing for Codex?</strong> Make sure you're using the <a href="https://github.com/openai/codex" className="text-primary underline" target="_blank" rel="noopener noreferrer">OpenAI Codex CLI</a> (not the web UI). The CLI stores usage data locally at <code className="font-mono bg-muted px-1 rounded">~/.codex/usage/</code>. If no files exist there yet, complete a coding session with Codex first.
+            <strong>No sessions showing for Codex?</strong> Try one of these options:
           </InfoBox>
+          <div className="ml-2 space-y-3 my-3">
+            <div>
+              <p className="text-sm font-medium text-foreground">Option 1: Use the OpenAI Codex CLI</p>
+              <Para>Install the <a href="https://github.com/openai/codex" className="text-primary underline" target="_blank" rel="noopener noreferrer">OpenAI Codex CLI</a> and complete a coding session. It auto-creates usage files at <code className="font-mono bg-muted px-1 rounded text-foreground">~/.codex/usage/</code>.</Para>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-foreground">Option 2: Create usage files manually</p>
+              <CodeBlock title="macOS / Linux">{`mkdir -p ~/.codex/usage
+cat > ~/.codex/usage/$(date +%Y-%m-%d).json << 'EOF'
+{
+  "date": "2026-03-10",
+  "input_tokens": 15000,
+  "output_tokens": 32000,
+  "models": ["codex-1"],
+  "cost_usd": 0.42
+}
+EOF`}</CodeBlock>
+              <CodeBlock title="Windows (PowerShell)">{`New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\\.codex\\usage"
+
+@'
+{
+  "date": "2026-03-10",
+  "input_tokens": 15000,
+  "output_tokens": 32000,
+  "models": ["codex-1"],
+  "cost_usd": 0.42
+}
+'@ | Set-Content "$env:USERPROFILE\\.codex\\usage\\2026-03-10.json"`}</CodeBlock>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-foreground">Option 3: Web import</p>
+              <Para>Go to <strong>Settings → Import</strong> and upload a JSON or CSV file with your Codex usage data.</Para>
+            </div>
+          </div>
         </div>
 
         <div className="my-4">
@@ -198,8 +247,42 @@ awarts sync  # detects Claude automatically`}</CodeBlock>
           </div>
           <Para>Reads from <code className="font-mono bg-muted px-1 rounded text-foreground">~/.gemini/usage/</code> or <code className="font-mono bg-muted px-1 rounded text-foreground">~/.config/gemini/usage/</code>. Costs are estimated from token counts using published pricing.</Para>
           <InfoBox>
-            <strong>No sessions showing for Gemini?</strong> AWARTS reads from local Gemini CLI usage files. If you only use Gemini through the web app or API without a local CLI tool, you can manually import sessions from Settings → Import using a CSV or JSON file.
+            <strong>No sessions showing for Gemini?</strong> Try one of these options:
           </InfoBox>
+          <div className="ml-2 space-y-3 my-3">
+            <div>
+              <p className="text-sm font-medium text-foreground">Option 1: Use a local Gemini CLI tool</p>
+              <Para>If your Gemini CLI writes to <code className="font-mono bg-muted px-1 rounded text-foreground">~/.gemini/usage/</code>, data is detected automatically.</Para>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-foreground">Option 2: Create usage files manually</p>
+              <CodeBlock title="macOS / Linux">{`mkdir -p ~/.gemini/usage
+cat > ~/.gemini/usage/$(date +%Y-%m-%d).json << 'EOF'
+{
+  "date": "2026-03-10",
+  "input_tokens": 20000,
+  "output_tokens": 30000,
+  "models": ["gemini-2.5-pro"],
+  "cost_usd": 0.35
+}
+EOF`}</CodeBlock>
+              <CodeBlock title="Windows (PowerShell)">{`New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\\.gemini\\usage"
+
+@'
+{
+  "date": "2026-03-10",
+  "input_tokens": 20000,
+  "output_tokens": 30000,
+  "models": ["gemini-2.5-pro"],
+  "cost_usd": 0.35
+}
+'@ | Set-Content "$env:USERPROFILE\\.gemini\\usage\\2026-03-10.json"`}</CodeBlock>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-foreground">Option 3: Web import</p>
+              <Para>Go to <strong>Settings → Import</strong> and upload a JSON or CSV file with your Gemini usage data.</Para>
+            </div>
+          </div>
         </div>
 
         <div className="my-4">
@@ -209,14 +292,69 @@ awarts sync  # detects Claude automatically`}</CodeBlock>
           </div>
           <Para>Reads from <code className="font-mono bg-muted px-1 rounded text-foreground">~/.antigravity/usage/</code>. Costs are estimated from token counts when not provided in usage files.</Para>
           <InfoBox>
-            <strong>No sessions showing for Antigravity?</strong> Make sure the Antigravity CLI stores usage data at <code className="font-mono bg-muted px-1 rounded">~/.antigravity/usage/</code>. If it stores data elsewhere, you can import sessions manually from Settings → Import.
+            <strong>No sessions showing for Antigravity?</strong> Try one of these options:
           </InfoBox>
+          <div className="ml-2 space-y-3 my-3">
+            <div>
+              <p className="text-sm font-medium text-foreground">Option 1: Use the Antigravity CLI</p>
+              <Para>Complete a session with the Antigravity CLI. It stores usage data at <code className="font-mono bg-muted px-1 rounded text-foreground">~/.antigravity/usage/</code>.</Para>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-foreground">Option 2: Create usage files manually</p>
+              <CodeBlock title="macOS / Linux">{`mkdir -p ~/.antigravity/usage
+cat > ~/.antigravity/usage/$(date +%Y-%m-%d).json << 'EOF'
+{
+  "date": "2026-03-10",
+  "input_tokens": 15000,
+  "output_tokens": 25000,
+  "models": ["antigravity-1"],
+  "cost_usd": 0.40
+}
+EOF`}</CodeBlock>
+              <CodeBlock title="Windows (PowerShell)">{`New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\\.antigravity\\usage"
+
+@'
+{
+  "date": "2026-03-10",
+  "input_tokens": 15000,
+  "output_tokens": 25000,
+  "models": ["antigravity-1"],
+  "cost_usd": 0.40
+}
+'@ | Set-Content "$env:USERPROFILE\\.antigravity\\usage\\2026-03-10.json"`}</CodeBlock>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-foreground">Option 3: Web import</p>
+              <Para>Go to <strong>Settings → Import</strong> and upload a JSON or CSV file with your Antigravity usage data.</Para>
+            </div>
+          </div>
         </div>
 
-        <Heading3>Can't find local files? Use manual import</Heading3>
+        <Heading3>Can't find local files? Use Settings → Import</Heading3>
         <Para>
-          If your provider doesn't create local usage files (e.g., you only use it via web), you can always import sessions manually from the <strong>Settings → Import</strong> tab using a JSON or CSV file with your usage data.
+          If your provider doesn't create local usage files (e.g., you only use it via web), you can always import sessions manually from the <strong>Settings → Import</strong> tab. Supported formats:
         </Para>
+        <CodeBlock title="JSON import format">{`[
+  {
+    "date": "2026-03-10",
+    "provider": "codex",
+    "cost_usd": 0.42,
+    "input_tokens": 15000,
+    "output_tokens": 32000,
+    "models": ["codex-1"]
+  },
+  {
+    "date": "2026-03-09",
+    "provider": "gemini",
+    "cost_usd": 0.35,
+    "input_tokens": 20000,
+    "output_tokens": 30000,
+    "models": ["gemini-2.5-pro"]
+  }
+]`}</CodeBlock>
+        <CodeBlock title="CSV import format">{`date,provider,cost_usd,input_tokens,output_tokens,models
+2026-03-10,codex,0.42,15000,32000,codex-1
+2026-03-09,gemini,0.35,20000,30000,gemini-2.5-pro`}</CodeBlock>
 
         <Heading3>Multi-Provider Sessions</Heading3>
         <Para>

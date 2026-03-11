@@ -15,6 +15,8 @@ interface ShareActionsProps {
     totalDays?: number;
     streak?: number;
   };
+  topModel?: string;
+  rank?: number;
 }
 
 /** Convert data URL to Blob */
@@ -39,7 +41,7 @@ async function tryNativeShare(imageDataUrl: string, text: string, url: string, f
   }
 }
 
-export function ShareActions({ cardRef, username, avatarUrl, providers, stats }: ShareActionsProps) {
+export function ShareActions({ cardRef, username, avatarUrl, providers, stats, topModel, rank }: ShareActionsProps) {
   const [copying, setCopying] = useState(false);
   const [downloadingPng, setDownloadingPng] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
@@ -65,6 +67,8 @@ export function ShareActions({ cardRef, username, avatarUrl, providers, stats }:
     totalDays: stats?.totalDays,
     streak: stats?.streak,
     providers,
+    topModel,
+    rank,
   };
 
   const generatePlatformImage = useCallback(async (platform: SharePlatform): Promise<string | null> => {
