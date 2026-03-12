@@ -12,7 +12,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
-import { execSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import type { Adapter, UsageEntry } from '../types.js';
 import { getKey } from '../lib/keys.js';
 
@@ -104,7 +104,7 @@ async function findUsageDir(): Promise<string | null> {
 
 function commandExists(cmd: string): boolean {
   try {
-    execSync(IS_WIN ? `where ${cmd}` : `which ${cmd}`, { stdio: 'ignore' });
+    execFileSync(IS_WIN ? 'where' : 'which', [cmd], { stdio: 'ignore' });
     return true;
   } catch {
     return false;

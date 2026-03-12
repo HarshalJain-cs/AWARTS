@@ -32,8 +32,13 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 
 function ScrollToTop() {
   const { pathname } = useLocation();
-  useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
+  useEffect(() => { window.scrollTo({ top: 0, behavior: 'smooth' }); }, [pathname]);
   return null;
+}
+
+function PageTransition({ children }: { children: React.ReactNode }) {
+  const { pathname } = useLocation();
+  return <div key={pathname} className="page-enter">{children}</div>;
 }
 
 const App = () => (
@@ -46,6 +51,7 @@ const App = () => (
         <ScrollToTop />
         <ErrorBoundary>
         <Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" /></div>}>
+          <PageTransition>
           <Routes>
             <Route path="/" element={<Landing />} />
             <Route path="/feed" element={<Feed />} />
@@ -68,6 +74,7 @@ const App = () => (
             <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
+          </PageTransition>
         </Suspense>
         </ErrorBoundary>
       </BrowserRouter>

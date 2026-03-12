@@ -14,6 +14,7 @@ import type * as feed from "../feed.js";
 import type * as http from "../http.js";
 import type * as leaderboard from "../leaderboard.js";
 import type * as posts from "../posts.js";
+import type * as prompts from "../prompts.js";
 import type * as search from "../search.js";
 import type * as seed from "../seed.js";
 import type * as social from "../social.js";
@@ -34,6 +35,7 @@ declare const fullApi: ApiFromModules<{
   http: typeof http;
   leaderboard: typeof leaderboard;
   posts: typeof posts;
+  prompts: typeof prompts;
   search: typeof search;
   seed: typeof seed;
   social: typeof social;

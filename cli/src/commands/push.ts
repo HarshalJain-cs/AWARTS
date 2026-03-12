@@ -132,9 +132,12 @@ export async function pushCommand(opts: PushOptions): Promise<void> {
   const spin = out.spinner('Submitting usage data...');
   spin.start();
 
+  // Strip fields the backend may not accept yet
+  const cleanEntries = allEntries.map(({ cost_source, ...rest }) => rest);
+
   try {
     const res = await post<SubmitResponse>('/api/usage/submit', {
-      entries: allEntries,
+      entries: cleanEntries,
       source: 'cli',
       hash,
     });

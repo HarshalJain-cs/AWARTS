@@ -11,7 +11,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
-import { execSync } from 'node:child_process';
+import { execSync, execFileSync } from 'node:child_process';
 import type { Adapter, UsageEntry } from '../types.js';
 import { getKey } from '../lib/keys.js';
 
@@ -182,7 +182,7 @@ async function findUsageDir(): Promise<string | null> {
 
 function commandExists(cmd: string): boolean {
   try {
-    execSync(IS_WIN ? `where ${cmd}` : `which ${cmd}`, { stdio: 'ignore' });
+    execFileSync(IS_WIN ? 'where' : 'which', [cmd], { stdio: 'ignore' });
     return true;
   } catch {
     return false;
@@ -272,7 +272,7 @@ async function readSqliteThreads(): Promise<UsageEntry[]> {
   // Use the system sqlite3 CLI to query — avoids native module dependency
   try {
     const query = `SELECT date(created_at/1000000000, 'unixepoch') as day, tokens_used, model_provider FROM threads WHERE tokens_used > 0 ORDER BY created_at;`;
-    const result = execSync(`sqlite3 "${dbPath}" "${query}"`, {
+    const result = execFileSync('sqlite3', [dbPath, query], {
       timeout: 5000,
       encoding: 'utf-8',
       stdio: ['pipe', 'pipe', 'pipe'],

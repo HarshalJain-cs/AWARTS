@@ -1,12 +1,17 @@
 import { mutation } from "./_generated/server";
 import { getCurrentUser } from "./users";
 
-// Run once to seed countries_to_regions data (requires authentication)
+// Run once to seed countries_to_regions data (admin only)
 export const seedCountries = mutation({
   args: {},
   handler: async (ctx) => {
     const me = await getCurrentUser(ctx);
     if (!me) throw new Error("Not authenticated");
+    // Admin-only guard
+    const adminIds = (process.env.ADMIN_CLERK_IDS ?? "").split(",").map((id) => id.trim()).filter(Boolean);
+    if (adminIds.length > 0 && !adminIds.includes(me.clerkId)) {
+      throw new Error("Forbidden: admin access required");
+    }
     // Check if already seeded
     const existing = await ctx.db.query("countries_to_regions").first();
     if (existing) return { message: "Already seeded" };

@@ -15,6 +15,7 @@ import { SkeletonCard } from '@/components/SkeletonCard';
 import { ErrorState } from '@/components/ErrorState';
 import { formatNumber } from '@/lib/format';
 import { MapPin, Calendar, BadgeCheck, Flame, Lock, Github, ExternalLink, Share2 } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { SEO } from '@/components/SEO';
@@ -176,7 +177,12 @@ export default function Profile() {
         </div>
 
         {/* Streak + Stats */}
-        <div className="space-y-4">
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.1 }}
+          className="space-y-4"
+        >
           <div className="flex items-center gap-2 text-lg font-bold text-foreground">
             <Flame className="h-5 w-5 text-primary" />
             {raw.stats?.current_streak ?? 0} day streak
@@ -188,18 +194,30 @@ export default function Profile() {
             sessions={raw.stats?.total_days ?? 0}
             isEstimated={raw.stats?.hasEstimatedCost}
           />
-        </div>
+        </motion.div>
 
         {/* Contribution Graph */}
         {heatmap.length > 0 && (
-          <div className="space-y-3">
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-40px' }}
+            transition={{ duration: 0.4 }}
+            className="space-y-3"
+          >
             <h2 className="text-lg font-semibold text-foreground">Activity</h2>
             <ContributionGraph data={heatmap} />
-          </div>
+          </motion.div>
         )}
 
         {/* Achievements */}
-        <div className="space-y-3">
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-40px' }}
+          transition={{ duration: 0.4 }}
+          className="space-y-3"
+        >
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-foreground">Achievements</h2>
             <span className="text-xs text-muted-foreground">{earnedAchievements.length}/{ACHIEVEMENTS.length} unlocked</span>
@@ -207,10 +225,16 @@ export default function Profile() {
           <div className="grid grid-cols-5 sm:grid-cols-9 gap-2">
             {achievements.map((a) => <AchievementBadge key={a.id} achievement={a} />)}
           </div>
-        </div>
+        </motion.div>
 
         {/* Recent Posts */}
-        <div className="space-y-3">
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-40px' }}
+          transition={{ duration: 0.4 }}
+          className="space-y-3"
+        >
           <h2 className="text-lg font-semibold text-foreground">Posts</h2>
           {postsLoading ? (
             <div className="space-y-4">
@@ -223,7 +247,7 @@ export default function Profile() {
           ) : (
             <p className="text-sm text-muted-foreground py-8 text-center">No posts yet.</p>
           )}
-        </div>
+        </motion.div>
       </div>
     </AppShell>
   );

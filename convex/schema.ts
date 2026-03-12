@@ -103,7 +103,8 @@ export default defineSchema({
   })
     .index("by_code", ["code"])
     .index("by_device_token", ["deviceToken"])
-    .index("by_jwt", ["jwtToken"]),
+    .index("by_jwt", ["jwtToken"])
+    .index("by_user", ["userId"]),
 
   user_achievements: defineTable({
     userId: v.id("users"),

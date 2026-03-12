@@ -58,8 +58,14 @@ export async function syncCommand(): Promise<void> {
       const entries = await adapter.read();
       if (entries.length === 0) {
         spin.info(chalk.dim(`${adapter.displayName} -- no usage data found`));
-        if (adapter.name !== 'claude') {
-          out.dim(`    Run ${chalk.cyan(`awarts seed -p ${adapter.name}`)} to generate sample data`);
+        if (adapter.name === 'codex') {
+          out.dim(`    Set your OpenAI API key:  ${chalk.cyan('awarts keys set openai <your-key>')}`);
+          out.dim(`    Or create usage files manually — see ${chalk.cyan('awarts.com/docs')}`);
+        } else if (adapter.name === 'gemini') {
+          out.dim(`    Set your Google API key:  ${chalk.cyan('awarts keys set google <your-key>')}`);
+          out.dim(`    Or create usage files manually — see ${chalk.cyan('awarts.com/docs')}`);
+        } else if (adapter.name === 'antigravity') {
+          out.dim(`    Set your API key:  ${chalk.cyan('awarts keys set antigravity <your-key>')}`);
           out.dim(`    Or create usage files manually — see ${chalk.cyan('awarts.com/docs')}`);
         }
       } else {
@@ -82,8 +88,11 @@ export async function syncCommand(): Promise<void> {
   if (allEntries.length === 0) {
     out.warn('No usage data found across any provider.');
     console.log();
-    out.info(`Try ${chalk.cyan('awarts seed')} to generate sample data for detected providers.`);
-    out.dim('Or visit awarts.com/docs for manual import instructions.');
+    out.info(`Set API keys to fetch real billing data:`);
+    out.dim(`  ${chalk.cyan('awarts keys set openai <key>')}      — for Codex / OpenAI`);
+    out.dim(`  ${chalk.cyan('awarts keys set google <key>')}      — for Gemini`);
+    out.dim(`  ${chalk.cyan('awarts keys set antigravity <key>')} — for Antigravity`);
+    out.dim(`Or visit ${chalk.cyan('awarts.com/docs')} for manual import instructions.`);
     console.log();
     return;
   }
@@ -106,9 +115,12 @@ export async function syncCommand(): Promise<void> {
   const submitSpin = out.spinner('Syncing with AWARTS...');
   submitSpin.start();
 
+  // Strip fields the backend may not accept yet
+  const cleanEntries = allEntries.map(({ cost_source, ...rest }) => rest);
+
   try {
     const res = await post<SubmitResponse>('/api/usage/submit', {
-      entries: allEntries,
+      entries: cleanEntries,
       source: 'cli',
       hash,
     });
