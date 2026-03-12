@@ -6,6 +6,7 @@ import { formatCost } from '@/lib/format';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { transformLeaderboardEntry } from '@/lib/transformers';
+import { motion } from 'framer-motion';
 
 export function RightSidebar() {
   const { user, isSignedIn, isUserLoading } = useAuth();
@@ -78,7 +79,12 @@ export function RightSidebar() {
 
       {/* Suggested Friends */}
       {suggested && suggested.length > 0 && (
-        <div className="rounded-lg border border-border bg-card p-4 space-y-3">
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.1 }}
+          className="rounded-lg border border-border bg-card p-4 space-y-3"
+        >
           <h3 className="text-xs font-semibold tracking-wider uppercase text-muted-foreground">Suggested Friends</h3>
           <div className="space-y-2.5">
             {suggested.map((u: any) => (
@@ -105,11 +111,16 @@ export function RightSidebar() {
               </div>
             ))}
           </div>
-        </div>
+        </motion.div>
       )}
 
       {/* Featured Challenge */}
-      <div className="rounded-lg border border-border bg-card p-4 space-y-2">
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.2 }}
+        className="rounded-lg border border-border bg-card p-4 space-y-2"
+      >
         <div className="flex items-center gap-1.5">
           <Target className="h-3.5 w-3.5 text-primary" />
           <h3 className="text-xs font-semibold tracking-wider uppercase text-muted-foreground">Featured Challenge</h3>
@@ -125,11 +136,16 @@ export function RightSidebar() {
             <div className="h-full rounded-full bg-primary/50" style={{ width: '0.01%' }} />
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* Top This Week */}
       {topEntries.length > 0 && (
-        <div className="rounded-lg border border-border bg-card p-4 space-y-3">
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.3 }}
+          className="rounded-lg border border-border bg-card p-4 space-y-3"
+        >
           <h3 className="text-xs font-semibold tracking-wider uppercase text-muted-foreground">Top This Week</h3>
           <div className="space-y-2">
             {topEntries.map((entry: any) => (
@@ -151,7 +167,7 @@ export function RightSidebar() {
           <Link to="/leaderboard" className="flex items-center gap-1 text-xs text-primary hover:underline font-medium">
             View Full Leaderboard <ChevronRight className="h-3 w-3" />
           </Link>
-        </div>
+        </motion.div>
       )}
     </aside>
   );

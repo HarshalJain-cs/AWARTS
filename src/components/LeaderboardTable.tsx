@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { cn } from '@/lib/utils';
 import { COUNTRIES, PROVIDERS } from '@/lib/constants';
+import { motion } from 'framer-motion';
 
 interface LeaderboardTableProps {
   entries: LeaderboardEntry[];
@@ -54,12 +55,15 @@ export function LeaderboardTable({ entries }: LeaderboardTableProps) {
             </tr>
           </thead>
           <tbody>
-            {entries.map((entry) => {
+            {entries.map((entry, i) => {
               const isMe = user ? entry.user.id === (user as any)._id : false;
               const country = COUNTRIES.find((c) => c.code === entry.user.countryCode);
               return (
-                <tr
+                <motion.tr
                   key={entry.user.id}
+                  initial={{ opacity: 0, x: -12 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.3, delay: i * 0.04 }}
                   className={cn(
                     'border-b border-border last:border-0 transition-all duration-200 hover:bg-muted/30 hover:shadow-sm',
                     isMe && 'bg-primary/5 border-l-2 border-l-primary'
@@ -91,7 +95,7 @@ export function LeaderboardTable({ entries }: LeaderboardTableProps) {
                   <td className="py-3 px-4 text-right font-mono">
                     {entry.streak > 0 ? `${entry.streak}d` : <span className="text-muted-foreground">-</span>}
                   </td>
-                </tr>
+                </motion.tr>
               );
             })}
           </tbody>

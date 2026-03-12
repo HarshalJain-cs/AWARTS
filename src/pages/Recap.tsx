@@ -11,6 +11,7 @@ import { transformHeatmap } from '@/lib/transformers';
 import { cn } from '@/lib/utils';
 import type { Provider } from '@/lib/types';
 import { SEO } from '@/components/SEO';
+import { motion } from 'framer-motion';
 
 export default function Recap() {
   return (
@@ -67,7 +68,12 @@ function RecapContent() {
   return (
     <AppShell>
       <SEO title="Recap" description="Generate a beautiful share card of your AI coding stats." noindex />
-      <div className="max-w-2xl mx-auto space-y-6">
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        className="max-w-2xl mx-auto space-y-6"
+      >
         {/* Header controls */}
         <div className="flex items-center justify-between flex-wrap gap-3">
           <h1 className="text-2xl font-bold text-foreground">Recap</h1>
@@ -139,7 +145,7 @@ function RecapContent() {
 
         {/* Export actions */}
         <ShareActions cardRef={cardRef} username={username} avatarUrl={avatarUrl} providers={providers} stats={{ totalCost, totalDays, streak }} />
-      </div>
+      </motion.div>
     </AppShell>
   );
 }

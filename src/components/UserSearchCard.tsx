@@ -4,14 +4,21 @@ import { ProviderChip } from './ProviderChip';
 import { FollowButton } from './FollowButton';
 import { Users } from 'lucide-react';
 import { formatNumber } from '@/lib/format';
+import { motion } from 'framer-motion';
 
 interface UserSearchCardProps {
   user: User;
+  index?: number;
 }
 
-export function UserSearchCard({ user }: UserSearchCardProps) {
+export function UserSearchCard({ user, index = 0 }: UserSearchCardProps) {
   return (
-    <div className="flex items-center gap-4 rounded-lg border border-border bg-card p-4">
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, delay: index * 0.06 }}
+      className="flex items-center gap-4 rounded-lg border border-border bg-card p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:border-primary/20"
+    >
       <Link to={`/u/${user.username}`}>
         <img src={user.avatar} alt={user.displayName} className="h-12 w-12 rounded-full" />
       </Link>
@@ -32,6 +39,6 @@ export function UserSearchCard({ user }: UserSearchCardProps) {
         </div>
       </div>
       <FollowButton targetUserId={user.id} isFollowing={user.isFollowing} username={user.username} />
-    </div>
+    </motion.div>
   );
 }

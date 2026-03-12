@@ -7,6 +7,7 @@ import { transformLeaderboardEntry } from '@/lib/transformers';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SEO } from '@/components/SEO';
 import { cn } from '@/lib/utils';
+import { motion } from 'framer-motion';
 
 const PERIODS = [
   { key: 'today', label: 'Day', api: 'daily' },
@@ -40,7 +41,12 @@ export default function Leaderboard() {
   return (
     <AppShell>
       <SEO title="Leaderboard — Top AI Coders" description="See who's writing the most AI-assisted code. Global leaderboard ranked by output tokens across Claude, Codex, Gemini, and Antigravity." canonical="/leaderboard" keywords="AI coding leaderboard, top developers, Claude leaderboard, Codex ranking, developer competition" jsonLd={{ "@context": "https://schema.org", "@type": "CollectionPage", "name": "AI Coding Leaderboard", "description": "Top AI-assisted developers ranked by usage", "url": "https://awarts.vercel.app/leaderboard" }} />
-      <div className="max-w-3xl mx-auto space-y-5">
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        className="max-w-3xl mx-auto space-y-5"
+      >
         <h1 className="text-2xl font-bold text-foreground">Leaderboard</h1>
 
         {/* Time period tabs */}
@@ -98,7 +104,7 @@ export default function Leaderboard() {
         ) : (
           <LeaderboardTable entries={entries} />
         )}
-      </div>
+      </motion.div>
     </AppShell>
   );
 }

@@ -2,6 +2,7 @@ import { Notification } from '@/lib/types';
 import { formatDate } from '@/lib/format';
 import { Zap, MessageCircle, AtSign, UserPlus, Award } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { motion } from 'framer-motion';
 
 const iconMap: Record<string, typeof Zap> = {
   kudos: Zap,
@@ -27,7 +28,13 @@ interface NotificationPanelProps {
 
 export function NotificationPanel({ notifications, onClose, onMarkAllRead }: NotificationPanelProps) {
   return (
-    <div className="w-80 rounded-lg border border-border bg-popover shadow-lg" onClick={(e) => e.stopPropagation()}>
+    <motion.div
+      initial={{ opacity: 0, y: -8, scale: 0.96 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ duration: 0.2, ease: 'easeOut' }}
+      className="w-80 rounded-lg border border-border bg-popover shadow-lg"
+      onClick={(e) => e.stopPropagation()}
+    >
       <div className="flex items-center justify-between border-b border-border px-4 py-3">
         <h3 className="text-sm font-semibold text-foreground">Notifications</h3>
         <button onClick={onMarkAllRead} className="text-xs text-primary hover:underline">Mark all read</button>
@@ -66,6 +73,6 @@ export function NotificationPanel({ notifications, onClose, onMarkAllRead }: Not
           })
         )}
       </div>
-    </div>
+    </motion.div>
   );
 }

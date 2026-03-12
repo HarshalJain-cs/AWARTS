@@ -147,6 +147,55 @@
     animation: pageEnter 0.35s ease-out both;
   }
 
+  /* Fade-in utility */
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-out both;
+  }
+  .animate-fade-in-up {
+    animation: fadeInUp 0.4s ease-out both;
+  }
+  .animate-slide-in-right {
+    animation: slideInRight 0.3s ease-out both;
+  }
+  .animate-slide-in-left {
+    animation: slideInLeft 0.3s ease-out both;
+  }
+  .animate-scale-in {
+    animation: scaleIn 0.25s ease-out both;
+  }
+
+  /* Stagger delay utilities */
+  .stagger-1 { animation-delay: 50ms; }
+  .stagger-2 { animation-delay: 100ms; }
+  .stagger-3 { animation-delay: 150ms; }
+  .stagger-4 { animation-delay: 200ms; }
+  .stagger-5 { animation-delay: 250ms; }
+  .stagger-6 { animation-delay: 300ms; }
+  .stagger-7 { animation-delay: 350ms; }
+  .stagger-8 { animation-delay: 400ms; }
+
+  /* Card hover lift */
+  .card-hover {
+    @apply transition-all duration-300 ease-out;
+  }
+  .card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+  }
+
+  /* Smooth button press */
+  .press-effect {
+    @apply transition-transform duration-150;
+  }
+  .press-effect:active {
+    transform: scale(0.97);
+  }
+
+  /* Glow pulse for primary elements */
+  .glow-pulse {
+    animation: glowPulse 2s ease-in-out infinite;
+  }
+
   /* Scroll-reveal: elements fade in + slide up as they enter the viewport */
   .scroll-reveal {
     opacity: 0;
@@ -165,15 +214,44 @@
   .scroll-reveal-stagger > .scroll-reveal:nth-child(4) { transition-delay: 240ms; }
   .scroll-reveal-stagger > .scroll-reveal:nth-child(5) { transition-delay: 320ms; }
   .scroll-reveal-stagger > .scroll-reveal:nth-child(6) { transition-delay: 400ms; }
+
+  /* Sidebar nav item transitions */
+  .nav-item {
+    @apply transition-all duration-200 ease-out;
+  }
+  .nav-item:hover {
+    transform: translateX(3px);
+  }
+  .nav-item.active {
+    transform: translateX(0);
+  }
 }
 
 @keyframes pageEnter {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(16px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-16px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes glowPulse {
+  0%, 100% { box-shadow: 0 0 0 0 hsl(18 82% 50% / 0); }
+  50% { box-shadow: 0 0 16px 2px hsl(18 82% 50% / 0.2); }
 }

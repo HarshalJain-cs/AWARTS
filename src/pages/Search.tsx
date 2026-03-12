@@ -76,7 +76,7 @@ export default function Search() {
           ) : (
             <>
               <p className="text-xs text-muted-foreground">{results.length} result{results.length !== 1 ? 's' : ''} for "{debouncedQuery}"</p>
-              {results.map((user) => <UserSearchCard key={user.id} user={user} />)}
+              {results.map((user, i) => <UserSearchCard key={user.id} user={user} index={i} />)}
             </>
           )}
         </div>

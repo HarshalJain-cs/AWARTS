@@ -16,6 +16,7 @@ import { toast } from '@/hooks/use-toast';
 import { SEO } from '@/components/SEO';
 import { COUNTRIES } from '@/lib/constants';
 import { useDebounce } from '@/hooks/use-debounce';
+import { motion } from 'framer-motion';
 
 export default function Settings() {
   return (
@@ -255,7 +256,12 @@ function SettingsContent() {
   return (
     <AppShell>
       <SEO title="Settings" description="Manage your AWARTS profile, privacy, notifications, and account settings." noindex />
-      <div className="max-w-2xl mx-auto space-y-6">
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        className="max-w-2xl mx-auto space-y-6"
+      >
         <h1 className="text-2xl font-bold text-foreground">Settings</h1>
 
         <Tabs defaultValue="profile">
@@ -622,7 +628,7 @@ function SettingsContent() {
             </div>
           </TabsContent>
         </Tabs>
-      </div>
+      </motion.div>
     </AppShell>
   );
 }

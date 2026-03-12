@@ -9,6 +9,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SEO } from '@/components/SEO';
+import { motion } from 'framer-motion';
 
 const iconMap: Record<string, typeof Zap> = {
   kudos: Zap,
@@ -81,7 +82,7 @@ function NotificationsContent() {
           </div>
         ) : (
           <div className="divide-y divide-border rounded-lg border border-border overflow-hidden">
-            {notifications.map((n) => {
+            {notifications.map((n, i) => {
               const Icon = iconMap[n.type] ?? Zap;
               const linkTo = n.type === 'follow'
                 ? `/u/${n.actor.username}`
@@ -90,36 +91,42 @@ function NotificationsContent() {
                   : `/notifications`;
 
               return (
-                <Link
+                <motion.div
                   key={n.id}
-                  to={linkTo}
-                  className={cn(
-                    'flex items-start gap-3 px-4 py-4 text-sm hover:bg-muted/50 transition-colors',
-                    !n.read && 'bg-primary/5'
-                  )}
+                  initial={{ opacity: 0, x: -12 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.25, delay: i * 0.04 }}
                 >
-                  <div className="shrink-0 mt-0.5 rounded-full bg-muted p-2">
-                    <Icon className="h-4 w-4 text-primary" />
-                  </div>
-                  <img
-                    src={n.actor.avatar || '/placeholder.svg'}
-                    alt={n.actor.username}
-                    className="h-10 w-10 rounded-full shrink-0"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-foreground">
-                      <span className="font-semibold">@{n.actor.username}</span>{' '}
-                      <span className="text-muted-foreground">{labelMap[n.type] ?? n.type}</span>
-                    </p>
-                    {n.post && (
-                      <p className="text-xs text-muted-foreground truncate mt-0.5">
-                        {n.post.title || `Session on ${n.post.createdAt}`}
-                      </p>
+                  <Link
+                    to={linkTo}
+                    className={cn(
+                      'flex items-start gap-3 px-4 py-4 text-sm hover:bg-muted/50 transition-colors',
+                      !n.read && 'bg-primary/5'
                     )}
-                    <p className="text-xs text-muted-foreground mt-1">{formatDate(n.createdAt)}</p>
-                  </div>
-                  {!n.read && <span className="mt-2 h-2.5 w-2.5 rounded-full bg-primary shrink-0" />}
-                </Link>
+                  >
+                    <div className="shrink-0 mt-0.5 rounded-full bg-muted p-2">
+                      <Icon className="h-4 w-4 text-primary" />
+                    </div>
+                    <img
+                      src={n.actor.avatar || '/placeholder.svg'}
+                      alt={n.actor.username}
+                      className="h-10 w-10 rounded-full shrink-0"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-foreground">
+                        <span className="font-semibold">@{n.actor.username}</span>{' '}
+                        <span className="text-muted-foreground">{labelMap[n.type] ?? n.type}</span>
+                      </p>
+                      {n.post && (
+                        <p className="text-xs text-muted-foreground truncate mt-0.5">
+                          {n.post.title || `Session on ${n.post.createdAt}`}
+                        </p>
+                      )}
+                      <p className="text-xs text-muted-foreground mt-1">{formatDate(n.createdAt)}</p>
+                    </div>
+                    {!n.read && <span className="mt-2 h-2.5 w-2.5 rounded-full bg-primary shrink-0" />}
+                  </Link>
+                </motion.div>
               );
             })}
           </div>

@@ -115,9 +115,12 @@ function MessagesContent() {
                   </div>
                 ) : conversations && conversations.length > 0 ? (
                   <div>
-                    {conversations.map((conv: any) => (
-                      <button
+                    {conversations.map((conv: any, i: number) => (
+                      <motion.button
                         key={conv._id}
+                        initial={{ opacity: 0, x: -12 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.25, delay: i * 0.05 }}
                         onClick={() => { setActiveConvId(conv._id); setShowThread(true); }}
                         className={cn(
                           'w-full flex items-center gap-3 px-4 py-3 hover:bg-muted/50 transition-colors text-left',
@@ -152,7 +155,7 @@ function MessagesContent() {
                             )}
                           </div>
                         </div>
-                      </button>
+                      </motion.button>
                     ))}
                   </div>
                 ) : (
