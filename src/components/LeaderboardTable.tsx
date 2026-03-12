@@ -1,5 +1,4 @@
 import { LeaderboardEntry } from '@/lib/types';
-import { ProviderChip } from './ProviderChip';
 import { formatCost, formatTokens } from '@/lib/format';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -10,7 +9,34 @@ interface LeaderboardTableProps {
   entries: LeaderboardEntry[];
 }
 
-const medals: Record<number, string> = { 1: '🥇', 2: '🥈', 3: '🥉' };
+function RankBadge({ rank }: { rank: number }) {
+  if (rank === 1) {
+    return (
+      <span className="inline-flex h-7 w-7 items-center justify-center rounded-md text-xs font-bold" style={{ background: '#FFD700', color: '#1a1a1a' }}>
+        1
+      </span>
+    );
+  }
+  if (rank === 2) {
+    return (
+      <span className="inline-flex h-7 w-7 items-center justify-center rounded-md text-xs font-bold" style={{ background: '#C0C0C0', color: '#1a1a1a' }}>
+        2
+      </span>
+    );
+  }
+  if (rank === 3) {
+    return (
+      <span className="inline-flex h-7 w-7 items-center justify-center rounded-md text-xs font-bold" style={{ background: '#CD7F32', color: '#fff' }}>
+        3
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex h-7 w-7 items-center justify-center rounded-md text-xs font-bold bg-primary/10 text-primary">
+      {rank}
+    </span>
+  );
+}
 
 export function LeaderboardTable({ entries }: LeaderboardTableProps) {
   const { user } = useAuth();
@@ -20,17 +46,17 @@ export function LeaderboardTable({ entries }: LeaderboardTableProps) {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border bg-muted/30">
-              <th className="text-left py-3 px-4 font-medium text-muted-foreground w-16">#</th>
-              <th className="text-left py-3 px-4 font-medium text-muted-foreground">User</th>
-              <th className="text-right py-3 px-4 font-medium text-muted-foreground hidden sm:table-cell">Spend</th>
-              <th className="text-right py-3 px-4 font-medium text-muted-foreground hidden md:table-cell">Tokens</th>
-              <th className="text-right py-3 px-4 font-medium text-muted-foreground">Streak</th>
+              <th className="text-left py-3 px-4 font-semibold text-xs tracking-wider uppercase text-muted-foreground w-16">Rank</th>
+              <th className="text-left py-3 px-4 font-semibold text-xs tracking-wider uppercase text-muted-foreground">User</th>
+              <th className="text-right py-3 px-4 font-semibold text-xs tracking-wider uppercase text-muted-foreground hidden sm:table-cell">Cost</th>
+              <th className="text-right py-3 px-4 font-semibold text-xs tracking-wider uppercase text-muted-foreground hidden md:table-cell">Output</th>
+              <th className="text-right py-3 px-4 font-semibold text-xs tracking-wider uppercase text-muted-foreground">Streak</th>
             </tr>
           </thead>
           <tbody>
             {entries.map((entry) => {
               const isMe = user ? entry.user.id === (user as any)._id : false;
-              const flag = COUNTRIES.find((c) => c.code === entry.user.countryCode)?.flag;
+              const country = COUNTRIES.find((c) => c.code === entry.user.countryCode);
               return (
                 <tr
                   key={entry.user.id}
@@ -39,8 +65,8 @@ export function LeaderboardTable({ entries }: LeaderboardTableProps) {
                     isMe && 'bg-primary/5 border-l-2 border-l-primary'
                   )}
                 >
-                  <td className="py-3 px-4 font-mono font-bold">
-                    {medals[entry.rank] || entry.rank}
+                  <td className="py-3 px-4">
+                    <RankBadge rank={entry.rank} />
                   </td>
                   <td className="py-3 px-4">
                     <Link to={`/u/${entry.user.username}`} className="flex items-center gap-2.5">
@@ -48,19 +74,23 @@ export function LeaderboardTable({ entries }: LeaderboardTableProps) {
                       <div className="min-w-0">
                         <div className="flex items-center gap-1.5">
                           <span className="font-medium text-foreground truncate">@{entry.user.username}</span>
-                          {flag && <span className="text-xs">{flag}</span>}
+                          {country && (
+                            <span className="text-xs text-muted-foreground">{country.flag} {country.code}</span>
+                          )}
                         </div>
                         <div className="flex gap-1 mt-0.5">
                           {entry.providers.map((p) => (
-                            <span key={p} className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: PROVIDERS[p].color }} />
+                            <span key={p} className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: PROVIDERS[p]?.color }} />
                           ))}
                         </div>
                       </div>
                     </Link>
                   </td>
-                  <td className="py-3 px-4 text-right font-mono hidden sm:table-cell">{formatCost(entry.spend)}</td>
-                  <td className="py-3 px-4 text-right font-mono hidden md:table-cell">{formatTokens(entry.tokens)}</td>
-                  <td className="py-3 px-4 text-right font-mono">🔥 {entry.streak}d</td>
+                  <td className="py-3 px-4 text-right font-mono font-semibold text-primary hidden sm:table-cell">{formatCost(entry.spend)}</td>
+                  <td className="py-3 px-4 text-right font-mono text-muted-foreground hidden md:table-cell">{formatTokens(entry.tokens)}</td>
+                  <td className="py-3 px-4 text-right font-mono">
+                    {entry.streak > 0 ? `${entry.streak}d` : <span className="text-muted-foreground">-</span>}
+                  </td>
                 </tr>
               );
             })}

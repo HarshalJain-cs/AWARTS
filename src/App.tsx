@@ -28,6 +28,7 @@ const CLIVerify = lazy(() => import("./pages/CLIVerify"));
 const Privacy = lazy(() => import("./pages/Privacy"));
 const Terms = lazy(() => import("./pages/Terms"));
 const AuthCallback = lazy(() => import("./pages/AuthCallback"));
+const Messages = lazy(() => import("./pages/Messages"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 function ScrollToTop() {
@@ -63,6 +64,7 @@ const App = () => (
             <Route path="/post/:id" element={<PostDetail />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/recap" element={<Recap />} />
+            <Route path="/messages" element={<Messages />} />
             <Route path="/prompts" element={<Prompts />} />
             <Route path="/notifications" element={<Notifications />} />
             <Route path="/onboarding" element={<Onboarding />} />

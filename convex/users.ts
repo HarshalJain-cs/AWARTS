@@ -130,6 +130,7 @@ export const updateMe = mutation({
     isPublic: v.optional(v.boolean()),
     defaultAiProvider: v.optional(v.string()),
     emailNotificationsEnabled: v.optional(v.boolean()),
+    referralSource: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const user = await requireUser(ctx);
@@ -177,6 +178,7 @@ export const updateMe = mutation({
       }
     }
     if (args.emailNotificationsEnabled !== undefined) updates.emailNotificationsEnabled = args.emailNotificationsEnabled;
+    if (args.referralSource !== undefined) updates.referralSource = args.referralSource.slice(0, 500);
 
     if (Object.keys(updates).length > 0) {
       await ctx.db.patch(user._id, updates);
@@ -418,6 +420,35 @@ export const getFollowers = query({
       })
     );
     return followers.filter(Boolean);
+  },
+});
+
+// GET /users/suggested — users the current user doesn't follow
+export const getSuggested = query({
+  args: { limit: v.optional(v.number()) },
+  handler: async (ctx, { limit = 5 }) => {
+    const me = await getCurrentUser(ctx);
+    if (!me) return [];
+
+    const following = await ctx.db
+      .query("follows")
+      .withIndex("by_follower", (q) => q.eq("followerId", me._id))
+      .collect();
+    const followingIds = new Set(following.map((f) => String(f.followingId)));
+    followingIds.add(String(me._id));
+
+    const allUsers = await ctx.db.query("users").take(200);
+    const suggestions = allUsers
+      .filter((u) => u.isPublic && !followingIds.has(String(u._id)))
+      .slice(0, limit);
+
+    return suggestions.map((u) => ({
+      _id: u._id,
+      username: u.username,
+      displayName: u.displayName,
+      avatarUrl: u.avatarUrl,
+      bio: u.bio,
+    }));
   },
 });
 

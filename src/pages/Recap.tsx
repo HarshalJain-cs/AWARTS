@@ -3,9 +3,8 @@ import { AppShell } from '@/components/layout/AppShell';
 import { AuthGate } from '@/components/AuthGate';
 import { useAuth } from '@/context/AuthContext';
 import { useProfile } from '@/hooks/use-api';
-import { ShareCard, type ShareTheme } from '@/components/ShareCard';
+import { ShareCard } from '@/components/ShareCard';
 import { ShareActions } from '@/components/ShareActions';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { BarChart3 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { transformHeatmap } from '@/lib/transformers';
@@ -21,17 +20,24 @@ export default function Recap() {
   );
 }
 
-const THEMES: { id: ShareTheme; label: string; preview: string }[] = [
-  { id: 'midnight', label: 'Midnight', preview: 'bg-gradient-to-br from-[#0f1219] to-[#1a1f2e]' },
-  { id: 'frost', label: 'Frost', preview: 'bg-white border-2 border-gray-200' },
-  { id: 'neon', label: 'Neon', preview: 'bg-gradient-to-br from-[#1a0533] via-[#0d1b3e] to-[#0a2540]' },
+export const GRADIENTS = [
+  { id: 'amber', label: 'Amber', style: 'linear-gradient(135deg, #F59E0B, #EA580C)', dark: false },
+  { id: 'coral', label: 'Coral', style: 'linear-gradient(135deg, #F43F5E, #E11D48)', dark: true },
+  { id: 'crimson', label: 'Crimson', style: 'linear-gradient(135deg, #991B1B, #7F1D1D)', dark: true },
+  { id: 'teal', label: 'Teal', style: 'linear-gradient(135deg, #14B8A6, #0891B2)', dark: false },
+  { id: 'mocha', label: 'Mocha', style: 'linear-gradient(135deg, #78716C, #44403C)', dark: true },
+  { id: 'purple', label: 'Purple', style: 'linear-gradient(135deg, #A855F7, #7C3AED)', dark: true },
+  { id: 'sunset', label: 'Sunset', style: 'linear-gradient(135deg, #F59E0B, #F97316, #EF4444)', dark: false },
+  { id: 'charcoal', label: 'Charcoal', style: 'linear-gradient(135deg, #1F2937, #111827)', dark: true },
+  { id: 'peach', label: 'Peach', style: 'linear-gradient(135deg, #FDA4AF, #FBBF24)', dark: false },
+  { id: 'midnight', label: 'Midnight', style: 'linear-gradient(135deg, #0f1219, #1a1f2e)', dark: true },
 ];
 
 function RecapContent() {
   const { user } = useAuth();
   const { data: profile, isLoading } = useProfile(user?.username ?? '');
-  const [period, setPeriod] = useState('month');
-  const [theme, setTheme] = useState<ShareTheme>('midnight');
+  const [period, setPeriod] = useState('week');
+  const [gradientId, setGradientId] = useState('amber');
   const cardRef = useRef<HTMLDivElement>(null);
 
   if (isLoading || !profile) {
@@ -54,22 +60,35 @@ function RecapContent() {
   const providers = (profile.providers_used ?? []) as Provider[];
   const heatmap = profile.heatmap ? transformHeatmap(profile.heatmap) : [];
   const hasData = totalCost > 0 || totalDays > 0;
+  const posts = profile.stats?.posts ?? 0;
+
+  const gradient = GRADIENTS.find((g) => g.id === gradientId) ?? GRADIENTS[0];
 
   return (
     <AppShell>
-      <SEO title="Share Your Stats" description="Generate a beautiful share card of your AI coding stats." noindex />
+      <SEO title="Recap" description="Generate a beautiful share card of your AI coding stats." noindex />
       <div className="max-w-2xl mx-auto space-y-6">
         {/* Header controls */}
         <div className="flex items-center justify-between flex-wrap gap-3">
-          <h1 className="text-2xl font-bold text-foreground">Share Your Stats</h1>
-          <Select value={period} onValueChange={setPeriod}>
-            <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="week">This Week</SelectItem>
-              <SelectItem value="month">This Month</SelectItem>
-              <SelectItem value="all">All Time</SelectItem>
-            </SelectContent>
-          </Select>
+          <h1 className="text-2xl font-bold text-foreground">Recap</h1>
+        </div>
+
+        {/* Period toggle pills */}
+        <div className="flex gap-2">
+          {['week', 'month', 'all'].map((p) => (
+            <button
+              key={p}
+              onClick={() => setPeriod(p)}
+              className={cn(
+                'px-4 py-1.5 text-sm font-medium rounded-full border transition-all',
+                period === p
+                  ? 'border-primary bg-primary/10 text-primary'
+                  : 'border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground'
+              )}
+            >
+              {p === 'week' ? 'This Week' : p === 'month' ? 'This Month' : 'All Time'}
+            </button>
+          ))}
         </div>
 
         {!hasData && (
@@ -81,25 +100,21 @@ function RecapContent() {
           </div>
         )}
 
-        {/* Theme picker */}
+        {/* Gradient picker */}
         <div className="space-y-2">
-          <p className="text-sm font-medium text-muted-foreground">Theme</p>
-          <div className="flex gap-3" aria-label="Theme selector" role="group">
-            {THEMES.map((t) => (
+          <p className="text-xs font-semibold tracking-wider uppercase text-muted-foreground">Background</p>
+          <div className="flex gap-2 flex-wrap">
+            {GRADIENTS.map((g) => (
               <button
-                key={t.id}
-                onClick={() => setTheme(t.id)}
-                aria-pressed={theme === t.id}
+                key={g.id}
+                onClick={() => setGradientId(g.id)}
                 className={cn(
-                  'flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-all',
-                  theme === t.id
-                    ? 'ring-2 ring-primary bg-muted'
-                    : 'bg-muted/50 hover:bg-muted'
+                  'h-10 w-10 rounded-lg transition-all duration-200 hover:scale-110',
+                  gradientId === g.id ? 'ring-2 ring-primary ring-offset-2 ring-offset-background scale-110' : ''
                 )}
-              >
-                <div className={cn('h-4 w-4 rounded-full', t.preview)} />
-                {t.label}
-              </button>
+                style={{ background: g.style }}
+                title={g.label}
+              />
             ))}
           </div>
         </div>
@@ -117,7 +132,8 @@ function RecapContent() {
             daysActive={totalDays}
             providers={providers}
             heatmap={heatmap}
-            theme={theme}
+            gradient={gradient}
+            sessions={posts}
           />
         </div>
 

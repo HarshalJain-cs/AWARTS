@@ -544,3 +544,74 @@ export function useCheckUsername(username: string) {
 export function useDeleteAccount() {
   return useMutationWithPending<Record<string, never>, any>(api.users.deleteAccount);
 }
+
+// ─── Suggested Users ─────────────────────────────────────────────────
+
+export function useSuggestedUsers() {
+  const result = useQuery(api.users.getSuggested, { limit: 5 });
+  return {
+    data: result,
+    isLoading: result === undefined,
+    error: null,
+  };
+}
+
+// ─── Direct Messages ─────────────────────────────────────────────────
+
+export function useConversations() {
+  const result = useQuery(api.messages.getConversations);
+  return {
+    data: result,
+    isLoading: result === undefined,
+    error: null,
+  };
+}
+
+export function useMessages(conversationId: string | null) {
+  const result = useQuery(
+    api.messages.getMessages,
+    conversationId ? { conversationId: conversationId as Id<"conversations"> } : "skip"
+  );
+  return {
+    data: result,
+    isLoading: result === undefined,
+    error: null,
+  };
+}
+
+export function useSendMessage() {
+  return useMutationWithPending<{ conversationId: string; content: string }, any>(
+    api.messages.sendMessage
+  );
+}
+
+export function useStartConversation() {
+  return useMutationWithPending<{ userId: string }, any>(
+    api.messages.startConversation
+  );
+}
+
+export function useMarkConversationRead() {
+  return useMutationWithPending<{ conversationId: string }, any>(
+    api.messages.markConversationRead
+  );
+}
+
+export function useUnreadMessageCount() {
+  const result = useQuery(api.messages.getUnreadCount);
+  return result ?? 0;
+}
+
+// ─── Top Weekly (for right sidebar) ──────────────────────────────────
+
+export function useTopWeekly() {
+  const result = useQuery(api.leaderboard.getLeaderboard, {
+    period: "weekly",
+    limit: 5,
+  });
+  return {
+    data: result,
+    isLoading: result === undefined,
+    error: null,
+  };
+}

@@ -1,4 +1,4 @@
-import { useParams } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { AppShell } from '@/components/layout/AppShell';
 import { useProfile, useUserPosts } from '@/hooks/use-api';
 import { useAuth } from '@/context/AuthContext';
@@ -14,15 +14,15 @@ import { SkeletonProfile } from '@/components/SkeletonProfile';
 import { SkeletonCard } from '@/components/SkeletonCard';
 import { ErrorState } from '@/components/ErrorState';
 import { formatNumber } from '@/lib/format';
-import { MapPin, Calendar, BadgeCheck, Flame, Lock, Github, ExternalLink, Share2 } from 'lucide-react';
+import { MapPin, Calendar, BadgeCheck, Flame, Lock, Github, ExternalLink, Share2, MessageSquare } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { Link } from 'react-router-dom';
 import { SEO } from '@/components/SEO';
 import { SocialShareMenu } from '@/components/SocialShareMenu';
 
 export default function Profile() {
   const { username } = useParams<{ username: string }>();
+  const navigate = useNavigate();
   const { user: authUser } = useAuth();
   const { data: raw, isLoading } = useProfile(username ?? '');
   const { data: postsData, isLoading: postsLoading } = useUserPosts(username ?? '');
@@ -152,7 +152,18 @@ export default function Profile() {
             {isOwn ? (
               <Button variant="outline" size="sm" asChild><Link to="/settings">Edit Profile</Link></Button>
             ) : (
-              <FollowButton targetUserId={raw._id} isFollowing={raw.isFollowing} username={user.username} />
+              <>
+                <FollowButton targetUserId={raw._id} isFollowing={raw.isFollowing} username={user.username} />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5"
+                  onClick={() => navigate(`/messages?user=${raw._id}`)}
+                >
+                  <MessageSquare className="h-4 w-4" />
+                  Message
+                </Button>
+              </>
             )}
             <SocialShareMenu
               data={{

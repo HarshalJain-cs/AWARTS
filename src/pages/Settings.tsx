@@ -3,16 +3,19 @@ import { AppShell } from '@/components/layout/AppShell';
 import { AuthGate } from '@/components/AuthGate';
 import { useAuth } from '@/context/AuthContext';
 import { useUser } from '@clerk/clerk-react';
-import { useCurrentUser, useUpdateProfile, useUploadAvatar, useImportUsage, useDeleteAccount } from '@/hooks/use-api';
+import { useCurrentUser, useUpdateProfile, useUploadAvatar, useImportUsage, useDeleteAccount, useCheckUsername } from '@/hooks/use-api';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Upload, Loader2, Check, Copy, FileUp, X, AlertCircle } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Upload, Loader2, Check, Copy, FileUp, X, AlertCircle, CheckCircle2, XCircle } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { SEO } from '@/components/SEO';
+import { COUNTRIES } from '@/lib/constants';
+import { useDebounce } from '@/hooks/use-debounce';
 
 export default function Settings() {
   return (
@@ -108,10 +111,13 @@ function SettingsContent() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
 
+  const [username, setUsername] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [bio, setBio] = useState('');
   const [externalLink, setExternalLink] = useState('');
   const [githubUsername, setGithubUsername] = useState('');
+  const [referralSource, setReferralSource] = useState('');
+  const [country, setCountry] = useState('');
   const [isPublic, setIsPublic] = useState(true);
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [notifKudos, setNotifKudos] = useState(true);
@@ -120,6 +126,16 @@ function SettingsContent() {
   const [notifFollows, setNotifFollows] = useState(true);
   const [copiedSync, setCopiedSync] = useState(false);
   const [copiedDaemon, setCopiedDaemon] = useState(false);
+
+  // Username validation
+  const debouncedUsername = useDebounce(username, 400);
+  const { data: usernameCheck } = useCheckUsername(
+    debouncedUsername !== (profile as any)?.username ? debouncedUsername : ''
+  );
+  const isUsernameValid = username.length >= 3 && username.length <= 20 && /^[a-z0-9_]+$/.test(username);
+  const isUsernameChanged = username !== ((profile as any)?.username ?? '');
+  const usernameAvailable = isUsernameChanged && isUsernameValid && usernameCheck?.available === true;
+  const usernameTaken = isUsernameChanged && isUsernameValid && usernameCheck?.available === false;
 
   // Import state
   const [importEntries, setImportEntries] = useState<ImportEntry[]>([]);
@@ -131,9 +147,12 @@ function SettingsContent() {
   // Populate form when profile loads
   useEffect(() => {
     if (profile) {
+      setUsername((profile as any).username ?? '');
       setDisplayName((profile as any).displayName ?? '');
       setBio((profile as any).bio ?? '');
       setExternalLink((profile as any).externalLink ?? '');
+      setReferralSource((profile as any).referralSource ?? '');
+      setCountry((profile as any).country ?? '');
       setIsPublic((profile as any).isPublic ?? true);
       setEmailNotifications((profile as any).emailNotificationsEnabled ?? true);
 
@@ -151,7 +170,18 @@ function SettingsContent() {
 
   const handleSave = async () => {
     try {
-      await updateProfile.mutateAsync({ displayName, bio, externalLink: externalLink || undefined, githubUsername: githubUsername || undefined });
+      const updates: Record<string, any> = {
+        displayName,
+        bio,
+        externalLink: externalLink || undefined,
+        githubUsername: githubUsername || undefined,
+        referralSource: referralSource || undefined,
+        country: country || undefined,
+      };
+      if (isUsernameChanged && isUsernameValid && usernameAvailable) {
+        updates.username = username;
+      }
+      await updateProfile.mutateAsync(updates);
       toast({ title: 'Profile updated!' });
     } catch {
       toast({ title: 'Failed to save', variant: 'destructive' });
@@ -238,8 +268,13 @@ function SettingsContent() {
           </TabsList>
 
           <TabsContent value="profile" className="space-y-4 mt-6">
+            {/* Profile header with avatar + user ID */}
             <div className="flex items-center gap-4">
               <img src={avatarUrl} alt="" className="h-16 w-16 rounded-full" />
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-foreground text-lg">@{(profile as any)?.username ?? ''}</p>
+                <p className="text-xs text-muted-foreground font-mono truncate">{authUser?.clerkId ?? ''}</p>
+              </div>
               <Button
                 variant="outline"
                 size="sm"
@@ -269,23 +304,79 @@ function SettingsContent() {
                 Change Avatar
               </Button>
             </div>
+
+            {/* Username */}
             <div className="space-y-2">
-              <Label>Display Name</Label>
+              <Label className="text-xs font-semibold tracking-wider uppercase text-muted-foreground">Username</Label>
+              <div className="relative">
+                <Input
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
+                  maxLength={20}
+                  placeholder="your_username"
+                />
+                {isUsernameChanged && isUsernameValid && (
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                    {usernameAvailable && <CheckCircle2 className="h-4 w-4 text-green-500" />}
+                    {usernameTaken && <XCircle className="h-4 w-4 text-destructive" />}
+                  </div>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground">3-20 chars, alphanumeric + underscore</p>
+              {usernameTaken && <p className="text-xs text-destructive">Username is already taken</p>}
+            </div>
+
+            {/* Display Name */}
+            <div className="space-y-2">
+              <Label className="text-xs font-semibold tracking-wider uppercase text-muted-foreground">Display Name</Label>
               <Input value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
             </div>
+
+            {/* Bio */}
             <div className="space-y-2">
-              <Label>Bio</Label>
+              <Label className="text-xs font-semibold tracking-wider uppercase text-muted-foreground">Bio</Label>
               <Textarea value={bio} onChange={(e) => setBio(e.target.value.slice(0, 160))} className="resize-none" />
               <p className="text-xs text-muted-foreground text-right">{bio.length}/160</p>
             </div>
+
+            {/* How did you hear about us? */}
             <div className="space-y-2">
-              <Label>External Link</Label>
+              <Label className="text-xs font-semibold tracking-wider uppercase text-muted-foreground">How did you hear about us?</Label>
+              <Textarea
+                value={referralSource}
+                onChange={(e) => setReferralSource(e.target.value.slice(0, 500))}
+                className="resize-none"
+                placeholder="Friend, GitHub, X, newsletter, podcast..."
+                rows={2}
+              />
+              <p className="text-xs text-muted-foreground text-right">{referralSource.length}/500</p>
+            </div>
+
+            {/* Country */}
+            <div className="space-y-2">
+              <Label className="text-xs font-semibold tracking-wider uppercase text-muted-foreground">Country</Label>
+              <Select value={country} onValueChange={setCountry}>
+                <SelectTrigger><SelectValue placeholder="Select your country" /></SelectTrigger>
+                <SelectContent>
+                  {COUNTRIES.map((c) => (
+                    <SelectItem key={c.code} value={c.code}>{c.flag} {c.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* External Link */}
+            <div className="space-y-2">
+              <Label className="text-xs font-semibold tracking-wider uppercase text-muted-foreground">External Link</Label>
               <Input value={externalLink} onChange={(e) => setExternalLink(e.target.value)} placeholder="https://yoursite.com" />
             </div>
+
+            {/* GitHub Username */}
             <div className="space-y-2">
-              <Label>GitHub Username</Label>
+              <Label className="text-xs font-semibold tracking-wider uppercase text-muted-foreground">GitHub Username</Label>
               <Input value={githubUsername} onChange={(e) => setGithubUsername(e.target.value)} placeholder="octocat" />
             </div>
+
             <Button onClick={handleSave} disabled={updateProfile.isPending}>
               {updateProfile.isPending ? 'Saving...' : 'Save Changes'}
             </Button>

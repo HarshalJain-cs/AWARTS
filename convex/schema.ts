@@ -17,6 +17,7 @@ export default defineSchema({
     email: v.optional(v.string()),
     defaultAiProvider: v.string(),
     emailNotificationsEnabled: v.boolean(),
+    referralSource: v.optional(v.string()),
   })
     .index("by_clerkId", ["clerkId"])
     .index("by_username", ["username"])
@@ -134,4 +135,21 @@ export default defineSchema({
   })
     .index("by_prompt", ["promptId"])
     .index("by_user_prompt", ["userId", "promptId"]),
+
+  conversations: defineTable({
+    participantIds: v.array(v.id("users")),
+    lastMessageAt: v.optional(v.number()),
+    lastMessagePreview: v.optional(v.string()),
+  })
+    .index("by_lastMessage", ["lastMessageAt"]),
+
+  messages: defineTable({
+    conversationId: v.id("conversations"),
+    senderId: v.id("users"),
+    content: v.string(),
+    isRead: v.boolean(),
+    createdAt: v.number(),
+  })
+    .index("by_conversation", ["conversationId", "createdAt"])
+    .index("by_unread", ["conversationId", "isRead"]),
 });
