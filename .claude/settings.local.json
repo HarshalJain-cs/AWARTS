@@ -36,7 +36,13 @@
       "Bash(done)",
       "Bash(grep:*)",
       "WebFetch(domain:developers.openai.com)",
-      "WebFetch(domain:ai.google.dev)"
+      "WebFetch(domain:ai.google.dev)",
+      "Bash(sqlite3:*)",
+      "Bash(bun run build:*)",
+      "Bash(set:*)",
+      "Bash(powershell -Command \"$env:CONVEX_DEPLOY_KEY=''prod:honorable-bee-242|eyJ2MiI6IjAzMWNhZThiYzhlYzQwZTE5MjQ5ZTNkNzA4NWY0ZjU4In0=''; npx convex deploy -y\")",
+      "Bash(powershell -Command \"$env:CONVEX_DEPLOY_KEY = ''prod:honorable-bee-242|eyJ2MiI6IjAzMWNhZThiYzhlYzQwZTE5MjQ5ZTNkNzA4NWY0ZjU4In0=''; $env:CONVEX_DEPLOYMENT = ''''; npx convex deploy -y\")",
+      "Bash(del \"C:\\\\harry\\\\Awarts\\\\.env.deploy\")"
     ]
   }
 }
