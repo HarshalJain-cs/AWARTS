@@ -50,6 +50,7 @@ export function Waves({
 
         window.addEventListener('resize', onResize)
         window.addEventListener('mousemove', onMouseMove, { passive: true })
+        containerRef.current.addEventListener('touchmove', onTouchMove, { passive: false })
 
         rafRef.current = requestAnimationFrame(tick)
 
@@ -80,11 +81,11 @@ export function Waves({
         pathsRef.current.forEach(path => path.remove())
         pathsRef.current = []
 
-        // Much wider spacing = far fewer elements
-        const xGap = 28
-        const yGap = 20
+        // Balanced density: smooth visuals without killing performance
+        const xGap = 20
+        const yGap = 16
 
-        const oWidth = width + 100
+        const oWidth = width + 200
         const oHeight = height + 30
 
         const totalLines = Math.ceil(oWidth / xGap)
@@ -142,6 +143,11 @@ export function Waves({
             mouse.ly = mouse.y
             mouse.set = true
         }
+
+        if (containerRef.current) {
+            containerRef.current.style.setProperty('--x', `${mouse.sx}px`)
+            containerRef.current.style.setProperty('--y', `${mouse.sy}px`)
+        }
     }
 
     const movePoints = (time: number) => {
@@ -187,6 +193,11 @@ export function Waves({
         }
     }
 
+    const moved = (point: Point, withCursorForce = true) => ({
+        x: point.x + point.wave.x + (withCursorForce ? point.cursor.x : 0),
+        y: point.y + point.wave.y + (withCursorForce ? point.cursor.y : 0),
+    })
+
     const drawLines = () => {
         const lines = linesRef.current
         const paths = pathsRef.current
@@ -195,12 +206,12 @@ export function Waves({
             const points = lines[li]
             if (points.length < 2 || !paths[li]) continue
 
-            const f = points[0]
-            let d = `M ${f.x + f.wave.x} ${f.y + f.wave.y}`
+            const f = moved(points[0], false)
+            let d = `M ${f.x} ${f.y}`
 
             for (let pi = 1; pi < points.length; pi++) {
-                const p = points[pi]
-                d += `L ${p.x + p.wave.x + p.cursor.x} ${p.y + p.wave.y + p.cursor.y}`
+                const p = moved(points[pi])
+                d += `L ${p.x} ${p.y}`
             }
 
             paths[li].setAttribute('d', d)
@@ -208,7 +219,6 @@ export function Waves({
     }
 
     const tick = (time: number) => {
-        // Run physics every frame but only draw every other frame (30fps rendering)
         const frame = frameRef.current++
         const mouse = mouseRef.current
 
@@ -225,9 +235,14 @@ export function Waves({
         mouse.ly = mouse.y
         mouse.a = Math.atan2(dy, dx)
 
+        if (containerRef.current) {
+            containerRef.current.style.setProperty('--x', `${mouse.sx}px`)
+            containerRef.current.style.setProperty('--y', `${mouse.sy}px`)
+        }
+
         movePoints(time)
 
-        // Only touch the DOM every 2nd frame
+        // Draw every 2nd frame (30fps DOM writes, 60fps physics)
         if (frame % 2 === 0) {
             drawLines()
         }
@@ -238,15 +253,20 @@ export function Waves({
     return (
         <div
             ref={containerRef}
-            className={`relative overflow-hidden ${className}`}
+            className={`waves-component relative overflow-hidden ${className}`}
             style={{
                 backgroundColor,
                 position: 'absolute',
                 top: 0,
                 left: 0,
+                margin: 0,
+                padding: 0,
                 width: '100%',
                 height: '100%',
+                overflow: 'hidden',
                 contain: 'strict',
+                '--x': '-0.5rem',
+                '--y': '50%',
             } as React.CSSProperties}
         >
             <svg
@@ -257,6 +277,7 @@ export function Waves({
             />
             {pointerSize > 0 && (
                 <div
+                    className="pointer-dot"
                     style={{
                         position: 'absolute',
                         top: 0,

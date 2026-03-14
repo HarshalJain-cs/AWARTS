@@ -4,7 +4,7 @@ import { TestimonialCard } from '@/components/TestimonialCard';
 import { ActivityCard } from '@/components/ActivityCard';
 import { mockPosts, mockTestimonials } from '@/lib/mock-data';
 import { Button } from '@/components/ui/button';
-import { EtheralShadow } from '@/components/ui/etheral-shadow';
+import { Waves } from '@/components/ui/wave-background';
 import { ArrowRight, Terminal, Share2, Trophy, Copy, Menu, X, ShieldCheck } from 'lucide-react';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Sun, Moon } from 'lucide-react';
@@ -110,14 +110,12 @@ export default function Landing() {
         keywords="AI coding tracker, Strava for coding, Claude tracker, Codex tracker, Gemini tracker, AI session tracker, developer leaderboard, coding streak, AI usage tracker, Claude Code tracker, code Strava, Antigravity tracker, AI developer tools, coding competition, developer stats, token tracker, AI cost tracker"
       />
 
-      {/* Ethereal Shadow Background */}
+      {/* Wave Background */}
       <div className="fixed inset-0 z-0 pointer-events-none">
-        <EtheralShadow
-          color="rgba(232, 122, 53, 0.12)"
-          animation={{ scale: 30, speed: 20 }}
-          noise={{ opacity: 0.2, scale: 1.2 }}
-          sizing="fill"
-          style={{ width: '100%', height: '100%' }}
+        <Waves
+          strokeColor="rgba(232, 122, 53, 0.25)"
+          backgroundColor="transparent"
+          pointerSize={0}
         />
       </div>
 
@@ -212,7 +210,7 @@ export default function Landing() {
       {/* Platform highlights — scroll-triggered */}
       <section
         ref={statsReveal.ref}
-        className={`relative z-10 border-y border-border bg-muted/20 py-12 scroll-reveal ${statsReveal.visible ? 'visible' : ''}`}
+        className={`relative z-10 border-y border-border bg-background/80 backdrop-blur-sm py-12 scroll-reveal ${statsReveal.visible ? 'visible' : ''}`}
       >
         <div className="mx-auto max-w-4xl grid grid-cols-3 gap-8 text-center">
           <div ref={devs.ref}>
@@ -264,7 +262,7 @@ export default function Landing() {
           ].map((f, i) => (
             <div
               key={f.title}
-              className={`rounded-lg border border-border bg-card p-6 space-y-3 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 cursor-default hover:-translate-y-1 transition-all duration-300 ease-out scroll-reveal ${featuresReveal.visible ? 'visible' : ''}`}
+              className={`rounded-lg border border-border bg-card/90 backdrop-blur-sm p-6 space-y-3 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 cursor-default hover:-translate-y-1 transition-all duration-300 ease-out scroll-reveal ${featuresReveal.visible ? 'visible' : ''}`}
               style={{ transitionDelay: `${i * 100}ms` }}
             >
               <f.icon className="h-8 w-8 text-primary" />
@@ -312,7 +310,7 @@ export default function Landing() {
       {/* Footer — scroll-triggered */}
       <footer
         ref={footerReveal.ref}
-        className={`relative z-10 border-t border-border py-8 scroll-reveal ${footerReveal.visible ? 'visible' : ''}`}
+        className={`relative z-10 border-t border-border bg-background/80 backdrop-blur-sm py-8 scroll-reveal ${footerReveal.visible ? 'visible' : ''}`}
       >
         <div className="mx-auto max-w-6xl px-4 flex items-center justify-between text-sm text-muted-foreground">
           <div className="flex items-center gap-2">
