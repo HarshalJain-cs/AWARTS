@@ -6,12 +6,36 @@ import { mockPosts, mockTestimonials } from '@/lib/mock-data';
 import { Button } from '@/components/ui/button';
 import { EtheralShadow } from '@/components/ui/etheral-shadow';
 import { ArrowRight, Terminal, Share2, Trophy, Copy, Menu, X, ShieldCheck } from 'lucide-react';
-import { motion } from 'framer-motion';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Sun, Moon } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { SEO } from '@/components/SEO';
 
+// ── Scroll-reveal hook: adds .visible when element enters viewport ───
+function useScrollReveal<T extends HTMLElement = HTMLDivElement>(threshold = 0.15) {
+  const ref = useRef<T>(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setVisible(true);
+          observer.disconnect();
+        }
+      },
+      { threshold }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [threshold]);
+
+  return { ref, visible };
+}
+
+// ── Animated counter that triggers on scroll ─────────────────────────
 function useCounter(target: number, duration = 1500) {
   const [count, setCount] = useState(0);
   const [started, setStarted] = useState(false);
@@ -33,7 +57,7 @@ function useCounter(target: number, duration = 1500) {
     const start = performance.now();
     const step = (now: number) => {
       const progress = Math.min((now - start) / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
+      const eased = 1 - Math.pow(1 - progress, 3);
       setCount(Math.floor(eased * target));
       if (progress < 1) requestAnimationFrame(step);
     };
@@ -56,6 +80,15 @@ export default function Landing() {
   const tokens = useCounter(100);
   const countries = useCounter(195);
 
+  // Scroll-reveal refs for each section
+  const terminalReveal = useScrollReveal(0.2);
+  const statsReveal = useScrollReveal(0.3);
+  const sessionsReveal = useScrollReveal(0.15);
+  const featuresReveal = useScrollReveal(0.15);
+  const wallReveal = useScrollReveal(0.1);
+  const ctaReveal = useScrollReveal(0.3);
+  const footerReveal = useScrollReveal(0.3);
+
   const toggleTheme = () => {
     const next = !isDark;
     setIsDark(next);
@@ -63,12 +96,12 @@ export default function Landing() {
     localStorage.setItem('theme', next ? 'dark' : 'light');
   };
 
-  const copyCommand = () => {
+  const copyCommand = useCallback(() => {
     navigator.clipboard.writeText('npx awarts@latest');
     setCopied(true);
     toast({ title: 'Copied!', description: 'CLI command copied to clipboard.' });
     setTimeout(() => setCopied(false), 2000);
-  };
+  }, []);
 
   return (
     <div className="min-h-screen bg-background relative">
@@ -140,38 +173,18 @@ export default function Landing() {
         )}
       </header>
 
-      {/* Hero */}
+      {/* Hero — plays on mount (above the fold, no scroll trigger needed) */}
       <section className="relative z-10 mx-auto max-w-6xl px-4 pt-20 pb-16 text-center overflow-hidden">
-        <motion.p
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="font-mono text-sm uppercase tracking-widest text-primary mb-4"
-        >
+        <p className="font-mono text-sm uppercase tracking-widest text-primary mb-4 animate-fade-in-up">
           STRAVA FOR CLAUDE, CODEX, GEMINI & ANTIGRAVITY
-        </motion.p>
-        <motion.h1
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.05 }}
-          className="text-4xl sm:text-6xl lg:text-7xl font-extrabold text-foreground leading-tight"
-        >
+        </p>
+        <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold text-foreground leading-tight animate-fade-in-up stagger-1">
           Every AI coding session counts.
-        </motion.h1>
-        <motion.p
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-          className="mt-4 text-lg text-muted-foreground max-w-xl mx-auto"
-        >
+        </h1>
+        <p className="mt-4 text-lg text-muted-foreground max-w-xl mx-auto animate-fade-in-up stagger-2">
           The Strava for AI-assisted coding. Track sessions across Claude, Codex, Gemini & Antigravity. No API keys needed — reads from your local files. Compete on leaderboards worldwide.
-        </motion.p>
-        <motion.div
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.15 }}
-          className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4"
-        >
+        </p>
+        <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in-up stagger-3">
           <Button asChild size="lg" className="text-base px-8">
             <Link to="/onboarding">
               Start Your Streak <ArrowRight className="ml-2 h-4 w-4" />
@@ -185,16 +198,22 @@ export default function Landing() {
             <Copy className="h-3.5 w-3.5" />
             {copied && <span className="text-xs text-primary">Copied!</span>}
           </button>
-        </motion.div>
+        </div>
       </section>
 
-      {/* Terminal Demo */}
-      <section className="relative z-10 mx-auto max-w-2xl px-4 pb-20">
+      {/* Terminal Demo — scroll-triggered */}
+      <section
+        ref={terminalReveal.ref}
+        className={`relative z-10 mx-auto max-w-2xl px-4 pb-20 scroll-reveal ${terminalReveal.visible ? 'visible' : ''}`}
+      >
         <TerminalDemo />
       </section>
 
-      {/* Platform highlights */}
-      <section className="relative z-10 border-y border-border bg-muted/20 py-12">
+      {/* Platform highlights — scroll-triggered */}
+      <section
+        ref={statsReveal.ref}
+        className={`relative z-10 border-y border-border bg-muted/20 py-12 scroll-reveal ${statsReveal.visible ? 'visible' : ''}`}
+      >
         <div className="mx-auto max-w-4xl grid grid-cols-3 gap-8 text-center">
           <div ref={devs.ref}>
             <p className="font-mono text-3xl font-bold text-foreground">4</p>
@@ -211,28 +230,31 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Sessions Visualized */}
-      <section className="relative z-10 mx-auto max-w-6xl px-4 py-20">
-        <motion.div
-          initial={{ opacity: 0, y: 15 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-40px' }}
-          transition={{ duration: 0.4 }}
-        >
+      {/* Sessions Visualized — scroll-triggered */}
+      <section
+        ref={sessionsReveal.ref}
+        className="relative z-10 mx-auto max-w-6xl px-4 py-20"
+      >
+        <div className={`scroll-reveal ${sessionsReveal.visible ? 'visible' : ''}`}>
           <h2 className="text-3xl font-bold text-foreground text-center mb-4">Sessions visualized</h2>
           <p className="text-muted-foreground text-center mb-10 max-w-lg mx-auto">
             See your AI coding activity come to life with detailed session cards and real-time leaderboards.
           </p>
-        </motion.div>
-        <div className="grid lg:grid-cols-2 gap-6 max-w-4xl mx-auto">
+        </div>
+        <div className="grid lg:grid-cols-2 gap-6 max-w-4xl mx-auto scroll-reveal-stagger">
           {mockPosts.slice(0, 2).map((post, i) => (
-            <ActivityCard key={post.id} post={post} index={i} />
+            <div key={post.id} className={`scroll-reveal ${sessionsReveal.visible ? 'visible' : ''}`} style={{ transitionDelay: `${200 + i * 150}ms` }}>
+              <ActivityCard post={post} index={0} />
+            </div>
           ))}
         </div>
       </section>
 
-      {/* Features */}
-      <section className="relative z-10 mx-auto max-w-6xl px-4 py-16">
+      {/* Features — scroll-triggered with stagger */}
+      <section
+        ref={featuresReveal.ref}
+        className="relative z-10 mx-auto max-w-6xl px-4 py-16"
+      >
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {[
             { icon: Terminal, title: 'Log your output', desc: 'One CLI command. All your sessions tracked across providers.' },
@@ -242,8 +264,8 @@ export default function Landing() {
           ].map((f, i) => (
             <div
               key={f.title}
-              className="rounded-lg border border-border bg-card p-6 space-y-3 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 cursor-default animate-fade-in-up hover:-translate-y-1 transition-transform duration-200"
-              style={{ animationDelay: `${i * 80}ms` }}
+              className={`rounded-lg border border-border bg-card p-6 space-y-3 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 cursor-default hover:-translate-y-1 transition-all duration-300 ease-out scroll-reveal ${featuresReveal.visible ? 'visible' : ''}`}
+              style={{ transitionDelay: `${i * 100}ms` }}
             >
               <f.icon className="h-8 w-8 text-primary" />
               <h3 className="font-semibold text-foreground">{f.title}</h3>
@@ -253,23 +275,20 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Wall of Love */}
-      <section className="relative z-10 mx-auto max-w-6xl px-4 py-16">
-        <motion.h2
-          initial={{ opacity: 0, y: 10 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.4 }}
-          className="text-3xl font-bold text-foreground text-center mb-10"
-        >
+      {/* Wall of Love — scroll-triggered */}
+      <section
+        ref={wallReveal.ref}
+        className="relative z-10 mx-auto max-w-6xl px-4 py-16"
+      >
+        <h2 className={`text-3xl font-bold text-foreground text-center mb-10 scroll-reveal ${wallReveal.visible ? 'visible' : ''}`}>
           Wall of Love
-        </motion.h2>
+        </h2>
         <div className="columns-1 sm:columns-2 lg:columns-3 gap-4 space-y-4">
           {mockTestimonials.map((t, i) => (
             <div
               key={t.id}
-              className="animate-fade-in-up hover:-translate-y-0.5 transition-transform duration-200"
-              style={{ animationDelay: `${i * 40}ms` }}
+              className={`hover:-translate-y-0.5 transition-all duration-300 ease-out scroll-reveal ${wallReveal.visible ? 'visible' : ''}`}
+              style={{ transitionDelay: `${100 + i * 60}ms` }}
             >
               <TestimonialCard author={t.author} handle={t.handle} content={t.content} provider={t.provider} />
             </div>
@@ -277,13 +296,10 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* CTA */}
-      <motion.section
-        initial={{ opacity: 0, y: 15 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.4 }}
-        className="relative z-10 mx-auto max-w-6xl px-4 py-20 text-center"
+      {/* CTA — scroll-triggered */}
+      <section
+        ref={ctaReveal.ref}
+        className={`relative z-10 mx-auto max-w-6xl px-4 py-20 text-center scroll-reveal ${ctaReveal.visible ? 'visible' : ''}`}
       >
         <h2 className="text-4xl sm:text-5xl font-extrabold text-foreground mb-6">Your move.</h2>
         <Button asChild size="lg" className="text-base px-10">
@@ -291,10 +307,13 @@ export default function Landing() {
             Get Started — Free <ArrowRight className="ml-2 h-4 w-4" />
           </Link>
         </Button>
-      </motion.section>
+      </section>
 
-      {/* Footer */}
-      <footer className="relative z-10 border-t border-border py-8">
+      {/* Footer — scroll-triggered */}
+      <footer
+        ref={footerReveal.ref}
+        className={`relative z-10 border-t border-border py-8 scroll-reveal ${footerReveal.visible ? 'visible' : ''}`}
+      >
         <div className="mx-auto max-w-6xl px-4 flex items-center justify-between text-sm text-muted-foreground">
           <div className="flex items-center gap-2">
             <div className="h-5 w-3.5 bg-primary" style={{ clipPath: 'polygon(15% 0%, 100% 0%, 85% 100%, 0% 100%)' }} />
