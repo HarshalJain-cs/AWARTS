@@ -4,7 +4,7 @@ import { TestimonialCard } from '@/components/TestimonialCard';
 import { ActivityCard } from '@/components/ActivityCard';
 import { mockPosts, mockTestimonials } from '@/lib/mock-data';
 import { Button } from '@/components/ui/button';
-import { EtheralShadow } from '@/components/ui/etheral-shadow';
+import { Waves } from '@/components/ui/wave-background';
 import { ArrowRight, Terminal, Share2, Trophy, Copy, Menu, X, ShieldCheck } from 'lucide-react';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Sun, Moon } from 'lucide-react';
@@ -110,14 +110,13 @@ export default function Landing() {
         keywords="AI coding tracker, Strava for coding, Claude tracker, Codex tracker, Gemini tracker, AI session tracker, developer leaderboard, coding streak, AI usage tracker, Claude Code tracker, code Strava, Antigravity tracker, AI developer tools, coding competition, developer stats, token tracker, AI cost tracker"
       />
 
-      {/* Ethereal Shadow Background */}
-      <div className="fixed inset-0 z-0 pointer-events-none">
-        <EtheralShadow
-          color="rgba(232, 122, 53, 0.12)"
-          animation={{ scale: 30, speed: 20 }}
-          noise={{ opacity: 0.2, scale: 1.2 }}
-          sizing="fill"
-          style={{ width: '100%', height: '100%' }}
+      {/* Wave Background */}
+      <div className="fixed inset-0 z-0 opacity-[0.08] dark:opacity-[0.12] pointer-events-none">
+        <Waves
+          strokeColor="hsl(18, 82%, 50%)"
+          backgroundColor="transparent"
+          className="h-full w-full"
+          pointerSize={0}
         />
       </div>
 
