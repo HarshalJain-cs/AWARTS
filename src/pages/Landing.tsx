@@ -189,15 +189,9 @@ export default function Landing() {
       </section>
 
       {/* Terminal Demo */}
-      <motion.section
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: '-40px' }}
-        transition={{ duration: 0.5 }}
-        className="relative z-10 mx-auto max-w-2xl px-4 pb-20"
-      >
+      <section className="relative z-10 mx-auto max-w-2xl px-4 pb-20">
         <TerminalDemo />
-      </motion.section>
+      </section>
 
       {/* Platform highlights */}
       <section className="relative z-10 border-y border-border bg-muted/20 py-12">
