@@ -26,7 +26,7 @@ export function Navbar() {
     return document.documentElement.classList.contains('dark');
   });
 
-  const { data: notifData } = useNotifications();
+  const { data: notifData } = useNotifications(!isSignedIn);
   const markRead = useMarkNotificationsRead();
   const unreadCount = notifData?.unread_count ?? 0;
   const notifications = (notifData?.notifications ?? []).map(transformNotification);

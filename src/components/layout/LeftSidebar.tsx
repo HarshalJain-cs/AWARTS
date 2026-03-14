@@ -12,7 +12,7 @@ export function LeftSidebar() {
   const location = useLocation();
   const { user, isSignedIn } = useAuth();
   const { data: profileData } = useProfile(user?.username ?? '');
-  const unreadMessages = useUnreadMessageCount();
+  const unreadMessages = useUnreadMessageCount(!isSignedIn);
 
   const navItems = [
     { label: 'Feed', icon: Home, href: '/feed' },

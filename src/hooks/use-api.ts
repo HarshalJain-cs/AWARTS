@@ -172,8 +172,8 @@ export function useToggleFollow() {
 
 // ─── Notifications ────────────────────────────────────────────────────
 
-export function useNotifications() {
-  const result = useQuery(api.social.getNotifications);
+export function useNotifications(skip = false) {
+  const result = useQuery(api.social.getNotifications, skip ? "skip" : {});
   const unreadCount = result?.filter((n) => !n.isRead).length ?? 0;
   return {
     data: result
@@ -232,8 +232,8 @@ export function useProfile(username: string) {
   };
 }
 
-export function useCurrentUser() {
-  const result = useQuery(api.users.getMe);
+export function useCurrentUser(skip = false) {
+  const result = useQuery(api.users.getMe, skip ? "skip" : {});
   return {
     data: result,
     isLoading: result === undefined,
@@ -558,8 +558,8 @@ export function useSuggestedUsers() {
 
 // ─── Direct Messages ─────────────────────────────────────────────────
 
-export function useConversations() {
-  const result = useQuery(api.messages.getConversations);
+export function useConversations(skip = false) {
+  const result = useQuery(api.messages.getConversations, skip ? "skip" : {});
   return {
     data: result,
     isLoading: result === undefined,
@@ -597,8 +597,8 @@ export function useMarkConversationRead() {
   );
 }
 
-export function useUnreadMessageCount() {
-  const result = useQuery(api.messages.getUnreadCount);
+export function useUnreadMessageCount(skip = false) {
+  const result = useQuery(api.messages.getUnreadCount, skip ? "skip" : {});
   return result ?? 0;
 }
 

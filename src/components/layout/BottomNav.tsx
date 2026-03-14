@@ -7,7 +7,7 @@ import { useUnreadMessageCount } from '@/hooks/use-api';
 export function BottomNav() {
   const location = useLocation();
   const { user, isSignedIn } = useAuth();
-  const unreadMessages = useUnreadMessageCount();
+  const unreadMessages = useUnreadMessageCount(!isSignedIn);
 
   const items = [
     { icon: Home, href: '/feed', label: 'Feed' },
