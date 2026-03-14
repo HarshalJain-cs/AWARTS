@@ -31,22 +31,14 @@ export function Waves({
     const containerRef = useRef<HTMLDivElement>(null)
     const svgRef = useRef<SVGSVGElement>(null)
     const mouseRef = useRef({
-        x: -10,
-        y: 0,
-        lx: 0,
-        ly: 0,
-        sx: 0,
-        sy: 0,
-        v: 0,
-        vs: 0,
-        a: 0,
-        set: false,
+        x: -10, y: 0, lx: 0, ly: 0, sx: 0, sy: 0, v: 0, vs: 0, a: 0, set: false,
     })
     const pathsRef = useRef<SVGPathElement[]>([])
     const linesRef = useRef<Point[][]>([])
     const noiseRef = useRef<((x: number, y: number) => number) | null>(null)
     const rafRef = useRef<number | null>(null)
     const boundingRef = useRef<DOMRect | null>(null)
+    const frameRef = useRef(0)
 
     useEffect(() => {
         if (!containerRef.current || !svgRef.current) return
@@ -57,8 +49,7 @@ export function Waves({
         setLines()
 
         window.addEventListener('resize', onResize)
-        window.addEventListener('mousemove', onMouseMove)
-        containerRef.current.addEventListener('touchmove', onTouchMove, { passive: false })
+        window.addEventListener('mousemove', onMouseMove, { passive: true })
 
         rafRef.current = requestAnimationFrame(tick)
 
@@ -73,12 +64,11 @@ export function Waves({
 
     const setSize = () => {
         if (!containerRef.current || !svgRef.current) return
-
         boundingRef.current = containerRef.current.getBoundingClientRect()
         const { width, height } = boundingRef.current
-
-        svgRef.current.style.width = `${width}px`
-        svgRef.current.style.height = `${height}px`
+        svgRef.current.setAttribute('width', String(width))
+        svgRef.current.setAttribute('height', String(height))
+        svgRef.current.setAttribute('viewBox', `0 0 ${width} ${height}`)
     }
 
     const setLines = () => {
@@ -87,15 +77,14 @@ export function Waves({
         const { width, height } = boundingRef.current
         linesRef.current = []
 
-        pathsRef.current.forEach(path => {
-            path.remove()
-        })
+        pathsRef.current.forEach(path => path.remove())
         pathsRef.current = []
 
-        const xGap = 8
-        const yGap = 8
+        // Much wider spacing = far fewer elements
+        const xGap = 28
+        const yGap = 20
 
-        const oWidth = width + 200
+        const oWidth = width + 100
         const oHeight = height + 30
 
         const totalLines = Math.ceil(oWidth / xGap)
@@ -108,27 +97,21 @@ export function Waves({
             const points: Point[] = []
 
             for (let j = 0; j < totalPoints; j++) {
-                const point: Point = {
+                points.push({
                     x: xStart + xGap * i,
                     y: yStart + yGap * j,
                     wave: { x: 0, y: 0 },
                     cursor: { x: 0, y: 0, vx: 0, vy: 0 },
-                }
-
-                points.push(point)
+                })
             }
 
-            const path = document.createElementNS(
-                'http://www.w3.org/2000/svg',
-                'path'
-            )
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path')
             path.setAttribute('fill', 'none')
             path.setAttribute('stroke', strokeColor)
             path.setAttribute('stroke-width', '1')
 
             svgRef.current.appendChild(path)
             pathsRef.current.push(path)
-
             linesRef.current.push(points)
         }
     }
@@ -144,41 +127,34 @@ export function Waves({
 
     const onTouchMove = (e: TouchEvent) => {
         e.preventDefault()
-        const touch = e.touches[0]
-        updateMousePosition(touch.clientX, touch.clientY)
+        updateMousePosition(e.touches[0].clientX, e.touches[0].clientY)
     }
 
     const updateMousePosition = (x: number, y: number) => {
         if (!boundingRef.current) return
-
         const mouse = mouseRef.current
         mouse.x = x - boundingRef.current.left
         mouse.y = y - boundingRef.current.top + window.scrollY
-
         if (!mouse.set) {
             mouse.sx = mouse.x
             mouse.sy = mouse.y
             mouse.lx = mouse.x
             mouse.ly = mouse.y
-
             mouse.set = true
-        }
-
-        if (containerRef.current) {
-            containerRef.current.style.setProperty('--x', `${mouse.sx}px`)
-            containerRef.current.style.setProperty('--y', `${mouse.sy}px`)
         }
     }
 
     const movePoints = (time: number) => {
-        const { current: lines } = linesRef
-        const { current: mouse } = mouseRef
-        const { current: noise } = noiseRef
-
+        const lines = linesRef.current
+        const mouse = mouseRef.current
+        const noise = noiseRef.current
         if (!noise) return
 
-        lines.forEach((points) => {
-            points.forEach((p: Point) => {
+        for (let li = 0; li < lines.length; li++) {
+            const points = lines[li]
+            for (let pi = 0; pi < points.length; pi++) {
+                const p = points[pi]
+
                 const move = noise(
                     (p.x + time * 0.008) * 0.003,
                     (p.y + time * 0.003) * 0.002
@@ -195,78 +171,66 @@ export function Waves({
                 if (d < l) {
                     const s = 1 - d / l
                     const f = Math.cos(d * 0.001) * s
-
                     p.cursor.vx += Math.cos(mouse.a) * f * l * mouse.vs * 0.00035
                     p.cursor.vy += Math.sin(mouse.a) * f * l * mouse.vs * 0.00035
                 }
 
                 p.cursor.vx += (0 - p.cursor.x) * 0.01
                 p.cursor.vy += (0 - p.cursor.y) * 0.01
-
                 p.cursor.vx *= 0.95
                 p.cursor.vy *= 0.95
-
                 p.cursor.x += p.cursor.vx
                 p.cursor.y += p.cursor.vy
-
                 p.cursor.x = Math.min(50, Math.max(-50, p.cursor.x))
                 p.cursor.y = Math.min(50, Math.max(-50, p.cursor.y))
-            })
-        })
-    }
-
-    const moved = (point: Point, withCursorForce = true) => {
-        return {
-            x: point.x + point.wave.x + (withCursorForce ? point.cursor.x : 0),
-            y: point.y + point.wave.y + (withCursorForce ? point.cursor.y : 0),
+            }
         }
     }
 
     const drawLines = () => {
-        const { current: lines } = linesRef
-        const { current: paths } = pathsRef
+        const lines = linesRef.current
+        const paths = pathsRef.current
 
-        lines.forEach((points, lIndex) => {
-            if (points.length < 2 || !paths[lIndex]) return
+        for (let li = 0; li < lines.length; li++) {
+            const points = lines[li]
+            if (points.length < 2 || !paths[li]) continue
 
-            const firstPoint = moved(points[0], false)
-            let d = `M ${firstPoint.x} ${firstPoint.y}`
+            const f = points[0]
+            let d = `M ${f.x + f.wave.x} ${f.y + f.wave.y}`
 
-            for (let i = 1; i < points.length; i++) {
-                const current = moved(points[i])
-                d += `L ${current.x} ${current.y}`
+            for (let pi = 1; pi < points.length; pi++) {
+                const p = points[pi]
+                d += `L ${p.x + p.wave.x + p.cursor.x} ${p.y + p.wave.y + p.cursor.y}`
             }
 
-            paths[lIndex].setAttribute('d', d)
-        })
+            paths[li].setAttribute('d', d)
+        }
     }
 
     const tick = (time: number) => {
-        const { current: mouse } = mouseRef
+        // Run physics every frame but only draw every other frame (30fps rendering)
+        const frame = frameRef.current++
+        const mouse = mouseRef.current
 
         mouse.sx += (mouse.x - mouse.sx) * 0.1
         mouse.sy += (mouse.y - mouse.sy) * 0.1
 
         const dx = mouse.x - mouse.lx
         const dy = mouse.y - mouse.ly
-        const d = Math.hypot(dx, dy)
 
-        mouse.v = d
-        mouse.vs += (d - mouse.vs) * 0.1
+        mouse.v = Math.hypot(dx, dy)
+        mouse.vs += (mouse.v - mouse.vs) * 0.1
         mouse.vs = Math.min(100, mouse.vs)
-
         mouse.lx = mouse.x
         mouse.ly = mouse.y
-
         mouse.a = Math.atan2(dy, dx)
 
-        if (containerRef.current) {
-            containerRef.current.style.setProperty('--x', `${mouse.sx}px`)
-            containerRef.current.style.setProperty('--y', `${mouse.sy}px`)
-        }
-
         movePoints(time)
-        drawLines()
+
+        // Only touch the DOM every 2nd frame
+        if (frame % 2 === 0) {
+            drawLines()
+        }
 
         rafRef.current = requestAnimationFrame(tick)
     }
@@ -280,33 +244,32 @@ export function Waves({
                 position: 'absolute',
                 top: 0,
                 left: 0,
-                margin: 0,
-                padding: 0,
                 width: '100%',
                 height: '100%',
-                overflow: 'hidden',
-                '--x': '-0.5rem',
-                '--y': '50%',
+                contain: 'strict',
             } as React.CSSProperties}
         >
             <svg
                 ref={svgRef}
                 className="block w-full h-full"
                 xmlns="http://www.w3.org/2000/svg"
+                style={{ willChange: 'contents' }}
             />
-            <div
-                style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    width: `${pointerSize}rem`,
-                    height: `${pointerSize}rem`,
-                    background: strokeColor,
-                    borderRadius: '50%',
-                    transform: 'translate3d(calc(var(--x) - 50%), calc(var(--y) - 50%), 0)',
-                    willChange: 'transform',
-                }}
-            />
+            {pointerSize > 0 && (
+                <div
+                    style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: `${pointerSize}rem`,
+                        height: `${pointerSize}rem`,
+                        background: strokeColor,
+                        borderRadius: '50%',
+                        transform: 'translate3d(calc(var(--x) - 50%), calc(var(--y) - 50%), 0)',
+                        willChange: 'transform',
+                    }}
+                />
+            )}
         </div>
     )
 }
