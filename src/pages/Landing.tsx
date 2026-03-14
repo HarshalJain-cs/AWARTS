@@ -81,8 +81,8 @@ export default function Landing() {
       <div className="fixed inset-0 z-0 pointer-events-none">
         <EtheralShadow
           color="rgba(232, 122, 53, 0.12)"
-          animation={{ scale: 60, speed: 40 }}
-          noise={{ opacity: 0.3, scale: 1.2 }}
+          animation={{ scale: 30, speed: 20 }}
+          noise={{ opacity: 0.2, scale: 1.2 }}
           sizing="fill"
           style={{ width: '100%', height: '100%' }}
         />
@@ -246,19 +246,15 @@ export default function Landing() {
             { icon: Share2, title: 'Share your sessions', desc: 'Beautiful activity cards. Show the world what you shipped.' },
             { icon: Trophy, title: 'Chase the leaderboard', desc: 'Compete globally or by country. Maintain your streak.' },
           ].map((f, i) => (
-            <motion.div
+            <div
               key={f.title}
-              initial={{ opacity: 0, y: 15 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: '-20px' }}
-              transition={{ duration: 0.4, delay: i * 0.08 }}
-              className="rounded-lg border border-border bg-card p-6 space-y-3 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 cursor-default"
-              whileHover={{ y: -4, scale: 1.02 }}
+              className="rounded-lg border border-border bg-card p-6 space-y-3 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 cursor-default animate-fade-in-up hover:-translate-y-1 transition-transform duration-200"
+              style={{ animationDelay: `${i * 80}ms` }}
             >
               <f.icon className="h-8 w-8 text-primary" />
               <h3 className="font-semibold text-foreground">{f.title}</h3>
               <p className="text-sm text-muted-foreground">{f.desc}</p>
-            </motion.div>
+            </div>
           ))}
         </div>
       </section>
@@ -276,16 +272,13 @@ export default function Landing() {
         </motion.h2>
         <div className="columns-1 sm:columns-2 lg:columns-3 gap-4 space-y-4">
           {mockTestimonials.map((t, i) => (
-            <motion.div
+            <div
               key={t.id}
-              initial={{ opacity: 0, scale: 0.97 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.3, delay: i * 0.04 }}
-              whileHover={{ y: -2, scale: 1.01 }}
+              className="animate-fade-in-up hover:-translate-y-0.5 transition-transform duration-200"
+              style={{ animationDelay: `${i * 40}ms` }}
             >
               <TestimonialCard author={t.author} handle={t.handle} content={t.content} provider={t.provider} />
-            </motion.div>
+            </div>
           ))}
         </div>
       </section>

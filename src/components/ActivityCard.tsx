@@ -10,7 +10,6 @@ import { MessageCircle, Share2, ChevronDown, BadgeCheck, ShieldCheck, X, Chevron
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { formatCost, formatTokens } from '@/lib/format';
 import { PROVIDERS } from '@/lib/constants';
-import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
 interface ActivityCardProps {
@@ -130,12 +129,9 @@ export function ActivityCard({ post, index = 0, showInlineComments = false }: Ac
 
   return (
     <>
-      <motion.article
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: '-50px' }}
-        transition={{ duration: 0.35, delay: index * 0.08 }}
-        className="rounded-lg border border-border bg-card p-5 space-y-3.5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/5 hover:border-primary/20"
+      <article
+        className="rounded-lg border border-border bg-card p-5 space-y-3.5 animate-fade-in-up transition-colors duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/5 hover:border-primary/20"
+        style={{ animationDelay: `${index * 60}ms` }}
       >
         {/* Header */}
         <div className="flex items-center gap-3">
@@ -284,7 +280,7 @@ export function ActivityCard({ post, index = 0, showInlineComments = false }: Ac
             }
           />
         </div>
-      </motion.article>
+      </article>
 
       {/* Image Lightbox */}
       {lightboxIndex !== null && (

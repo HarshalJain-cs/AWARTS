@@ -113,7 +113,6 @@
     @apply border-border;
   }
   html {
-    scroll-behavior: smooth;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -121,13 +120,9 @@
     @apply bg-background text-foreground font-sans antialiased;
     font-family: 'Inter', system-ui, sans-serif;
   }
-  /* Smoother transitions on all interactive elements */
-  a, button, [role="button"], input, select, textarea {
-    @apply transition-colors duration-150;
-  }
   /* Smooth border-color transitions on cards */
   .rounded-lg[class*="border"] {
-    @apply transition-all duration-200;
+    @apply transition-colors duration-200;
   }
   .font-mono {
     font-family: 'JetBrains Mono', monospace;
@@ -176,11 +171,10 @@
 
   /* Card hover lift */
   .card-hover {
-    @apply transition-all duration-300 ease-out;
+    @apply transition-transform duration-200 ease-out;
   }
   .card-hover:hover {
     transform: translateY(-2px);
-    box-shadow: var(--shadow-lg);
   }
 
   /* Smooth button press */
@@ -194,13 +188,15 @@
   /* Glow pulse for primary elements */
   .glow-pulse {
     animation: glowPulse 2s ease-in-out infinite;
+    will-change: opacity;
   }
 
   /* Scroll-reveal: elements fade in + slide up as they enter the viewport */
   .scroll-reveal {
     opacity: 0;
     transform: translateY(24px);
-    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+    transition: opacity 0.4s ease-out, transform 0.4s ease-out;
+    will-change: opacity, transform;
   }
   .scroll-reveal.visible {
     opacity: 1;
@@ -252,6 +248,6 @@
   to { opacity: 1; transform: scale(1); }
 }
 @keyframes glowPulse {
-  0%, 100% { box-shadow: 0 0 0 0 hsl(18 82% 50% / 0); }
-  50% { box-shadow: 0 0 16px 2px hsl(18 82% 50% / 0.2); }
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
 }

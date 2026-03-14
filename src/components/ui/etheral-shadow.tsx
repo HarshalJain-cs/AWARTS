@@ -1,4 +1,4 @@
-import React, { useRef, useId, useEffect, CSSProperties } from 'react';
+import React, { useRef, useId, useEffect, useCallback, CSSProperties } from 'react';
 import { animate, useMotionValue, AnimationPlaybackControls } from 'framer-motion';
 
 interface ResponsiveImage {
@@ -70,6 +70,17 @@ export function EtheralShadow({
     const displacementScale = animation ? mapRange(animation.scale, 1, 100, 20, 100) : 0;
     const animationDuration = animation ? mapRange(animation.speed, 1, 100, 1000, 50) : 1;
 
+    const pendingRaf = useRef<number | null>(null);
+    const onUpdate = useCallback((value: number) => {
+        if (pendingRaf.current) return;
+        pendingRaf.current = requestAnimationFrame(() => {
+            if (feColorMatrixRef.current) {
+                feColorMatrixRef.current.setAttribute("values", String(value));
+            }
+            pendingRaf.current = null;
+        });
+    }, []);
+
     useEffect(() => {
         if (feColorMatrixRef.current && animationEnabled) {
             if (hueRotateAnimation.current) {
@@ -83,20 +94,19 @@ export function EtheralShadow({
                 repeatDelay: 0,
                 ease: "linear",
                 delay: 0,
-                onUpdate: (value: number) => {
-                    if (feColorMatrixRef.current) {
-                        feColorMatrixRef.current.setAttribute("values", String(value));
-                    }
-                }
+                onUpdate,
             });
 
             return () => {
                 if (hueRotateAnimation.current) {
                     hueRotateAnimation.current.stop();
                 }
+                if (pendingRaf.current) {
+                    cancelAnimationFrame(pendingRaf.current);
+                }
             };
         }
-    }, [animationEnabled, animationDuration, hueRotateMotionValue]);
+    }, [animationEnabled, animationDuration, hueRotateMotionValue, onUpdate]);
 
     return (
         <div
@@ -113,7 +123,9 @@ export function EtheralShadow({
                 style={{
                     position: "absolute",
                     inset: -displacementScale,
-                    filter: animationEnabled ? `url(#${id}) blur(4px)` : "none"
+                    filter: animationEnabled ? `url(#${id}) blur(4px)` : "none",
+                    willChange: animationEnabled ? "filter" : "auto",
+                    contain: "strict"
                 }}
             >
                 {animationEnabled && (

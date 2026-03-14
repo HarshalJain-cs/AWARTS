@@ -8,7 +8,7 @@ interface SmoothScrollProps {
 
 const SmoothScroll = forwardRef<HTMLDivElement, SmoothScrollProps>(({ children }, ref) => {
     return (
-        <ReactLenis root options={{ lerp: 0.1, duration: 1.2, smoothWheel: true }}>
+        <ReactLenis root options={{ lerp: 0.12, duration: 0.8, smoothWheel: true, touchMultiplier: 1.5 }}>
             <div ref={ref}>{children}</div>
         </ReactLenis>
     );
