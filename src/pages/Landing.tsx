@@ -107,7 +107,8 @@ export default function Landing() {
     <div className="min-h-screen bg-background relative">
       <SEO
         canonical="/"
-        keywords="AI coding tracker, Strava for coding, Strava for AI coding, Strava for Claude, Strava for Codex, Strava for OpenAI, Strava for Gemini, Strava for Antigravity, Strava for developers, Claude tracker, Codex tracker, Gemini tracker, AI session tracker, developer leaderboard, coding streak, AI usage tracker, Claude Code tracker, code Strava, Antigravity tracker, AI developer tools, coding competition, developer stats, token tracker, AI cost tracker, AI productivity tracker, open source developer tools"
+        description="AWARTS is the Strava for AI coding. Track your AI coding sessions across Claude, Codex, Gemini & Antigravity. Compete on leaderboards, share sessions, maintain streaks. Free, open source — no API keys needed."
+        keywords="Strava for coding, Strava for AI coding, Strava for AI, Strava for developers, Strava for programmers, Strava but for coding, code tracker, AI code tracker, AI coding tracker, coding tracker app, coding activity tracker, coding session tracker, developer activity tracker, developer leaderboard, coding streak tracker, coding competition app, Claude tracker, Claude Code tracker, Claude usage tracker, track Claude usage, Codex tracker, OpenAI Codex tracker, Gemini tracker, Google Gemini tracker, Antigravity tracker, AI usage tracker, AI cost tracker, AI token tracker, AI spend tracker, track AI spending, AI coding leaderboard, vibe coding tracker, LLM usage tracker, cursor usage tracker, copilot usage tracker, developer stats, coding analytics, AI productivity tracker, open source coding tracker, free coding tracker, npx awarts"
       />
 
       {/* Wave Background */}
@@ -305,6 +306,37 @@ export default function Landing() {
             Get Started — Free <ArrowRight className="ml-2 h-4 w-4" />
           </Link>
         </Button>
+      </section>
+
+      {/* SEO content section — visible to crawlers and users */}
+      <section className="relative z-10 mx-auto max-w-4xl px-4 py-16">
+        <div className="rounded-xl border border-border bg-card/50 backdrop-blur-sm p-8 space-y-6">
+          <h2 className="text-2xl font-bold text-foreground text-center">The Strava for AI-Assisted Development</h2>
+          <div className="grid sm:grid-cols-2 gap-6 text-sm text-muted-foreground">
+            <div className="space-y-3">
+              <h3 className="font-semibold text-foreground">Track Every AI Coding Session</h3>
+              <p>AWARTS automatically detects your AI coding activity across <strong>Claude Code</strong>, <strong>OpenAI Codex</strong>, <strong>Google Gemini</strong>, and <strong>Antigravity</strong>. Like Strava tracks every run, AWARTS tracks every coding session — tokens, cost, and duration.</p>
+            </div>
+            <div className="space-y-3">
+              <h3 className="font-semibold text-foreground">Compete on Leaderboards</h3>
+              <p>See where you rank among AI developers worldwide. Filter by country, provider, or time period. Maintain your daily coding streak and climb the global leaderboard — just like Strava segments for coding.</p>
+            </div>
+            <div className="space-y-3">
+              <h3 className="font-semibold text-foreground">AI Cost & Usage Analytics</h3>
+              <p>Track your AI spending across all providers in one dashboard. See token usage trends, cost breakdowns by provider, and daily/weekly/monthly analytics. Know exactly how much your AI coding costs.</p>
+            </div>
+            <div className="space-y-3">
+              <h3 className="font-semibold text-foreground">Built for Vibe Coders</h3>
+              <p>Whether you're vibe coding with Claude, pair programming with Codex, or building with Gemini — AWARTS captures it all. Share your sessions, give kudos, and follow other developers in the community.</p>
+            </div>
+          </div>
+          <div className="text-center pt-4">
+            <p className="text-xs text-muted-foreground">
+              Works with Claude Code, Anthropic Claude, OpenAI Codex, ChatGPT, Google Gemini, Gemini Pro, Antigravity, Cursor AI, GitHub Copilot (via providers), and more.
+              <br />Free and open source. No API keys needed. Install with <code className="bg-muted px-1.5 py-0.5 rounded text-foreground">npx awarts@latest</code>
+            </p>
+          </div>
+        </div>
       </section>
 
       {/* Footer — scroll-triggered */}

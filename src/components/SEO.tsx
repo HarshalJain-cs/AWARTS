@@ -12,9 +12,9 @@ interface SEOProps {
 }
 
 const SITE_NAME = 'AWARTS';
-const DEFAULT_TITLE = 'AWARTS — Strava for AI Coding | Track Claude, Codex, Gemini Sessions';
+const DEFAULT_TITLE = 'AWARTS — Strava for AI Coding | Track Claude, Codex, Gemini & Antigravity Sessions';
 const DEFAULT_DESCRIPTION =
-  'Track your AI coding sessions across Claude, Codex, Gemini & Antigravity. Compete on leaderboards, share sessions, maintain streaks, and join 2,800+ developers worldwide. Free and open source.';
+  'AWARTS is the Strava for AI coding. Track your AI coding sessions across Claude, Codex, Gemini & Antigravity. Compete on leaderboards, share sessions, maintain streaks. Free, open source CLI — no API keys needed.';
 const DEFAULT_OG_IMAGE = 'https://awarts.vercel.app/og-image.png';
 const BASE_URL = 'https://awarts.vercel.app';
 
