@@ -9,18 +9,27 @@
  */
 
 import type * as ai from "../ai.js";
+import type * as analytics from "../analytics.js";
+import type * as badges from "../badges.js";
 import type * as cliAuth from "../cliAuth.js";
+import type * as crons from "../crons.js";
+import type * as digest from "../digest.js";
+import type * as export_ from "../export.js";
 import type * as feed from "../feed.js";
 import type * as http from "../http.js";
 import type * as leaderboard from "../leaderboard.js";
+import type * as messages from "../messages.js";
 import type * as posts from "../posts.js";
 import type * as prompts from "../prompts.js";
+import type * as reactions from "../reactions.js";
+import type * as reports from "../reports.js";
 import type * as search from "../search.js";
 import type * as seed from "../seed.js";
 import type * as social from "../social.js";
 import type * as upload from "../upload.js";
 import type * as usage from "../usage.js";
 import type * as users from "../users.js";
+import type * as webhooks from "../webhooks.js";
 
 import type {
   ApiFromModules,
@@ -30,18 +39,27 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   ai: typeof ai;
+  analytics: typeof analytics;
+  badges: typeof badges;
   cliAuth: typeof cliAuth;
+  crons: typeof crons;
+  digest: typeof digest;
+  export: typeof export_;
   feed: typeof feed;
   http: typeof http;
   leaderboard: typeof leaderboard;
+  messages: typeof messages;
   posts: typeof posts;
   prompts: typeof prompts;
+  reactions: typeof reactions;
+  reports: typeof reports;
   search: typeof search;
   seed: typeof seed;
   social: typeof social;
   upload: typeof upload;
   usage: typeof usage;
   users: typeof users;
+  webhooks: typeof webhooks;
 }>;
 
 /**

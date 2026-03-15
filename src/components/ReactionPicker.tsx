@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, Component, type ReactNode } from 'react';
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import type { Id } from '../../convex/_generated/dataModel';
@@ -18,7 +18,22 @@ interface ReactionPickerProps {
   postId: string;
 }
 
-export function ReactionPicker({ postId }: ReactionPickerProps) {
+// Silent error boundary — renders nothing on error instead of crashing the page
+class ReactionErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
+  constructor(props: { children: ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError(): { hasError: boolean } {
+    return { hasError: true };
+  }
+  render() {
+    if (this.state.hasError) return null;
+    return this.props.children;
+  }
+}
+
+function ReactionPickerInner({ postId }: ReactionPickerProps) {
   const [open, setOpen] = useState(false);
   const data = useQuery(api.reactions.getReactions, { postId: postId as Id<'posts'> });
   const toggle = useMutation(api.reactions.toggleReaction);
@@ -38,7 +53,6 @@ export function ReactionPicker({ postId }: ReactionPickerProps) {
 
   return (
     <div className="flex items-center gap-1">
-      {/* Show existing reactions as badges */}
       {activeReactions.map((r) => (
         <button
           key={r.type}
@@ -55,7 +69,6 @@ export function ReactionPicker({ postId }: ReactionPickerProps) {
         </button>
       ))}
 
-      {/* Add reaction button */}
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <button className="inline-flex items-center rounded-full p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
@@ -81,5 +94,13 @@ export function ReactionPicker({ postId }: ReactionPickerProps) {
         </PopoverContent>
       </Popover>
     </div>
+  );
+}
+
+export function ReactionPicker({ postId }: ReactionPickerProps) {
+  return (
+    <ReactionErrorBoundary>
+      <ReactionPickerInner postId={postId} />
+    </ReactionErrorBoundary>
   );
 }
