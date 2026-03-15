@@ -8,7 +8,7 @@ import { transformFeedPost } from '@/lib/transformers';
 import { useAuth } from '@/context/AuthContext';
 import { Provider } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { ArrowUp } from 'lucide-react';
+import { ArrowUp, Terminal, Upload, X, Rocket } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { SEO } from '@/components/SEO';
 
@@ -20,6 +20,9 @@ export default function Feed() {
   const [activeTab, setActiveTab] = useState<typeof tabs[number]>('Global');
   const [providerFilter, setProviderFilter] = useState<Provider | 'all'>('all');
   const [showTop, setShowTop] = useState(false);
+  const [bannerDismissed, setBannerDismissed] = useState(() =>
+    localStorage.getItem('awarts_getting_started_dismissed') === '1'
+  );
 
   const isMySessionsTab = activeTab === 'My Sessions';
   const feedType = activeTab === 'Following' ? 'following' : 'global';
@@ -71,6 +74,18 @@ export default function Feed() {
 
   const posts = data?.pages.flatMap((page) => page.posts.map(transformFeedPost)) ?? [];
 
+  const dismissBanner = () => {
+    localStorage.setItem('awarts_getting_started_dismissed', '1');
+    setBannerDismissed(true);
+  };
+
+  // Show banner when signed in, not dismissed, on My Sessions with no posts, or globally new user
+  const myPosts = myPostsResult.data?.pages.flatMap((p) => p.posts) ?? [];
+  const showGettingStarted = user && !bannerDismissed && !isLoading && (
+    (isMySessionsTab && myPosts.length === 0) ||
+    (!isMySessionsTab && myPosts.length === 0 && !myPostsResult.isLoading)
+  );
+
   return (
     <AppShell>
       <SEO title="Feed — AI Coding Activity" description="See the latest AI coding sessions from developers worldwide. Filter by Claude, Codex, Gemini, and Antigravity providers." canonical="/feed" keywords="AI coding feed, developer activity, Claude sessions, Codex sessions, AI coding community" jsonLd={{ "@context": "https://schema.org", "@type": "CollectionPage", "name": "AI Coding Activity Feed", "description": "Latest AI coding sessions from developers worldwide", "url": "https://awarts.vercel.app/feed" }} />
@@ -113,6 +128,56 @@ export default function Feed() {
             </button>
           ))}
         </div>
+
+        {/* Getting Started banner for new users */}
+        {showGettingStarted && (
+          <div className="relative rounded-xl border border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10 p-5 space-y-4">
+            <button
+              onClick={dismissBanner}
+              className="absolute top-3 right-3 text-muted-foreground hover:text-foreground transition-colors"
+              aria-label="Dismiss"
+            >
+              <X className="h-4 w-4" />
+            </button>
+            <div className="flex items-center gap-2">
+              <Rocket className="h-5 w-5 text-primary" />
+              <h3 className="text-base font-bold text-foreground">Welcome to AWARTS!</h3>
+            </div>
+            <p className="text-sm text-muted-foreground">Get started tracking your AI coding sessions:</p>
+            <div className="space-y-3">
+              <div className="flex items-start gap-3">
+                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">1</div>
+                <div>
+                  <p className="text-sm font-medium text-foreground flex items-center gap-1.5">
+                    <Terminal className="h-3.5 w-3.5" /> Install the CLI
+                  </p>
+                  <code className="text-xs bg-muted px-2 py-0.5 rounded font-mono text-muted-foreground">npx awarts@latest</code>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">2</div>
+                <div>
+                  <p className="text-sm font-medium text-foreground">Sync your sessions</p>
+                  <code className="text-xs bg-muted px-2 py-0.5 rounded font-mono text-muted-foreground">npx awarts@latest sync</code>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">3</div>
+                <div>
+                  <p className="text-sm font-medium text-foreground flex items-center gap-1.5">
+                    <Upload className="h-3.5 w-3.5" /> Or import manually
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Go to <Link to="/settings" className="text-primary hover:underline">Settings &rarr; Import</Link> to upload JSON/CSV files
+                  </p>
+                </div>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground border-t border-border/50 pt-3">
+              <strong>Using Pro subscriptions without API keys?</strong> The CLI reads local files created by your tools — no API keys needed.
+            </p>
+          </div>
+        )}
 
         {/* Auth prompt for auth-required tabs */}
         {(activeTab === 'Following' || activeTab === 'My Sessions') && !user && (

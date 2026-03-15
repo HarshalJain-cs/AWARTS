@@ -34,7 +34,7 @@ export function LeftSidebar() {
   const totalOutput = profileData?.stats?.total_output_tokens ?? 0;
 
   return (
-    <aside className="hidden lg:flex flex-col w-[220px] shrink-0 border-r border-border p-4 gap-1 sticky top-14 h-[calc(100vh-3.5rem)] overflow-y-auto">
+    <aside className="hidden lg:flex flex-col w-[220px] shrink-0 border-r border-border p-4 gap-1 sticky top-14 h-[calc(100vh-3.5rem)] overflow-y-auto sidebar-scroll">
       {/* Profile mini-card */}
       {isSignedIn && user && (
         <div className="mb-3 pb-3 border-b border-border">
@@ -100,7 +100,7 @@ export function LeftSidebar() {
         </div>
       )}
 
-      <nav className="flex flex-col gap-0.5">
+      <nav className="flex flex-col gap-0.5 flex-1 min-h-0">
         {navItems.map((item) => {
           const active = location.pathname === item.href || (item.href === '/feed' && location.pathname === '/');
           return (

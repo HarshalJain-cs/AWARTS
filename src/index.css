@@ -211,6 +211,25 @@
   .scroll-reveal-stagger > .scroll-reveal:nth-child(5) { transition-delay: 320ms; }
   .scroll-reveal-stagger > .scroll-reveal:nth-child(6) { transition-delay: 400ms; }
 
+  /* Sidebar scrollbar */
+  .sidebar-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--border)) transparent;
+  }
+  .sidebar-scroll::-webkit-scrollbar {
+    width: 4px;
+  }
+  .sidebar-scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .sidebar-scroll::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--border));
+    border-radius: 9999px;
+  }
+  .sidebar-scroll:hover::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--muted-foreground) / 0.4);
+  }
+
   /* Sidebar nav item transitions */
   .nav-item {
     @apply transition-all duration-200 ease-out;

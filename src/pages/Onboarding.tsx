@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { COUNTRIES, PROVIDERS } from '@/lib/constants';
-import { Check, Copy, ArrowRight, ArrowLeft, Shield, Eye, EyeOff } from 'lucide-react';
+import { Check, Copy, ArrowRight, ArrowLeft, Shield, Eye, EyeOff, Info } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from '@/hooks/use-toast';
@@ -278,6 +278,19 @@ export default function Onboarding() {
                 );
               })}
 
+              {nonClaudeProviders.length > 0 && (
+                <div className="rounded-lg border border-blue-500/20 bg-blue-500/5 p-3 space-y-1.5">
+                  <div className="flex items-center gap-1.5 text-xs font-medium text-blue-600 dark:text-blue-400">
+                    <Info className="h-3.5 w-3.5" />
+                    Don't have API keys?
+                  </div>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    No problem! Most Pro subscription users (ChatGPT Plus, Gemini Pro, etc.) don't need API keys.
+                    The CLI auto-detects usage from local files, or you can import data via <strong>Settings &rarr; Import</strong>.
+                  </p>
+                </div>
+              )}
+
               <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 space-y-1.5">
                 <div className="flex items-center gap-1.5 text-xs font-medium text-primary">
                   <Shield className="h-3.5 w-3.5" />
@@ -355,6 +368,22 @@ export default function Onboarding() {
                     <li>Don't manually edit local provider files</li>
                     <li>Don't submit fake usage data</li>
                   </ul>
+                </div>
+              </div>
+
+              {/* Pro subscription tips */}
+              <div className="rounded-lg border border-blue-500/20 bg-blue-500/5 p-4 space-y-3">
+                <p className="text-sm font-semibold text-foreground">Using Pro subscriptions? (No API keys)</p>
+                <div className="space-y-1 text-xs text-muted-foreground">
+                  <ul className="list-disc list-inside space-y-0.5 ml-1">
+                    <li><strong>Claude Code</strong> — auto-detected from <code className="bg-muted px-1 rounded">~/.claude/</code></li>
+                    <li><strong>Codex</strong> — place usage files in <code className="bg-muted px-1 rounded">~/.codex/usage/</code> or import via web</li>
+                    <li><strong>Gemini</strong> — place usage files in <code className="bg-muted px-1 rounded">~/.gemini/usage/</code> or import via web</li>
+                    <li><strong>Antigravity</strong> — place usage files in <code className="bg-muted px-1 rounded">~/.antigravity/usage/</code> or import via web</li>
+                  </ul>
+                  <p className="mt-2 text-muted-foreground">
+                    You can always import data anytime from <strong>Settings &rarr; Import</strong>.
+                  </p>
                 </div>
               </div>
 
