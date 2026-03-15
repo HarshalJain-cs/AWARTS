@@ -11,8 +11,7 @@ import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Upload, Loader2, Check, Copy, FileUp, X, AlertCircle, CheckCircle2, XCircle, Wallet } from 'lucide-react';
-import { WalletConnect } from '@/components/WalletConnect';
+import { Upload, Loader2, Check, Copy, FileUp, X, AlertCircle, CheckCircle2, XCircle } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { SEO } from '@/components/SEO';
 import { COUNTRIES } from '@/lib/constants';
@@ -277,7 +276,6 @@ function SettingsContent() {
             <TabsTrigger value="profile">Profile</TabsTrigger>
             <TabsTrigger value="privacy">Privacy</TabsTrigger>
             <TabsTrigger value="notifications">Notifications</TabsTrigger>
-            <TabsTrigger value="wallet">Wallet</TabsTrigger>
             <TabsTrigger value="import">Import</TabsTrigger>
             <TabsTrigger value="account">Account</TabsTrigger>
           </TabsList>
@@ -489,24 +487,6 @@ function SettingsContent() {
                   <li>Any URL — receives JSON payloads</li>
                 </ul>
               </div>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="wallet" className="space-y-4 mt-6">
-            <div className="space-y-1">
-              <h3 className="font-medium text-foreground">Web3 Wallet</h3>
-              <p className="text-sm text-muted-foreground">
-                Link a wallet to your AWARTS profile. Supports MetaMask, Coinbase Wallet, WalletConnect, Trust, Phantom, and 300+ wallets.
-              </p>
-            </div>
-            <WalletConnect savedAddress={(profile as any)?.walletAddress} />
-            <div className="rounded-lg border border-border bg-muted/20 p-4 space-y-2 text-xs text-muted-foreground">
-              <p className="font-medium text-foreground text-sm">Why connect a wallet?</p>
-              <ul className="list-disc list-inside space-y-1">
-                <li>Display your wallet address on your public profile</li>
-                <li>Verify your on-chain identity</li>
-                <li>Unlock future web3 features (NFT achievements, token rewards)</li>
-              </ul>
             </div>
           </TabsContent>
 

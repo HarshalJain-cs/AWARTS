@@ -14,7 +14,7 @@ import { SkeletonProfile } from '@/components/SkeletonProfile';
 import { SkeletonCard } from '@/components/SkeletonCard';
 import { ErrorState } from '@/components/ErrorState';
 import { formatNumber } from '@/lib/format';
-import { MapPin, Calendar, BadgeCheck, Flame, Lock, Github, ExternalLink, Share2, MessageSquare, TrendingUp, PieChart, BarChart3, DollarSign, Wallet } from 'lucide-react';
+import { MapPin, Calendar, BadgeCheck, Flame, Lock, Github, ExternalLink, Share2, MessageSquare, TrendingUp, PieChart, BarChart3, DollarSign } from 'lucide-react';
 import { BadgeFlair } from '@/components/BadgeFlair';
 import { SpendChart } from '@/components/charts/SpendChart';
 import { ProviderPieChart } from '@/components/charts/ProviderPieChart';
@@ -120,12 +120,6 @@ export default function Profile() {
                     <Github className="h-3.5 w-3.5" />
                     {raw.githubUsername}
                   </a>
-                )}
-                {raw.walletAddress && (
-                  <span className="flex items-center gap-1 font-mono text-xs">
-                    <Wallet className="h-3.5 w-3.5" />
-                    {raw.walletAddress.slice(0, 6)}...{raw.walletAddress.slice(-4)}
-                  </span>
                 )}
                 {raw.externalLink && (
                   <a

@@ -38,7 +38,6 @@ export default defineConfig(({ mode }) => ({
           clerk: ["@clerk/clerk-react"],
           motion: ["framer-motion"],
           charts: ["recharts"],
-          wallet: ["wagmi", "viem", "@rainbow-me/rainbowkit"],
         },
       },
     },
