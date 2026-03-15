@@ -1,12 +1,41 @@
 {
   "name": "awarts",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "Track your AI coding across Claude, Codex, Gemini & Antigravity",
   "type": "module",
+  "license": "MIT",
+  "author": "Harshal Jain <harshaljaincs@gmail.com> (https://github.com/HarshalJain-cs)",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/HarshalJain-cs/AWARTS.git",
+    "directory": "cli"
+  },
+  "homepage": "https://awarts.vercel.app",
+  "bugs": {
+    "url": "https://github.com/HarshalJain-cs/AWARTS/issues"
+  },
+  "keywords": [
+    "ai",
+    "coding",
+    "tracker",
+    "claude",
+    "codex",
+    "gemini",
+    "antigravity",
+    "developer-tools",
+    "cli",
+    "usage-tracking",
+    "ai-coding",
+    "strava-for-coding"
+  ],
   "bin": {
     "awarts": "dist/index.js"
   },
-  "files": ["dist"],
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "dev": "bun --watch src/index.ts",
     "build": "bun build src/index.ts --outdir dist --target node",
