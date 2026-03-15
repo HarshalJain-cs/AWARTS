@@ -32,13 +32,15 @@ import { clearAuth } from './lib/auth-store.js';
 import { DEFAULT_INTERVAL_MS } from './lib/daemon.js';
 import { setKey, removeKey, listKeys, type ProviderKeyName } from './lib/keys.js';
 import * as out from './lib/output.js';
+import { checkForUpdates } from './lib/version-check.js';
 
 const program = new Command();
 
 program
   .name('awarts')
   .description('Track your AI coding spend across Claude, Codex, Gemini & Antigravity')
-  .version('0.1.0');
+  .version('0.2.4')
+  .hook('preAction', () => checkForUpdates());
 
 // ─── login ──────────────────────────────────────────────────────────────
 program
