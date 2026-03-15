@@ -10,14 +10,23 @@ interface AppShellProps {
   children: ReactNode;
 }
 
-// Silent error boundary — renders nothing on error instead of crashing the page
-class SilentBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
+// Self-recovering error boundary — hides on error, retries after 2s
+class RecoverBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
+  private timer: ReturnType<typeof setTimeout> | null = null;
   constructor(props: { children: ReactNode }) {
     super(props);
     this.state = { hasError: false };
   }
   static getDerivedStateFromError(): { hasError: boolean } {
     return { hasError: true };
+  }
+  componentDidUpdate(_: unknown, prevState: { hasError: boolean }) {
+    if (this.state.hasError && !prevState.hasError) {
+      this.timer = setTimeout(() => this.setState({ hasError: false }), 2000);
+    }
+  }
+  componentWillUnmount() {
+    if (this.timer) clearTimeout(this.timer);
   }
   render() {
     if (this.state.hasError) return null;
@@ -41,13 +50,13 @@ export function AppShell({ children }: AppShellProps) {
     <div className="min-h-screen bg-background">
       <Navbar />
       <div className="flex w-full max-w-screen-2xl mx-auto">
-        <SilentBoundary><LeftSidebar /></SilentBoundary>
+        <RecoverBoundary><LeftSidebar /></RecoverBoundary>
         <main className="flex-1 min-w-0 px-4 py-6 pb-20 lg:pb-6">
           {children}
         </main>
-        <SilentBoundary><RightSidebar /></SilentBoundary>
+        <RecoverBoundary><RightSidebar /></RecoverBoundary>
       </div>
-      <SilentBoundary><BottomNav /></SilentBoundary>
+      <RecoverBoundary><BottomNav /></RecoverBoundary>
     </div>
   );
 }
