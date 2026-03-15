@@ -7,7 +7,7 @@ export const getMyData = query({
   args: {},
   handler: async (ctx) => {
     const me = await getCurrentUser(ctx);
-    if (!me) throw new Error("Not authenticated");
+    if (!me) return null;
 
     // Collect all user data
     const usage = await ctx.db

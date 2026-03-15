@@ -1,4 +1,4 @@
-import { ReactNode, useEffect } from 'react';
+import { ReactNode, useEffect, Component } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Navbar } from './Navbar';
 import { LeftSidebar } from './LeftSidebar';
@@ -8,6 +8,21 @@ import { useAuth } from '@/context/AuthContext';
 
 interface AppShellProps {
   children: ReactNode;
+}
+
+// Silent error boundary — renders nothing on error instead of crashing the page
+class SilentBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
+  constructor(props: { children: ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError(): { hasError: boolean } {
+    return { hasError: true };
+  }
+  render() {
+    if (this.state.hasError) return null;
+    return this.props.children;
+  }
 }
 
 export function AppShell({ children }: AppShellProps) {
@@ -26,13 +41,13 @@ export function AppShell({ children }: AppShellProps) {
     <div className="min-h-screen bg-background">
       <Navbar />
       <div className="flex w-full max-w-screen-2xl mx-auto">
-        <LeftSidebar />
+        <SilentBoundary><LeftSidebar /></SilentBoundary>
         <main className="flex-1 min-w-0 px-4 py-6 pb-20 lg:pb-6">
           {children}
         </main>
-        <RightSidebar />
+        <SilentBoundary><RightSidebar /></SilentBoundary>
       </div>
-      <BottomNav />
+      <SilentBoundary><BottomNav /></SilentBoundary>
     </div>
   );
 }

@@ -5,7 +5,7 @@ import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { lazy, Suspense, useEffect } from "react";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { HelmetProvider } from "react-helmet-async";
-import { ConvexAuthProvider } from "@/context/AuthContext";
+import { ConvexAuthProviderSafe } from "@/context/AuthContext";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import { SmoothScroll } from "@/components/ui/smooth-scroll";
@@ -64,7 +64,7 @@ function PageTransition({ children }: { children: React.ReactNode }) {
 
 const App = () => (
   <HelmetProvider>
-    <ConvexAuthProvider>
+    <ConvexAuthProviderSafe>
       <TooltipProvider>
         <Toaster />
         <Sonner />
@@ -105,7 +105,7 @@ const App = () => (
         <Analytics />
         <SpeedInsights />
       </TooltipProvider>
-    </ConvexAuthProvider>
+    </ConvexAuthProviderSafe>
   </HelmetProvider>
 );
 

@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, type ReactNode } from "react";
+import { createContext, useContext, useEffect, Component, type ReactNode } from "react";
 import { useUser, useAuth as useClerkAuth } from "@clerk/clerk-react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
@@ -88,6 +88,36 @@ export function ConvexAuthProvider({ children }: { children: ReactNode }) {
     <AuthContext.Provider value={{ isSignedIn: !!isSignedIn, isLoaded, isUserLoading, user, signOut }}>
       {children}
     </AuthContext.Provider>
+  );
+}
+
+// Fallback boundary so auth errors don't white-screen the app
+class AuthErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
+  constructor(props: { children: ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError(): { hasError: boolean } {
+    return { hasError: true };
+  }
+  render() {
+    if (this.state.hasError) {
+      // Provide a signed-out context so the app still renders
+      return (
+        <AuthContext.Provider value={{ isSignedIn: false, isLoaded: true, isUserLoading: false, user: null, signOut: async () => {} }}>
+          {this.props.children}
+        </AuthContext.Provider>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+export function ConvexAuthProviderSafe({ children }: { children: ReactNode }) {
+  return (
+    <AuthErrorBoundary>
+      <ConvexAuthProvider>{children}</ConvexAuthProvider>
+    </AuthErrorBoundary>
   );
 }
 
