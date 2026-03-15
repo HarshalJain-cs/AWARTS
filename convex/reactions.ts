@@ -51,6 +51,12 @@ export const toggleReaction = mutation({
 export const getReactions = query({
   args: { postId: v.id("posts") },
   handler: async (ctx, { postId }) => {
+    const empty = { counts: {} as Record<string, number>, myReaction: null as string | null, total: 0 };
+
+    // Verify the post exists on this deployment
+    const post = await ctx.db.get(postId);
+    if (!post) return empty;
+
     const reactions = await ctx.db
       .query("reactions")
       .withIndex("by_post", (q) => q.eq("postId", postId))
@@ -58,7 +64,6 @@ export const getReactions = query({
 
     const me = await getCurrentUser(ctx);
 
-    // Group by type
     const counts: Record<string, number> = {};
     let myReaction: string | null = null;
 
