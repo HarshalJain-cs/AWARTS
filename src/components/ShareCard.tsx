@@ -27,7 +27,7 @@ interface ShareCardProps {
   sessions?: number;
 }
 
-function getPeriodLabel(period: string): string {
+function getPeriodLabel(period: string, providerName: string): string {
   const now = new Date();
   if (period === 'week') {
     const start = new Date(now);
@@ -35,12 +35,12 @@ function getPeriodLabel(period: string): string {
     const end = new Date(start);
     end.setDate(start.getDate() + 6);
     const fmt = (d: Date) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    return `My Week in AI Coding \u00B7 ${fmt(start)}\u2013${fmt(end)}, ${now.getFullYear()}`;
+    return `My Week in ${providerName} \u00B7 ${fmt(start)}\u2013${fmt(end)}, ${now.getFullYear()}`;
   }
   if (period === 'month') {
-    return `My Month in AI Coding \u00B7 ${now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`;
+    return `My Month in ${providerName} \u00B7 ${now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`;
   }
-  return 'All Time Stats';
+  return `All Time in ${providerName}`;
 }
 
 function getDaysInPeriod(period: string): number {
@@ -53,7 +53,6 @@ export const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
     const textColor = isDark ? '#ffffff' : '#1a1a2e';
     const mutedColor = isDark ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.45)';
     const brandBg = isDark ? '#ffffff' : '#1a1a2e';
-    const periodLabel = getPeriodLabel(period);
     const periodDays = getDaysInPeriod(period);
 
     // Determine background
@@ -70,13 +69,14 @@ export const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
 
     // Find primary provider
     const primaryProvider = providers.length > 0 ? providers[0] : null;
-    const primaryProviderName = primaryProvider ? PROVIDERS[primaryProvider]?.name ?? 'AI' : 'AI';
+    const primaryProviderName = primaryProvider ? PROVIDERS[primaryProvider]?.name ?? 'AI Coding' : 'AI Coding';
+    const periodLabel = getPeriodLabel(period, primaryProviderName);
 
     const stats = [
-      { label: 'OUTPUT', value: formatTokens(outputTokens) },
-      { label: 'ACTIVE', value: `${daysActive}/${periodDays}d` },
-      { label: 'SESSIONS', value: String(sessions) },
-      { label: 'STREAK', value: streak > 0 ? `${streak}d` : '0d' },
+      { label: 'OUTPUT', value: formatTokens(outputTokens), emoji: '' },
+      { label: 'ACTIVE', value: `${daysActive}/${periodDays}`, unit: 'days', emoji: '' },
+      { label: 'SESSIONS', value: String(sessions), emoji: '' },
+      { label: 'STREAK', value: String(streak), unit: 'days', emoji: '\uD83D\uDD25' },
     ];
 
     return (
@@ -127,7 +127,11 @@ export const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
               }}
             >
               <p style={{ color: mutedColor, fontSize: 9, fontWeight: 600, letterSpacing: '0.08em' }}>{stat.label}</p>
-              <p style={{ color: textColor, fontFamily: 'monospace', fontSize: 14, fontWeight: 700, marginTop: 2 }}>{stat.value}</p>
+              <p style={{ color: textColor, fontFamily: 'monospace', fontSize: 14, fontWeight: 700, marginTop: 2 }}>
+                {stat.emoji && <span style={{ marginRight: 2 }}>{stat.emoji}</span>}
+                {stat.value}
+                {stat.unit && <span style={{ color: mutedColor, fontSize: 10, fontWeight: 500, marginLeft: 3 }}>{stat.unit}</span>}
+              </p>
             </div>
           ))}
         </div>
@@ -158,7 +162,7 @@ export const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
         {/* Footer */}
         <div className="flex items-center justify-between" style={{ borderTop: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`, paddingTop: 12 }}>
           <div className="space-y-0.5">
-            <span style={{ color: mutedColor, fontSize: 9, fontWeight: 500 }}>Powered by {primaryProviderName}</span>
+            <span style={{ color: mutedColor, fontSize: 9, fontWeight: 500 }}>Powered by {primaryProviderName === 'Claude' ? 'Claude Sonnet' : primaryProviderName}</span>
             <p style={{ color: textColor, fontFamily: 'monospace', fontSize: 10, fontWeight: 600 }}>@{username}</p>
           </div>
           <span style={{ color: mutedColor, fontFamily: 'monospace', fontSize: 10 }}>awarts.com</span>

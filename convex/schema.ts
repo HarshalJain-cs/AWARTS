@@ -18,10 +18,18 @@ export default defineSchema({
     defaultAiProvider: v.string(),
     emailNotificationsEnabled: v.boolean(),
     referralSource: v.optional(v.string()),
+    walletAddress: v.optional(v.string()),
+    walletChainId: v.optional(v.number()),
+    notifyKudos: v.optional(v.boolean()),
+    notifyComments: v.optional(v.boolean()),
+    notifyFollows: v.optional(v.boolean()),
+    notifyMentions: v.optional(v.boolean()),
+    webhookUrl: v.optional(v.string()),
   })
     .index("by_clerkId", ["clerkId"])
     .index("by_username", ["username"])
-    .index("by_email", ["email"]),
+    .index("by_email", ["email"])
+    .index("by_wallet", ["walletAddress"]),
 
   daily_usage: defineTable({
     userId: v.id("users"),
@@ -142,6 +150,34 @@ export default defineSchema({
     lastMessagePreview: v.optional(v.string()),
   })
     .index("by_lastMessage", ["lastMessageAt"]),
+
+  reports: defineTable({
+    reporterId: v.id("users"),
+    targetType: v.string(), // "post" | "user"
+    targetPostId: v.optional(v.id("posts")),
+    targetUserId: v.optional(v.id("users")),
+    reason: v.string(),
+    details: v.optional(v.string()),
+    status: v.string(), // "pending" | "reviewed" | "dismissed"
+  })
+    .index("by_reporter", ["reporterId"])
+    .index("by_status", ["status"]),
+
+  reactions: defineTable({
+    userId: v.id("users"),
+    postId: v.id("posts"),
+    type: v.string(), // "fire" | "mind_blown" | "rocket" | "heart" | "clap"
+  })
+    .index("by_post", ["postId"])
+    .index("by_user_post", ["userId", "postId"]),
+
+  user_badges: defineTable({
+    userId: v.id("users"),
+    badge: v.string(), // "early_adopter" | "top_contributor" | "claude_specialist" etc.
+    awardedAt: v.number(),
+    metadata: v.optional(v.string()),
+  })
+    .index("by_user", ["userId"]),
 
   messages: defineTable({
     conversationId: v.id("conversations"),

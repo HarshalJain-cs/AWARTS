@@ -12,7 +12,7 @@
     <meta name="title" content="AWARTS — Strava for AI Coding | Track Claude, Codex, Gemini Sessions" />
     <meta name="description" content="Track your AI coding sessions across Claude, Codex, Gemini & Antigravity. Compete on leaderboards, share sessions, maintain streaks, and join 2,800+ developers worldwide. Free and open source." />
     <meta name="author" content="AWARTS" />
-    <meta name="keywords" content="AI coding tracker, Strava for coding, Claude tracker, Codex tracker, Gemini tracker, AI session tracker, developer leaderboard, coding streak, AI usage tracker, Claude Code tracker, code Strava, Antigravity tracker, AI developer tools, coding competition, developer stats, token tracker, AI cost tracker, Claude sessions, Codex sessions, Gemini sessions, AI coding leaderboard, developer activity tracker" />
+    <meta name="keywords" content="AI coding tracker, Strava for coding, Strava for AI coding, Strava for Claude, Strava for Codex, Strava for OpenAI, Strava for Gemini, Strava for Antigravity, Strava for developers, Claude tracker, Codex tracker, Gemini tracker, AI session tracker, developer leaderboard, coding streak, AI usage tracker, Claude Code tracker, code Strava, Antigravity tracker, AI developer tools, coding competition, developer stats, token tracker, AI cost tracker, Claude sessions, Codex sessions, Gemini sessions, AI coding leaderboard, developer activity tracker, AI productivity tracker, developer coding leaderboard, AI token analytics, coding activity tracker, AI usage dashboard, open source developer tools" />
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
     <meta name="googlebot" content="index, follow" />
     <meta name="theme-color" content="#09090b" />
@@ -65,7 +65,7 @@
       "@context": "https://schema.org",
       "@type": ["WebApplication", "SoftwareApplication"],
       "name": "AWARTS",
-      "alternateName": ["Strava for AI Coding", "AI Coding Tracker", "Code Strava", "Claude Code Tracker", "Codex Tracker", "Gemini Tracker"],
+      "alternateName": ["Strava for AI Coding", "Strava for Claude", "Strava for Codex", "Strava for OpenAI", "Strava for Gemini", "Strava for Antigravity", "Strava for Developers", "AI Coding Tracker", "Code Strava", "Claude Code Tracker", "Codex Tracker", "Gemini Tracker"],
       "url": "https://awarts.vercel.app",
       "description": "Track your AI coding sessions across Claude, Codex, Gemini & Antigravity. Compete on leaderboards, share sessions, and maintain your coding streak.",
       "applicationCategory": "DeveloperApplication",
@@ -146,6 +146,30 @@
             "@type": "Answer",
             "text": "AWARTS uses a lightweight CLI tool that reads your local AI provider logs. Run 'npx awarts@latest sync' to automatically detect and push your session data. No data is sent without your explicit action."
           }
+        },
+        {
+          "@type": "Question",
+          "name": "How is AWARTS like Strava?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Just like Strava tracks your runs and rides, AWARTS tracks your AI coding sessions. It's Strava for AI coding — compete on leaderboards, maintain streaks, share recaps, follow other developers, and give kudos. Works with Claude, Codex, Gemini, and Antigravity."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I track multiple AI providers at once?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes! AWARTS supports tracking Claude (Anthropic), Codex (OpenAI), Gemini (Google), and Antigravity simultaneously. Your dashboard shows a unified view with per-provider breakdowns, analytics, and color-coded contribution graphs."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is my code or data safe with AWARTS?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Absolutely. AWARTS never collects your source code, prompts, or conversations. It only reads session metadata — token counts, costs, and timestamps. The project is fully open source so you can verify the code yourself."
+          }
         }
       ]
     }
@@ -166,7 +190,7 @@
     </script>
 
     <!-- Security -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com https://*.clerk.accounts.dev https://*.clerk.com https://*.vercel-scripts.com; connect-src 'self' ws: wss: https://*.convex.cloud wss://*.convex.cloud https://*.clerk.accounts.dev https://*.clerk.com https://*.clerk.dev https://*.vercel-scripts.com https://*.vercel-insights.com; img-src 'self' https://*.convex.cloud https://img.clerk.com https://framerusercontent.com https://ui-avatars.com data: blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; frame-src https://*.clerk.accounts.dev https://*.clerk.com https://challenges.cloudflare.com; worker-src 'self' blob:; media-src 'self'" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com https://*.clerk.accounts.dev https://*.clerk.com https://*.vercel-scripts.com https://accounts.google.com; connect-src 'self' ws: wss: https://*.convex.cloud wss://*.convex.cloud https://*.clerk.accounts.dev https://*.clerk.com https://*.clerk.dev https://*.vercel-scripts.com https://*.vercel-insights.com https://accounts.google.com https://*.googleapis.com; img-src 'self' https://*.convex.cloud https://img.clerk.com https://framerusercontent.com https://ui-avatars.com https://*.googleusercontent.com data: blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com; font-src 'self' https://fonts.gstatic.com data:; frame-src https://*.clerk.accounts.dev https://*.clerk.com https://challenges.cloudflare.com https://accounts.google.com; worker-src 'self' blob:; media-src 'self'" />
     <meta name="referrer" content="strict-origin-when-cross-origin" />
     <!-- Additional security headers (X-Frame-Options, HSTS, etc.) are set via HTTP headers in vercel.json -->
   </head>
@@ -174,5 +198,12 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js').catch(() => {});
+        });
+      }
+    </script>
   </body>
 </html>

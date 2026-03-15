@@ -206,10 +206,10 @@ export function useLeaderboard(period = "weekly", provider?: string, region?: st
 
 // ─── Search ───────────────────────────────────────────────────────────
 
-export function useSearch(query: string) {
+export function useSearch(query: string, provider?: string, country?: string) {
   const result = useQuery(
     api.search.searchUsers,
-    query.length >= 2 ? { q: query } : "skip"
+    query.length >= 2 ? { q: query, provider: provider || undefined, country: country || undefined } : "skip"
   );
   return {
     data: result ? { users: result, query } : undefined,
@@ -609,6 +609,31 @@ export function useTopWeekly() {
     period: "weekly",
     limit: 5,
   });
+  return {
+    data: result,
+    isLoading: result === undefined,
+    error: null,
+  };
+}
+
+// ─── Data Export ───────────────────────────────────────────────────────
+
+export function useDataExport() {
+  const result = useQuery(api.export.getMyData);
+  return {
+    data: result,
+    isLoading: result === undefined,
+    error: null,
+  };
+}
+
+// ─── Analytics Charts ──────────────────────────────────────────────────
+
+export function useChartData(username: string) {
+  const result = useQuery(
+    api.analytics.getChartData,
+    username ? { username } : "skip"
+  );
   return {
     data: result,
     isLoading: result === undefined,

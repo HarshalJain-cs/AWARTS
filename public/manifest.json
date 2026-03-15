@@ -2,10 +2,10 @@
   "name": "AWARTS — Strava for AI Coding",
   "short_name": "AWARTS",
   "description": "Track your AI coding sessions across Claude, Codex, Gemini & Antigravity. Compete on leaderboards, share sessions, and maintain your coding streak.",
-  "start_url": "/",
+  "start_url": "/feed",
   "display": "standalone",
-  "background_color": "#09090b",
-  "theme_color": "#7c3aed",
+  "background_color": "#0f1219",
+  "theme_color": "#E87A35",
   "orientation": "portrait-primary",
   "icons": [
     {
@@ -21,8 +21,10 @@
     {
       "src": "/apple-touch-icon.png",
       "type": "image/png",
-      "sizes": "180x180"
+      "sizes": "180x180",
+      "purpose": "any maskable"
     }
   ],
-  "categories": ["developer", "productivity", "social"]
+  "categories": ["developer", "productivity", "social"],
+  "prefer_related_applications": false
 }

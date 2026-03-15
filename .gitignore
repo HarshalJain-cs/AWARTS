@@ -46,8 +46,11 @@ cli/.npmrc
 # Claude Code local settings
 .claude/settings.local.json
 
-# Lovable
-.lovable/
+# Local screenshots / reference images
+assets/
+
+# Windows accidental files
+nul
 
 # Coverage
 coverage/

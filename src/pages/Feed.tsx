@@ -134,14 +134,23 @@ export default function Feed() {
                 ? <ErrorState message="Failed to load feed." onRetry={() => window.location.reload()} />
                 : posts.length === 0
                   ? (
-                    <div className="text-center py-12 text-muted-foreground">
-                      <p className="text-lg font-medium">No posts yet</p>
-                      <p className="text-sm mt-1">
+                    <div className="text-center py-16 text-muted-foreground space-y-3">
+                      <div className="text-4xl">
+                        {activeTab === 'Following' ? '👥' : activeTab === 'My Sessions' ? '🚀' : '📡'}
+                      </div>
+                      <p className="text-lg font-semibold text-foreground">
                         {activeTab === 'Following'
-                          ? 'Follow some developers to see their sessions here.'
+                          ? 'Your feed is empty'
                           : activeTab === 'My Sessions'
-                            ? 'Sync your first session with the CLI to see it here.'
-                            : 'Try changing your filters or check back later.'}
+                            ? 'No sessions yet'
+                            : 'No activity yet'}
+                      </p>
+                      <p className="text-sm max-w-xs mx-auto">
+                        {activeTab === 'Following'
+                          ? 'Follow developers from the Leaderboard or Search to see their sessions here.'
+                          : activeTab === 'My Sessions'
+                            ? 'Run npx awarts@latest sync to push your first AI coding session.'
+                            : 'Be the first! Install the CLI and start tracking your AI coding sessions.'}
                       </p>
                     </div>
                   )

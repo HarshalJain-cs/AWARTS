@@ -1,6 +1,6 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { AppShell } from '@/components/layout/AppShell';
-import { useProfile, useUserPosts } from '@/hooks/use-api';
+import { useProfile, useUserPosts, useChartData } from '@/hooks/use-api';
 import { useAuth } from '@/context/AuthContext';
 import { transformUser, transformHeatmap, transformAchievement, transformFeedPost } from '@/lib/transformers';
 import { ProviderChip } from '@/components/ProviderChip';
@@ -14,7 +14,12 @@ import { SkeletonProfile } from '@/components/SkeletonProfile';
 import { SkeletonCard } from '@/components/SkeletonCard';
 import { ErrorState } from '@/components/ErrorState';
 import { formatNumber } from '@/lib/format';
-import { MapPin, Calendar, BadgeCheck, Flame, Lock, Github, ExternalLink, Share2, MessageSquare } from 'lucide-react';
+import { MapPin, Calendar, BadgeCheck, Flame, Lock, Github, ExternalLink, Share2, MessageSquare, TrendingUp, PieChart, BarChart3, DollarSign, Wallet } from 'lucide-react';
+import { BadgeFlair } from '@/components/BadgeFlair';
+import { SpendChart } from '@/components/charts/SpendChart';
+import { ProviderPieChart } from '@/components/charts/ProviderPieChart';
+import { TokenBarChart } from '@/components/charts/TokenBarChart';
+import { CumulativeChart } from '@/components/charts/CumulativeChart';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { SEO } from '@/components/SEO';
@@ -26,6 +31,7 @@ export default function Profile() {
   const { user: authUser } = useAuth();
   const { data: raw, isLoading } = useProfile(username ?? '');
   const { data: postsData, isLoading: postsLoading } = useUserPosts(username ?? '');
+  const { data: chartData } = useChartData(username ?? '');
 
   if (isLoading) {
     return (
@@ -87,6 +93,7 @@ export default function Profile() {
                 <span className="text-sm text-muted-foreground">{user.displayName}</span>
               )}
               {user.isVerified && <BadgeCheck className="h-5 w-5 text-primary" />}
+              <BadgeFlair username={user.username} compact />
             </div>
             {user.bio && <p className="text-sm text-muted-foreground">{user.bio}</p>}
             <div className="flex items-center gap-4 text-sm text-muted-foreground">
@@ -113,6 +120,12 @@ export default function Profile() {
                     <Github className="h-3.5 w-3.5" />
                     {raw.githubUsername}
                   </a>
+                )}
+                {raw.walletAddress && (
+                  <span className="flex items-center gap-1 font-mono text-xs">
+                    <Wallet className="h-3.5 w-3.5" />
+                    {raw.walletAddress.slice(0, 6)}...{raw.walletAddress.slice(-4)}
+                  </span>
                 )}
                 {raw.externalLink && (
                   <a
@@ -221,6 +234,57 @@ export default function Profile() {
           </motion.div>
         )}
 
+        {/* Analytics Charts */}
+        {chartData && chartData.daily && chartData.daily.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-40px' }}
+            transition={{ duration: 0.4 }}
+            className="space-y-6"
+          >
+            <h2 className="text-lg font-semibold text-foreground">Analytics</h2>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Daily Spend */}
+              <div className="rounded-lg border border-border bg-card p-4 space-y-3">
+                <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                  <DollarSign className="h-4 w-4 text-primary" />
+                  Daily Spend
+                </div>
+                <SpendChart data={chartData.daily} />
+              </div>
+
+              {/* Provider Breakdown */}
+              <div className="rounded-lg border border-border bg-card p-4 space-y-3">
+                <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                  <PieChart className="h-4 w-4 text-primary" />
+                  Provider Breakdown
+                </div>
+                <ProviderPieChart data={chartData.providers} />
+              </div>
+
+              {/* Token Usage */}
+              <div className="rounded-lg border border-border bg-card p-4 space-y-3">
+                <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                  <BarChart3 className="h-4 w-4 text-primary" />
+                  Token Usage
+                </div>
+                <TokenBarChart data={chartData.tokens} />
+              </div>
+
+              {/* Cumulative Spend */}
+              <div className="rounded-lg border border-border bg-card p-4 space-y-3">
+                <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                  <TrendingUp className="h-4 w-4 text-primary" />
+                  Cumulative Spend
+                </div>
+                <CumulativeChart data={chartData.cumulative} />
+              </div>
+            </div>
+          </motion.div>
+        )}
+
         {/* Achievements */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
@@ -236,6 +300,18 @@ export default function Profile() {
           <div className="grid grid-cols-5 sm:grid-cols-9 gap-2">
             {achievements.map((a) => <AchievementBadge key={a.id} achievement={a} />)}
           </div>
+        </motion.div>
+
+        {/* Badges & Flairs */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-40px' }}
+          transition={{ duration: 0.4 }}
+          className="space-y-3"
+        >
+          <h2 className="text-lg font-semibold text-foreground">Badges</h2>
+          <BadgeFlair username={user.username} />
         </motion.div>
 
         {/* Recent Posts */}

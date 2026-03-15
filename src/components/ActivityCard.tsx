@@ -6,7 +6,9 @@ import { ProviderChip } from './ProviderChip';
 import { StatsGrid } from './StatsGrid';
 import { KudosButton } from './KudosButton';
 import { SocialShareMenu } from './SocialShareMenu';
-import { MessageCircle, Share2, ChevronDown, BadgeCheck, ShieldCheck, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ReportDialog } from './ReportDialog';
+import { ReactionPicker } from './ReactionPicker';
+import { MessageCircle, Share2, ChevronDown, BadgeCheck, ShieldCheck, X, ChevronLeft, ChevronRight, Flag } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { formatCost, formatTokens } from '@/lib/format';
 import { PROVIDERS } from '@/lib/constants';
@@ -251,6 +253,11 @@ export function ActivityCard({ post, index = 0, showInlineComments = false }: Ac
           </Collapsible>
         )}
 
+        {/* Reactions */}
+        <div className="pt-1">
+          <ReactionPicker postId={post.id} />
+        </div>
+
         {/* Actions */}
         <div className="flex items-center gap-1 pt-1 border-t border-border">
           <KudosButton postId={post.id} count={post.kudosCount} hasKudosed={post.hasKudosed} />
@@ -276,6 +283,15 @@ export function ActivityCard({ post, index = 0, showInlineComments = false }: Ac
               <span className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors ml-auto cursor-pointer">
                 <Share2 className="h-4 w-4" />
                 Share
+              </span>
+            }
+          />
+          <ReportDialog
+            targetType="post"
+            targetPostId={post.id as any}
+            trigger={
+              <span className="inline-flex items-center gap-1 rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors cursor-pointer">
+                <Flag className="h-3.5 w-3.5" />
               </span>
             }
           />

@@ -3,7 +3,7 @@ import { AppShell } from '@/components/layout/AppShell';
 import { AuthGate } from '@/components/AuthGate';
 import { useAuth } from '@/context/AuthContext';
 import { useUser } from '@clerk/clerk-react';
-import { useCurrentUser, useUpdateProfile, useUploadAvatar, useImportUsage, useDeleteAccount, useCheckUsername } from '@/hooks/use-api';
+import { useCurrentUser, useUpdateProfile, useUploadAvatar, useImportUsage, useDeleteAccount, useCheckUsername, useDataExport } from '@/hooks/use-api';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -11,7 +11,8 @@ import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Upload, Loader2, Check, Copy, FileUp, X, AlertCircle, CheckCircle2, XCircle } from 'lucide-react';
+import { Upload, Loader2, Check, Copy, FileUp, X, AlertCircle, CheckCircle2, XCircle, Wallet } from 'lucide-react';
+import { WalletConnect } from '@/components/WalletConnect';
 import { toast } from '@/hooks/use-toast';
 import { SEO } from '@/components/SEO';
 import { COUNTRIES } from '@/lib/constants';
@@ -109,6 +110,7 @@ function SettingsContent() {
   const uploadAvatar = useUploadAvatar();
   const importUsage = useImportUsage();
   const deleteAccount = useDeleteAccount();
+  const { data: exportData } = useDataExport();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
 
@@ -125,6 +127,7 @@ function SettingsContent() {
   const [notifComments, setNotifComments] = useState(true);
   const [notifMentions, setNotifMentions] = useState(true);
   const [notifFollows, setNotifFollows] = useState(true);
+  const [webhookUrl, setWebhookUrl] = useState('');
   const [copiedSync, setCopiedSync] = useState(false);
   const [copiedDaemon, setCopiedDaemon] = useState(false);
 
@@ -156,6 +159,11 @@ function SettingsContent() {
       setCountry((profile as any).country ?? '');
       setIsPublic((profile as any).isPublic ?? true);
       setEmailNotifications((profile as any).emailNotificationsEnabled ?? true);
+      setNotifKudos((profile as any).notifyKudos ?? true);
+      setNotifComments((profile as any).notifyComments ?? true);
+      setNotifMentions((profile as any).notifyMentions ?? true);
+      setNotifFollows((profile as any).notifyFollows ?? true);
+      setWebhookUrl((profile as any).webhookUrl ?? '');
 
       const saved = (profile as any).githubUsername ?? '';
       if (saved) {
@@ -269,6 +277,7 @@ function SettingsContent() {
             <TabsTrigger value="profile">Profile</TabsTrigger>
             <TabsTrigger value="privacy">Privacy</TabsTrigger>
             <TabsTrigger value="notifications">Notifications</TabsTrigger>
+            <TabsTrigger value="wallet">Wallet</TabsTrigger>
             <TabsTrigger value="import">Import</TabsTrigger>
             <TabsTrigger value="account">Account</TabsTrigger>
           </TabsList>
@@ -417,21 +426,88 @@ function SettingsContent() {
                 }}
               />
             </div>
-            <p className="text-xs text-muted-foreground mt-2">In-app notifications for the following are always enabled:</p>
+            <p className="text-xs text-muted-foreground mt-2">Toggle in-app notifications:</p>
             {[
-              { label: 'Kudos', desc: 'When someone gives you kudos', checked: notifKudos, set: setNotifKudos },
-              { label: 'Comments', desc: 'When someone comments on your post', checked: notifComments, set: setNotifComments },
-              { label: 'Mentions', desc: 'When someone mentions you', checked: notifMentions, set: setNotifMentions },
-              { label: 'Follows', desc: 'When someone follows you', checked: notifFollows, set: setNotifFollows },
+              { label: 'Kudos', desc: 'When someone gives you kudos', checked: notifKudos, set: setNotifKudos, field: 'notifyKudos' as const },
+              { label: 'Comments', desc: 'When someone comments on your post', checked: notifComments, set: setNotifComments, field: 'notifyComments' as const },
+              { label: 'Mentions', desc: 'When someone mentions you', checked: notifMentions, set: setNotifMentions, field: 'notifyMentions' as const },
+              { label: 'Follows', desc: 'When someone follows you', checked: notifFollows, set: setNotifFollows, field: 'notifyFollows' as const },
             ].map((n) => (
               <div key={n.label} className="flex items-center justify-between rounded-lg border border-border p-4">
                 <div>
                   <p className="font-medium text-foreground">{n.label}</p>
                   <p className="text-sm text-muted-foreground">{n.desc}</p>
                 </div>
-                <Switch checked={n.checked} onCheckedChange={n.set} />
+                <Switch
+                  checked={n.checked}
+                  onCheckedChange={async (checked) => {
+                    n.set(checked);
+                    try {
+                      await updateProfile.mutateAsync({ [n.field]: checked });
+                    } catch {
+                      n.set(!checked);
+                      toast({ title: 'Failed to update', variant: 'destructive' });
+                    }
+                  }}
+                />
               </div>
             ))}
+
+            {/* Webhook Integration */}
+            <div className="pt-4 border-t border-border space-y-3">
+              <p className="text-sm font-medium text-foreground">Webhook Integration</p>
+              <p className="text-xs text-muted-foreground">
+                Send notifications to Discord, Slack, or any webhook URL when you sync sessions, earn achievements, or hit milestones.
+              </p>
+              <div className="flex gap-2">
+                <Input
+                  value={webhookUrl}
+                  onChange={(e) => setWebhookUrl(e.target.value)}
+                  placeholder="https://discord.com/api/webhooks/... or https://hooks.slack.com/..."
+                  className="flex-1 font-mono text-xs"
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={async () => {
+                    try {
+                      await updateProfile.mutateAsync({ webhookUrl: webhookUrl.trim() || '' });
+                      toast({ title: webhookUrl.trim() ? 'Webhook saved' : 'Webhook removed' });
+                    } catch {
+                      toast({ title: 'Failed to save webhook', variant: 'destructive' });
+                    }
+                  }}
+                >
+                  Save
+                </Button>
+              </div>
+              <div className="text-xs text-muted-foreground space-y-1">
+                <p>Supported platforms:</p>
+                <ul className="list-disc list-inside ml-1 space-y-0.5">
+                  <li>Discord webhooks — formatted embeds with color</li>
+                  <li>Slack incoming webhooks — formatted blocks</li>
+                  <li>Any URL — receives JSON payloads</li>
+                </ul>
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="wallet" className="space-y-4 mt-6">
+            <div className="space-y-1">
+              <h3 className="font-medium text-foreground">Web3 Wallet</h3>
+              <p className="text-sm text-muted-foreground">
+                Link a wallet to your AWARTS profile. Supports MetaMask, Coinbase Wallet, WalletConnect, Trust, Phantom, and 300+ wallets.
+              </p>
+            </div>
+            <WalletConnect savedAddress={(profile as any)?.walletAddress} />
+            <div className="rounded-lg border border-border bg-muted/20 p-4 space-y-2 text-xs text-muted-foreground">
+              <p className="font-medium text-foreground text-sm">Why connect a wallet?</p>
+              <ul className="list-disc list-inside space-y-1">
+                <li>Display your wallet address on your public profile</li>
+                <li>Verify your on-chain identity</li>
+                <li>Unlock future web3 features (NFT achievements, token rewards)</li>
+              </ul>
+            </div>
           </TabsContent>
 
           <TabsContent value="import" className="space-y-4 mt-6">
@@ -583,6 +659,31 @@ function SettingsContent() {
               <Label>Email</Label>
               <Input value={authUser?.email ?? ''} disabled />
             </div>
+
+            {/* Data Export */}
+            <div className="pt-4 border-t border-border space-y-3">
+              <p className="text-sm font-medium text-foreground">Data Export</p>
+              <p className="text-xs text-muted-foreground">Download all your AWARTS data — profile, usage history, posts, achievements, and social connections.</p>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={!exportData}
+                onClick={() => {
+                  if (!exportData) return;
+                  const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `awarts-export-${new Date().toISOString().split('T')[0]}.json`;
+                  a.click();
+                  URL.revokeObjectURL(url);
+                  toast({ title: 'Data exported successfully' });
+                }}
+              >
+                Download My Data
+              </Button>
+            </div>
+
             <div className="pt-4 border-t border-border space-y-3">
               <p className="text-sm text-destructive font-medium">Danger Zone</p>
               {!showDeleteConfirm ? (

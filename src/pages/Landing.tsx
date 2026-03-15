@@ -107,7 +107,7 @@ export default function Landing() {
     <div className="min-h-screen bg-background relative">
       <SEO
         canonical="/"
-        keywords="AI coding tracker, Strava for coding, Claude tracker, Codex tracker, Gemini tracker, AI session tracker, developer leaderboard, coding streak, AI usage tracker, Claude Code tracker, code Strava, Antigravity tracker, AI developer tools, coding competition, developer stats, token tracker, AI cost tracker"
+        keywords="AI coding tracker, Strava for coding, Strava for AI coding, Strava for Claude, Strava for Codex, Strava for OpenAI, Strava for Gemini, Strava for Antigravity, Strava for developers, Claude tracker, Codex tracker, Gemini tracker, AI session tracker, developer leaderboard, coding streak, AI usage tracker, Claude Code tracker, code Strava, Antigravity tracker, AI developer tools, coding competition, developer stats, token tracker, AI cost tracker, AI productivity tracker, open source developer tools"
       />
 
       {/* Wave Background */}

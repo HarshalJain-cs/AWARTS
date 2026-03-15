@@ -7,14 +7,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { COUNTRIES, PROVIDERS } from '@/lib/constants';
-import { Check, Copy, ArrowRight, ArrowLeft } from 'lucide-react';
+import { Check, Copy, ArrowRight, ArrowLeft, Shield, Eye, EyeOff } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from '@/hooks/use-toast';
 import { SEO } from '@/components/SEO';
 import { cn } from '@/lib/utils';
 
-const TOTAL_STEPS = 4;
+const TOTAL_STEPS = 5;
 
 export default function Onboarding() {
   const navigate = useNavigate();
@@ -24,6 +24,8 @@ export default function Onboarding() {
   const [username, setUsername] = useState('');
   const [country, setCountry] = useState('');
   const [selectedProviders, setSelectedProviders] = useState<string[]>([]);
+  const [apiKeys, setApiKeys] = useState<Record<string, string>>({});
+  const [showKeys, setShowKeys] = useState<Record<string, boolean>>({});
   const [copied, setCopied] = useState(false);
   const [copiedDaemon, setCopiedDaemon] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -41,6 +43,15 @@ export default function Onboarding() {
     navigator.clipboard.writeText('npx awarts@latest');
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const saveApiKeys = () => {
+    Object.entries(apiKeys).forEach(([provider, key]) => {
+      if (key.trim()) {
+        localStorage.setItem(`awarts_apikey_${provider}`, key.trim());
+      }
+    });
+    setStep(5);
   };
 
   const handleFinish = async () => {
@@ -70,6 +81,8 @@ export default function Onboarding() {
     exit: { opacity: 0, x: -30 },
   };
 
+  const nonClaudeProviders = selectedProviders.filter((p) => p !== 'claude');
+
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center px-4">
       <SEO title="Get Started" description="Set up your AWARTS profile and start tracking your AI coding sessions." noindex />
@@ -78,6 +91,25 @@ export default function Onboarding() {
         <div className="flex items-center justify-center gap-2">
           <div className="h-8 w-6 bg-primary" style={{ clipPath: 'polygon(15% 0%, 100% 0%, 85% 100%, 0% 100%)' }} />
           <span className="font-mono text-xl font-bold text-foreground">AWARTS</span>
+        </div>
+
+        {/* Step indicators */}
+        <div className="flex items-center justify-center gap-2">
+          {Array.from({ length: TOTAL_STEPS }, (_, i) => i + 1).map((s) => (
+            <div
+              key={s}
+              className={cn(
+                'h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300',
+                s < step
+                  ? 'bg-primary text-primary-foreground'
+                  : s === step
+                    ? 'bg-primary text-primary-foreground ring-2 ring-primary/30 ring-offset-2 ring-offset-background'
+                    : 'bg-muted text-muted-foreground'
+              )}
+            >
+              {s < step ? <Check className="h-3.5 w-3.5" /> : s}
+            </div>
+          ))}
         </div>
 
         <Progress value={(step / TOTAL_STEPS) * 100} className="h-1" role="progressbar" aria-valuenow={step} aria-valuemin={1} aria-valuemax={TOTAL_STEPS} aria-label="Onboarding progress" />
@@ -186,9 +218,101 @@ export default function Onboarding() {
             </motion.div>
           )}
 
-          {/* Step 4: CLI Install */}
+          {/* Step 4: API Keys (Optional) */}
           {step === 4 && (
             <motion.div key="step4" variants={stepVariants} initial="initial" animate="animate" exit="exit" className="space-y-4">
+              <h2 className="text-2xl font-bold text-foreground text-center">API Keys</h2>
+              <p className="text-sm text-muted-foreground text-center">
+                Optional — enhance tracking with API keys. You can skip this and add them later in Settings.
+              </p>
+
+              {selectedProviders.includes('claude') && (
+                <div className="rounded-lg border border-border bg-muted/20 p-4 space-y-1">
+                  <div className="flex items-center gap-2">
+                    <div
+                      className="h-6 w-6 rounded-full flex items-center justify-center text-white text-xs font-bold"
+                      style={{ backgroundColor: PROVIDERS.claude.color }}
+                    >
+                      C
+                    </div>
+                    <span className="font-medium text-sm text-foreground">Claude</span>
+                    <span className="ml-auto text-xs text-primary font-medium">Auto-detected</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground pl-8">
+                    No API key needed. Usage is automatically read from <code className="bg-muted px-1 rounded">~/.claude/usage/</code>
+                  </p>
+                </div>
+              )}
+
+              {nonClaudeProviders.map((providerId) => {
+                const provider = PROVIDERS[providerId as keyof typeof PROVIDERS];
+                if (!provider) return null;
+                return (
+                  <div key={providerId} className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="h-6 w-6 rounded-full flex items-center justify-center text-white text-xs font-bold"
+                        style={{ backgroundColor: provider.color }}
+                      >
+                        {provider.name[0]}
+                      </div>
+                      <Label className="text-sm">{provider.name} API Key</Label>
+                    </div>
+                    <div className="relative">
+                      <Input
+                        type={showKeys[providerId] ? 'text' : 'password'}
+                        value={apiKeys[providerId] ?? ''}
+                        onChange={(e) => setApiKeys((prev) => ({ ...prev, [providerId]: e.target.value }))}
+                        placeholder={`Enter your ${provider.name} API key (optional)`}
+                        className="bg-muted/50 font-mono text-xs pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowKeys((prev) => ({ ...prev, [providerId]: !prev[providerId] }))}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        {showKeys[providerId] ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+
+              <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 space-y-1.5">
+                <div className="flex items-center gap-1.5 text-xs font-medium text-primary">
+                  <Shield className="h-3.5 w-3.5" />
+                  Your keys are safe
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  API keys are stored <strong>locally on your machine only</strong> and are never sent to our servers.
+                  AWARTS is fully open source — you can verify the code yourself.
+                </p>
+              </div>
+
+              <div className="flex gap-3">
+                <Button variant="outline" onClick={() => setStep(3)}>
+                  <ArrowLeft className="mr-2 h-4 w-4" /> Back
+                </Button>
+                <Button variant="ghost" className="flex-1" onClick={() => setStep(5)}>
+                  Skip
+                </Button>
+                {nonClaudeProviders.length > 0 && Object.values(apiKeys).some((k) => k.trim()) && (
+                  <Button className="flex-1" onClick={saveApiKeys}>
+                    Save & Continue <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                )}
+                {(nonClaudeProviders.length === 0 || !Object.values(apiKeys).some((k) => k.trim())) && (
+                  <Button className="flex-1" onClick={() => setStep(5)}>
+                    Next <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            </motion.div>
+          )}
+
+          {/* Step 5: CLI Install */}
+          {step === 5 && (
+            <motion.div key="step5" variants={stepVariants} initial="initial" animate="animate" exit="exit" className="space-y-4">
               <h2 className="text-2xl font-bold text-foreground text-center">Install the CLI</h2>
               <p className="text-sm text-muted-foreground text-center">Run this command to start tracking your sessions:</p>
               <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/30 px-4 py-3 font-mono text-sm">
@@ -235,7 +359,7 @@ export default function Onboarding() {
               </div>
 
               <div className="flex gap-3">
-                <Button variant="outline" onClick={() => setStep(3)}>
+                <Button variant="outline" onClick={() => setStep(4)}>
                   <ArrowLeft className="mr-2 h-4 w-4" /> Back
                 </Button>
                 <Button className="flex-1" onClick={handleFinish} disabled={saving}>

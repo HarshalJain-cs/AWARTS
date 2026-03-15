@@ -131,6 +131,13 @@ export const updateMe = mutation({
     defaultAiProvider: v.optional(v.string()),
     emailNotificationsEnabled: v.optional(v.boolean()),
     referralSource: v.optional(v.string()),
+    walletAddress: v.optional(v.string()),
+    walletChainId: v.optional(v.number()),
+    notifyKudos: v.optional(v.boolean()),
+    notifyComments: v.optional(v.boolean()),
+    notifyFollows: v.optional(v.boolean()),
+    notifyMentions: v.optional(v.boolean()),
+    webhookUrl: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const user = await requireUser(ctx);
@@ -179,6 +186,22 @@ export const updateMe = mutation({
     }
     if (args.emailNotificationsEnabled !== undefined) updates.emailNotificationsEnabled = args.emailNotificationsEnabled;
     if (args.referralSource !== undefined) updates.referralSource = args.referralSource.slice(0, 500);
+    if (args.walletAddress !== undefined) {
+      // Validate Ethereum address format (0x + 40 hex chars)
+      if (args.walletAddress && /^0x[a-fA-F0-9]{40}$/.test(args.walletAddress)) {
+        updates.walletAddress = args.walletAddress.toLowerCase();
+      } else if (!args.walletAddress) {
+        updates.walletAddress = undefined;
+      }
+    }
+    if (args.walletChainId !== undefined) updates.walletChainId = args.walletChainId;
+    if (args.notifyKudos !== undefined) updates.notifyKudos = args.notifyKudos;
+    if (args.notifyComments !== undefined) updates.notifyComments = args.notifyComments;
+    if (args.notifyFollows !== undefined) updates.notifyFollows = args.notifyFollows;
+    if (args.notifyMentions !== undefined) updates.notifyMentions = args.notifyMentions;
+    if (args.webhookUrl !== undefined) {
+      updates.webhookUrl = args.webhookUrl ? sanitizeUrl(args.webhookUrl) : undefined;
+    }
 
     if (Object.keys(updates).length > 0) {
       await ctx.db.patch(user._id, updates);
@@ -318,6 +341,7 @@ export const getByUsername = query({
       githubUsername: user.githubUsername,
       externalLink: user.externalLink,
       isPublic: user.isPublic,
+      walletAddress: user.walletAddress,
       _creationTime: user._creationTime,
       stats: {
         followers: followers.length,

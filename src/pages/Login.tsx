@@ -69,12 +69,39 @@ export default function Login() {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <SEO title="Log In" description="Sign in to AWARTS to track your AI coding sessions, view your stats, and compete on leaderboards." canonical="/login" />
-      <SignIn
-        routing="hash"
-        fallbackRedirectUrl="/feed"
-        signUpFallbackRedirectUrl="/onboarding"
-        appearance={clerkAppearance}
-      />
+      <div className="w-full max-w-md space-y-6">
+        {/* Branding */}
+        <div className="text-center space-y-2">
+          <div className="flex items-center justify-center gap-2">
+            <div className="h-8 w-6 bg-primary" style={{ clipPath: 'polygon(15% 0%, 100% 0%, 85% 100%, 0% 100%)' }} />
+            <span className="font-mono text-2xl font-bold text-foreground">AWARTS</span>
+          </div>
+          <p className="text-sm text-muted-foreground">Strava for AI Coding</p>
+        </div>
+
+        <SignIn
+          routing="hash"
+          fallbackRedirectUrl="/feed"
+          signUpFallbackRedirectUrl="/onboarding"
+          appearance={clerkAppearance}
+        />
+
+        {/* Feature highlights */}
+        <div className="grid grid-cols-3 gap-3 text-center text-xs text-muted-foreground">
+          <div className="space-y-1">
+            <div className="text-lg">📊</div>
+            <p>Track sessions</p>
+          </div>
+          <div className="space-y-1">
+            <div className="text-lg">🏆</div>
+            <p>Leaderboards</p>
+          </div>
+          <div className="space-y-1">
+            <div className="text-lg">🔥</div>
+            <p>Streaks</p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
