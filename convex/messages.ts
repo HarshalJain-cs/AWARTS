@@ -189,28 +189,32 @@ export const markConversationRead = mutation({
 export const getUnreadCount = query({
   args: {},
   handler: async (ctx) => {
-    const me = await getCurrentUser(ctx);
-    if (!me) return 0;
+    try {
+      const me = await getCurrentUser(ctx);
+      if (!me) return 0;
 
-    const allConversations = await ctx.db
-      .query("conversations")
-      .take(500);
+      const allConversations = await ctx.db
+        .query("conversations")
+        .take(500);
 
-    const myConversations = allConversations.filter((c) =>
-      c.participantIds.includes(me._id)
-    );
+      const myConversations = allConversations.filter((c) =>
+        c.participantIds.includes(me._id)
+      );
 
-    let total = 0;
-    for (const conv of myConversations) {
-      const unread = await ctx.db
-        .query("messages")
-        .withIndex("by_unread", (q) =>
-          q.eq("conversationId", conv._id).eq("isRead", false)
-        )
-        .collect();
-      total += unread.filter((m) => m.senderId !== me._id).length;
+      let total = 0;
+      for (const conv of myConversations) {
+        const unread = await ctx.db
+          .query("messages")
+          .withIndex("by_unread", (q) =>
+            q.eq("conversationId", conv._id).eq("isRead", false)
+          )
+          .collect();
+        total += unread.filter((m) => m.senderId !== me._id).length;
+      }
+
+      return total;
+    } catch {
+      return 0;
     }
-
-    return total;
   },
 });
