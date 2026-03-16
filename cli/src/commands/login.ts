@@ -5,6 +5,8 @@
  * 2. Show the code in the terminal and attempt to open the browser
  * 3. Poll  POST /api/auth/cli/poll  every 2 s until verified / expired
  * 4. Store the JWT in ~/.awarts/auth.json
+ * 5. Run an immediate sync so the user sees data right away
+ * 6. Start the background daemon for continuous sync
  */
 
 import chalk from 'chalk';
@@ -13,10 +15,22 @@ import { postUnauthenticated } from '../lib/api.js';
 import { saveAuth, loadAuth, clearAuth } from '../lib/auth-store.js';
 import * as out from '../lib/output.js';
 import type { InitResponse, PollResponse } from '../types.js';
-import { readPid, isProcessRunning, DEFAULT_INTERVAL_MS, spawnDaemon } from '../lib/daemon.js';
+import { readPid, isProcessRunning, killProcess, removePid, DEFAULT_INTERVAL_MS, spawnDaemon } from '../lib/daemon.js';
+import { syncCommand } from './sync.js';
 
 const POLL_INTERVAL_MS = 2_000;
 const MAX_POLLS = 300; // 10-minute timeout at 2 s intervals
+
+/** Stop the running daemon (if any). Silent on failure. */
+async function stopExistingDaemon(): Promise<void> {
+  const pid = await readPid();
+  if (pid && isProcessRunning(pid)) {
+    killProcess(pid);
+    await removePid();
+  } else if (pid) {
+    await removePid(); // stale PID
+  }
+}
 
 export async function loginCommand(): Promise<void> {
   out.banner();
@@ -28,8 +42,8 @@ export async function loginCommand(): Promise<void> {
     out.kv('User ID', existing.user_id);
     out.kv('Saved at', existing.saved_at);
     console.log();
-    out.dim('Run  awarts login --force  to re-authenticate.');
-    out.dim('Run  awarts logout  to clear your credentials.');
+    out.dim('To switch accounts:  awarts login --force');
+    out.dim('To log out:          awarts logout');
     console.log();
     return;
   }
@@ -39,6 +53,14 @@ export async function loginCommand(): Promise<void> {
 
 export async function loginForceCommand(): Promise<void> {
   out.banner();
+
+  // Stop any running daemon first — it holds the old account's token
+  const pid = await readPid();
+  if (pid && isProcessRunning(pid)) {
+    out.dim('Stopping existing daemon...');
+    await stopExistingDaemon();
+  }
+
   await clearAuth();
   await startDeviceAuth();
 }
@@ -109,6 +131,9 @@ async function startDeviceAuth(): Promise<void> {
 
       if (status === 'verified' && token && user_id) {
         // ── Step 4: Store token ─────────────────────────────────────────
+        // Stop any existing daemon before saving new auth (it reads from the same file)
+        await stopExistingDaemon();
+
         await saveAuth({
           token,
           user_id,
@@ -121,18 +146,19 @@ async function startDeviceAuth(): Promise<void> {
         out.success('Token saved to ~/.awarts/auth.json');
         console.log();
 
-        // Auto-start daemon for continuous sync
+        // ── Step 5: Immediate sync ──────────────────────────────────────
         try {
-          const existingPid = await readPid();
-          const isRunning = existingPid ? isProcessRunning(existingPid) : false;
-          if (!isRunning) {
-            const pid = await spawnDaemon(DEFAULT_INTERVAL_MS);
-            out.success(`Auto-sync daemon started (PID ${pid}, every 5 min)`);
-            out.dim('Your usage data will sync automatically in the background.');
-            out.dim('Manage with:  awarts daemon status | stop | logs');
-          } else {
-            out.dim('Auto-sync daemon is already running.');
-          }
+          await syncCommand();
+        } catch {
+          out.dim('Initial sync skipped — you can run  awarts sync  manually.');
+        }
+
+        // ── Step 6: Start fresh daemon ──────────────────────────────────
+        try {
+          const pid = await spawnDaemon(DEFAULT_INTERVAL_MS);
+          out.success(`Auto-sync daemon started (PID ${pid}, every 5 min)`);
+          out.dim('Your usage data will sync automatically in the background.');
+          out.dim('Manage with:  awarts daemon status | stop | logs');
         } catch {
           out.dim('Run  awarts daemon start  to enable auto-sync.');
         }
