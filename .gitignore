@@ -49,6 +49,13 @@ cli/.npmrc
 # Local screenshots / reference images
 assets/
 
+# Internal plans and audit reports
+plans/
+AUDIT_REPORT.md
+
+# Environment examples (shows infra structure)
+.env.example
+
 # Windows accidental files
 nul
 
