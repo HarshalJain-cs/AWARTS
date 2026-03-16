@@ -50,29 +50,44 @@ const CONFIG_DIRS = [
 ];
 
 // ── OpenAI Pricing (per million tokens, USD) ────────────────────────────
-// Updated: March 2026 — https://developers.openai.com/api/docs/pricing/
+// Updated: March 2026 — https://openai.com/api/pricing/
 const CODEX_PRICING: Record<string, { input: number; output: number }> = {
-  'gpt-5.4':        { input: 2.50,  output: 15.00 },
-  'gpt-5.4-pro':    { input: 30.00, output: 180.00 },
-  'gpt-5.2':        { input: 1.75,  output: 14.00 },
-  'gpt-5.1':        { input: 1.25,  output: 10.00 },
-  'gpt-5':          { input: 1.25,  output: 10.00 },
-  'gpt-5-mini':     { input: 0.25,  output: 2.00 },
-  'gpt-5-nano':     { input: 0.05,  output: 0.40 },
-  'gpt-4.1':        { input: 2.00,  output: 8.00 },
-  'gpt-4.1-mini':   { input: 0.40,  output: 1.60 },
-  'gpt-4.1-nano':   { input: 0.10,  output: 0.40 },
-  'gpt-4o':         { input: 2.50,  output: 10.00 },
-  'gpt-4o-mini':    { input: 0.15,  output: 0.60 },
-  'o3':             { input: 2.00,  output: 8.00 },
-  'o3-pro':         { input: 20.00, output: 80.00 },
-  'o4-mini':        { input: 1.10,  output: 4.40 },
-  'o1':             { input: 15.00, output: 60.00 },
-  'o1-pro':         { input: 150.00, output: 600.00 },
-  'codex-mini':     { input: 1.50,  output: 6.00 },
-  'openai-codex':   { input: 2.00,  output: 8.00 },
+  // GPT-5.x series
+  'gpt-5.4':          { input: 2.50,  output: 15.00 },
+  'gpt-5.4-pro':      { input: 30.00, output: 180.00 },
+  'gpt-5.3':          { input: 1.75,  output: 14.00 },
+  'gpt-5.3-codex':    { input: 1.75,  output: 14.00 },
+  'gpt-5.2':          { input: 0.875, output: 7.00 },
+  'gpt-5.2-codex':    { input: 1.75,  output: 14.00 },
+  'gpt-5.2-pro':      { input: 10.50, output: 84.00 },
+  'gpt-5.1':          { input: 1.25,  output: 10.00 },
+  'gpt-5.1-codex':    { input: 1.25,  output: 10.00 },
+  'gpt-5.1-codex-mini': { input: 0.25, output: 2.00 },
+  'gpt-5.1-codex-max': { input: 1.25, output: 10.00 },
+  'gpt-5':            { input: 1.25,  output: 10.00 },
+  'gpt-5-codex':      { input: 1.25,  output: 10.00 },
+  'gpt-5-mini':       { input: 0.25,  output: 2.00 },
+  'gpt-5-nano':       { input: 0.05,  output: 0.40 },
+  'gpt-5-pro':        { input: 15.00, output: 120.00 },
+  // GPT-4.x series
+  'gpt-4.1':          { input: 2.00,  output: 8.00 },
+  'gpt-4.1-mini':     { input: 0.40,  output: 1.60 },
+  'gpt-4.1-nano':     { input: 0.10,  output: 0.40 },
+  'gpt-4o':           { input: 2.50,  output: 10.00 },
+  'gpt-4o-mini':      { input: 0.15,  output: 0.60 },
+  // o-series (reasoning)
+  'o3':               { input: 2.00,  output: 8.00 },
+  'o3-pro':           { input: 20.00, output: 80.00 },
+  'o3-mini':          { input: 0.55,  output: 2.20 },
+  'o4-mini':          { input: 1.10,  output: 4.40 },
+  'o1':               { input: 15.00, output: 60.00 },
+  'o1-mini':          { input: 0.55,  output: 2.20 },
+  'o1-pro':           { input: 150.00, output: 600.00 },
+  // Codex-specific models
+  'codex-mini':       { input: 0.75,  output: 3.00 },
 };
-const DEFAULT_PRICING = { input: 2.00, output: 8.00 }; // GPT-4.1 tier default
+// Default: o4-mini tier — the standard model for Codex CLI
+const DEFAULT_PRICING = { input: 1.10, output: 4.40 };
 
 // ── OpenAI Costs API ────────────────────────────────────────────────────
 
@@ -265,13 +280,26 @@ async function findSqliteDb(): Promise<string | null> {
   return null;
 }
 
+/** Read the configured model from ~/.codex/config.toml */
+async function readConfigModel(): Promise<string | null> {
+  const configPath = path.join(HOME, '.codex', 'config.toml');
+  try {
+    const content = await fs.readFile(configPath, 'utf-8');
+    const match = content.match(/^\s*model\s*=\s*"([^"]+)"/m);
+    return match ? match[1] : null;
+  } catch {
+    return null;
+  }
+}
+
 async function readSqliteThreads(): Promise<UsageEntry[]> {
   const dbPath = await findSqliteDb();
   if (!dbPath) return [];
 
   // Use the system sqlite3 CLI to query — avoids native module dependency
   try {
-    const query = `SELECT date(created_at/1000000000, 'unixepoch') as day, tokens_used, model_provider FROM threads WHERE tokens_used > 0 ORDER BY created_at;`;
+    // created_at is Unix seconds (e.g. 1773487263 = 2026-03-14)
+    const query = `SELECT date(created_at, 'unixepoch') as day, tokens_used, model_provider FROM threads WHERE tokens_used > 0 ORDER BY created_at;`;
     const result = execFileSync('sqlite3', [dbPath, query], {
       timeout: 5000,
       encoding: 'utf-8',
@@ -280,11 +308,14 @@ async function readSqliteThreads(): Promise<UsageEntry[]> {
 
     if (!result) return [];
 
+    // Try to get the configured model for better pricing
+    const configModel = await readConfigModel();
+
     // Group by date
     const dayMap = new Map<string, { tokens: number; models: Set<string> }>();
     for (const line of result.split('\n')) {
       const [day, tokensStr, model] = line.split('|');
-      if (!day) continue;
+      if (!day || day === '') continue;
       const tokens = Number(tokensStr) || 0;
       if (!dayMap.has(day)) dayMap.set(day, { tokens: 0, models: new Set() });
       const entry = dayMap.get(day)!;
@@ -297,8 +328,10 @@ async function readSqliteThreads(): Promise<UsageEntry[]> {
       // Codex threads track total tokens (not split input/output), estimate 40% input 60% output
       const inputTokens = Math.round(tokens * 0.4);
       const outputTokens = Math.round(tokens * 0.6);
-      const modelName = [...models][0] ?? 'openai-codex';
-      const pricing = CODEX_PRICING[modelName] || DEFAULT_PRICING;
+
+      // Use configured model from config.toml → model_provider from DB → default
+      const resolvedModel = configModel ?? [...models][0] ?? null;
+      const pricing = (resolvedModel && CODEX_PRICING[resolvedModel]) || DEFAULT_PRICING;
       const cost = (inputTokens * pricing.input + outputTokens * pricing.output) / 1_000_000;
 
       entries.push({
@@ -307,7 +340,7 @@ async function readSqliteThreads(): Promise<UsageEntry[]> {
         cost_usd: cost,
         input_tokens: inputTokens,
         output_tokens: outputTokens,
-        models: [...models].length > 0 ? [...models] : ['openai-codex'],
+        models: resolvedModel ? [resolvedModel] : ['codex'],
         cost_source: 'estimated',
       });
     }

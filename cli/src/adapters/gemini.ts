@@ -1,12 +1,12 @@
 /**
  * Gemini adapter -- reads local usage data from Gemini CLI.
  *
- * Primary: Local file reading from ~/.gemini/usage/ (Gemini CLI usage JSON)
- * Secondary: Google AI Studio API (requires API key)
+ * Primary: Local file reading from ~/.gemini/usage/ (YYYY-MM-DD.json)
+ * Fallback: Session chat files from ~/.gemini/tmp/<user>/chats/session-*.json
+ *           (Gemini CLI stores token counts per message in these files)
  *
- * Note: Gemini CLI stores conversation data as protobuf in ~/.gemini/ but
- * doesn't expose token counts in a readable format. Usage files must exist
- * in ~/.gemini/usage/ as YYYY-MM-DD.json files for data to be reported.
+ * Detection: Checks for Google API key, Gemini CLI config dirs, or
+ * the `gemini` command being available in PATH.
  */
 
 import fs from 'node:fs/promises';
@@ -44,10 +44,11 @@ const GEMINI_PRICING: Record<string, { input: number; output: number }> = {
   'gemini-2.5-pro':          { input: 1.25,  output: 10.00 },
   'gemini-2.5-flash':        { input: 0.30,  output: 2.50 },
   'gemini-2.5-flash-lite':   { input: 0.10,  output: 0.40 },
-  // Preview models
-  'gemini-3.1-pro':          { input: 2.00,  output: 12.00 },
-  'gemini-3.1-flash-lite':   { input: 0.25,  output: 1.50 },
-  'gemini-3-flash':          { input: 0.50,  output: 3.00 },
+  // Preview / newer models
+  'gemini-3.1-pro':              { input: 2.00,  output: 12.00 },
+  'gemini-3.1-flash-lite':       { input: 0.25,  output: 1.50 },
+  'gemini-3-flash':              { input: 0.50,  output: 3.00 },
+  'gemini-3-flash-preview':      { input: 0.50,  output: 3.00 },
   // Older models
   'gemini-2.0-flash':        { input: 0.10,  output: 0.40 },
   'gemini-2.0-flash-lite':   { input: 0.075, output: 0.30 },
@@ -166,6 +167,106 @@ async function readLocalFiles(): Promise<UsageEntry[]> {
   return entries;
 }
 
+// ── Session file fallback: read ~/.gemini/tmp/*/chats/session-*.json ────
+
+interface GeminiSessionMessage {
+  type: string;
+  timestamp?: string;
+  tokens?: {
+    input?: number;
+    output?: number;
+    cached?: number;
+    thoughts?: number;
+    tool?: number;
+    total?: number;
+  };
+  model?: string;
+}
+
+interface GeminiSessionFile {
+  sessionId?: string;
+  startTime?: string;
+  messages?: GeminiSessionMessage[];
+}
+
+async function readSessionFiles(): Promise<UsageEntry[]> {
+  // Gemini CLI stores sessions in ~/.gemini/tmp/<user>/chats/session-*.json
+  const geminiDir = path.join(HOME, '.gemini', 'tmp');
+  if (!(await dirExists(geminiDir))) return [];
+
+  const entries: UsageEntry[] = [];
+
+  try {
+    // List user directories under tmp/
+    const userDirs = await fs.readdir(geminiDir);
+
+    for (const userDir of userDirs) {
+      const chatsDir = path.join(geminiDir, userDir, 'chats');
+      if (!(await dirExists(chatsDir))) continue;
+
+      let files: string[];
+      try {
+        files = await fs.readdir(chatsDir);
+      } catch { continue; }
+
+      const sessionFiles = files.filter(f => f.startsWith('session-') && f.endsWith('.json'));
+
+      // Group tokens by date across all sessions
+      const dayMap = new Map<string, { input: number; output: number; cached: number; models: Set<string> }>();
+
+      for (const file of sessionFiles) {
+        try {
+          const raw = await fs.readFile(path.join(chatsDir, file), 'utf-8');
+          const session: GeminiSessionFile = JSON.parse(raw);
+
+          // Extract date from startTime or filename
+          let date: string | null = null;
+          if (session.startTime) {
+            date = session.startTime.split('T')[0];
+          } else {
+            // Filename: session-2026-03-16T06-04-de12821c.json
+            const match = file.match(/session-(\d{4}-\d{2}-\d{2})/);
+            if (match) date = match[1];
+          }
+          if (!date) continue;
+
+          if (!dayMap.has(date)) dayMap.set(date, { input: 0, output: 0, cached: 0, models: new Set() });
+          const day = dayMap.get(date)!;
+
+          for (const msg of session.messages ?? []) {
+            if (msg.type !== 'gemini' || !msg.tokens) continue;
+            day.input += msg.tokens.input ?? 0;
+            day.output += msg.tokens.output ?? 0;
+            day.cached += msg.tokens.cached ?? 0;
+            if (msg.model) day.models.add(msg.model);
+          }
+        } catch { /* skip unparseable */ }
+      }
+
+      for (const [date, { input, output, cached, models }] of dayMap) {
+        if (input === 0 && output === 0) continue;
+        const modelName = [...models][0];
+        const cost = calculateCost(input, output, modelName);
+
+        entries.push({
+          date,
+          provider: 'gemini',
+          cost_usd: cost,
+          input_tokens: input,
+          output_tokens: output,
+          cache_read_tokens: cached,
+          models: [...models].length > 0 ? [...models] : ['gemini'],
+          cost_source: 'estimated',
+        });
+      }
+    }
+  } catch {
+    // tmp directory unreadable
+  }
+
+  return entries;
+}
+
 // ── Adapter export ──────────────────────────────────────────────────────
 
 export const geminiAdapter: Adapter = {
@@ -186,7 +287,11 @@ export const geminiAdapter: Adapter = {
   },
 
   async read(): Promise<UsageEntry[]> {
-    // Read structured usage files (only source of real data)
-    return readLocalFiles();
+    // Try structured usage files first
+    const localEntries = await readLocalFiles();
+    if (localEntries.length > 0) return localEntries;
+
+    // Fall back to session chat files (Gemini CLI's actual storage)
+    return readSessionFiles();
   },
 };
