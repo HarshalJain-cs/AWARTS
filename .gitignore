@@ -53,9 +53,6 @@ assets/
 plans/
 AUDIT_REPORT.md
 
-# Environment examples (shows infra structure)
-.env.example
-
 # Windows accidental files
 nul
 
