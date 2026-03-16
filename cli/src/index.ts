@@ -21,6 +21,7 @@ import { pushCommand } from './commands/push.js';
 import { statusCommand } from './commands/status.js';
 import { syncCommand } from './commands/sync.js';
 import { seedCommand } from './commands/seed.js';
+import { cleanupCommand } from './commands/cleanup.js';
 import {
   daemonStartCommand,
   daemonStopCommand,
@@ -39,7 +40,7 @@ const program = new Command();
 program
   .name('awarts')
   .description('Track your AI coding spend across Claude, Codex, Gemini & Antigravity')
-  .version('0.2.6')
+  .version('0.2.8')
   .hook('preAction', () => checkForUpdates());
 
 // ─── login ──────────────────────────────────────────────────────────────
@@ -101,6 +102,24 @@ program
         provider: opts.provider,
         days: Number(opts.days) || 7,
         force: opts.force,
+      });
+    } catch (err) {
+      out.error(err instanceof Error ? err.message : String(err));
+      process.exit(1);
+    }
+  });
+
+// ─── cleanup ────────────────────────────────────────────────────────────
+program
+  .command('cleanup')
+  .description('Remove invalid/old usage data from AWARTS (e.g. entries with wrong dates)')
+  .option('--before <date>', 'Delete entries before this date (default: 2020-01-01)', '2020-01-01')
+  .option('--date <dates...>', 'Delete entries for specific dates (YYYY-MM-DD)')
+  .action(async (opts: { before?: string; date?: string[] }) => {
+    try {
+      await cleanupCommand({
+        beforeDate: opts.before,
+        dates: opts.date,
       });
     } catch (err) {
       out.error(err instanceof Error ? err.message : String(err));

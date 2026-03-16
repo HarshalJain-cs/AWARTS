@@ -268,6 +268,103 @@ async function checkAchievements(
   }
 }
 
+// ─── Cleanup: delete usage entries and orphaned posts for bad dates ─────
+export const cleanupUsage = mutation({
+  args: {
+    beforeDate: v.optional(v.string()), // Delete entries with date before this (default: "2020-01-01")
+    dates: v.optional(v.array(v.string())), // Delete entries with these specific dates
+    authToken: v.optional(v.string()),
+  },
+  handler: async (ctx, { beforeDate, dates, authToken }) => {
+    let me = await getCurrentUser(ctx);
+
+    if (!me && authToken) {
+      const authRow = await ctx.db
+        .query("cli_auth_codes")
+        .withIndex("by_jwt", (q) => q.eq("jwtToken", authToken))
+        .first();
+      if (authRow && authRow.status === "verified" && authRow.userId) {
+        if (authRow.tokenExpiresAt && authRow.tokenExpiresAt < Date.now()) {
+          throw new Error("Token expired. Please re-authenticate with `awarts login`.");
+        }
+        me = await ctx.db.get(authRow.userId);
+      }
+    }
+
+    if (!me) throw new Error("Not authenticated");
+
+    const cutoff = beforeDate ?? "2020-01-01";
+    let deleted = 0;
+    let postsDeleted = 0;
+
+    // Find all usage entries for this user
+    const allEntries = await ctx.db
+      .query("daily_usage")
+      .withIndex("by_user", (q) => q.eq("userId", me._id))
+      .collect();
+
+    const entriesToDelete = allEntries.filter((e) => {
+      if (dates && dates.includes(e.date)) return true;
+      if (e.date < cutoff) return true;
+      return false;
+    });
+
+    const affectedDates = new Set(entriesToDelete.map((e) => e.date));
+
+    // Delete usage entries
+    for (const entry of entriesToDelete) {
+      // Delete post_daily_usage links pointing to this entry
+      const links = await ctx.db
+        .query("post_daily_usage")
+        .withIndex("by_usage", (q) => q.eq("dailyUsageId", entry._id))
+        .collect();
+      for (const link of links) {
+        await ctx.db.delete(link._id);
+      }
+      await ctx.db.delete(entry._id);
+      deleted++;
+    }
+
+    // Delete orphaned posts for affected dates
+    for (const date of affectedDates) {
+      const post = await ctx.db
+        .query("posts")
+        .withIndex("by_user_date", (q) =>
+          q.eq("userId", me._id).eq("usageDate", date)
+        )
+        .unique();
+
+      if (!post) continue;
+
+      // Check if post still has any linked usage entries
+      const remainingLinks = await ctx.db
+        .query("post_daily_usage")
+        .withIndex("by_post", (q) => q.eq("postId", post._id))
+        .collect();
+
+      if (remainingLinks.length === 0) {
+        // Delete kudos and comments too
+        const kudos = await ctx.db
+          .query("kudos")
+          .withIndex("by_post", (q) => q.eq("postId", post._id))
+          .collect();
+        for (const k of kudos) await ctx.db.delete(k._id);
+
+        const comments = await ctx.db
+          .query("comments")
+          .withIndex("by_post", (q) => q.eq("postId", post._id))
+          .collect();
+        for (const c of comments) await ctx.db.delete(c._id);
+
+        await ctx.db.delete(post._id);
+        postsDeleted++;
+      }
+    }
+
+    return { deleted, posts_deleted: postsDeleted };
+  },
+});
+
 // ─── Web Import (Clerk auth only) ──────────────────────────────────────
 export const importUsage = mutation({
   args: {

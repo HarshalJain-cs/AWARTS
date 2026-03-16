@@ -132,9 +132,49 @@ http.route({
   }),
 });
 
+// ─── Usage Cleanup (delete old/wrong entries) ────────────────────────
+http.route({
+  path: "/api/usage/cleanup",
+  method: "POST",
+  handler: httpAction(async (ctx, request) => {
+    const authHeader = request.headers.get("Authorization");
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return errorResponse("Missing or invalid Authorization header", request, 401);
+    }
+    const token = authHeader.slice(7);
+    if (!token || token.length < 10) {
+      return errorResponse("Invalid token", request, 401);
+    }
+
+    let body: any;
+    try {
+      body = await request.json();
+    } catch {
+      return errorResponse("Invalid JSON body", request);
+    }
+
+    try {
+      const result = await ctx.runMutation(api.usage.cleanupUsage, {
+        beforeDate: body.before_date,
+        dates: body.dates,
+        authToken: token,
+      });
+      return jsonResponse(result, request);
+    } catch (err: any) {
+      const isAuthError = err.message?.includes("Not authenticated") || err.message?.includes("Token expired");
+      return errorResponse(
+        isAuthError ? "Authentication failed" : "Cleanup failed",
+        request,
+        isAuthError ? 401 : 400,
+      );
+    }
+  }),
+});
+
 // ─── CORS Preflight ──────────────────────────────────────────────────
 http.route({ path: "/api/auth/cli/init", method: "OPTIONS", handler: preflightHandler });
 http.route({ path: "/api/auth/cli/poll", method: "OPTIONS", handler: preflightHandler });
 http.route({ path: "/api/usage/submit", method: "OPTIONS", handler: preflightHandler });
+http.route({ path: "/api/usage/cleanup", method: "OPTIONS", handler: preflightHandler });
 
 export default http;
