@@ -39,7 +39,7 @@ const program = new Command();
 program
   .name('awarts')
   .description('Track your AI coding spend across Claude, Codex, Gemini & Antigravity')
-  .version('0.2.5')
+  .version('0.2.6')
   .hook('preAction', () => checkForUpdates());
 
 // ─── login ──────────────────────────────────────────────────────────────

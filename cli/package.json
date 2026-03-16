@@ -1,6 +1,6 @@
 {
   "name": "awarts",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "description": "Track your AI coding across Claude, Codex, Gemini & Antigravity",
   "type": "module",
   "license": "MIT",
@@ -36,25 +36,23 @@
     "README.md",
     "LICENSE"
   ],
+  "sideEffects": false,
   "scripts": {
     "dev": "bun --watch src/index.ts",
     "build": "bun build src/index.ts --outdir dist --target node",
-    "prepublishOnly": "bun run build",
     "test": "vitest run",
     "test:watch": "vitest"
   },
-  "dependencies": {
-    "chalk": "^5.4.0",
-    "ora": "^8.2.0",
-    "open": "^10.1.0",
-    "commander": "^13.1.0",
-    "jose": "^5.10.0",
-    "nanoid": "^5.1.0"
-  },
   "devDependencies": {
     "@types/node": "^22.16.0",
-    "vitest": "^3.2.0",
-    "typescript": "^5.8.0"
+    "chalk": "^5.4.0",
+    "commander": "^13.1.0",
+    "jose": "^5.10.0",
+    "nanoid": "^5.1.0",
+    "open": "^10.1.0",
+    "ora": "^8.2.0",
+    "typescript": "^5.8.0",
+    "vitest": "^3.2.0"
   },
   "engines": {
     "node": ">=18.0.0"
