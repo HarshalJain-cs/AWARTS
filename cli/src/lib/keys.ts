@@ -19,7 +19,7 @@ interface KeyStore {
 
 async function ensureDir(): Promise<void> {
   const dir = path.dirname(KEYS_PATH);
-  await fs.mkdir(dir, { recursive: true });
+  await fs.mkdir(dir, { recursive: true, mode: 0o700 });
 }
 
 export async function loadKeys(): Promise<KeyStore> {

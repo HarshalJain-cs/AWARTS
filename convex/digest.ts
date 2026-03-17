@@ -194,11 +194,11 @@ export const sendWeeklyDigests = internalAction({
             </tr>
           </table>
 
-          <a href="https://awarts.com/recap" style="display: inline-block; background: #7c3aed; color: white; text-decoration: none; padding: 10px 24px; border-radius: 6px; font-size: 14px; font-weight: 500;">View Full Recap</a>
+          <a href="https://awarts.vercel.app/recap" style="display: inline-block; background: #7c3aed; color: white; text-decoration: none; padding: 10px 24px; border-radius: 6px; font-size: 14px; font-weight: 500;">View Full Recap</a>
 
           <p style="color: #999; font-size: 12px; margin-top: 32px;">
             You're receiving this because you have email notifications enabled on AWARTS.
-            <a href="https://awarts.com/settings" style="color: #999;">Unsubscribe</a>
+            <a href="https://awarts.vercel.app/settings" style="color: #999;">Unsubscribe</a>
           </p>
         </div>
       `;

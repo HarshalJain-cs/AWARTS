@@ -18,6 +18,18 @@ export const sendWebhook = action({
     }),
   },
   handler: async (_ctx, { webhookUrl, event, data }) => {
+    // SSRF prevention: only allow HTTPS URLs to known webhook services
+    if (!/^https:\/\//i.test(webhookUrl)) {
+      console.error("Webhook rejected: non-HTTPS URL");
+      return;
+    }
+    // Block internal/private IPs and metadata endpoints
+    const blocked = /^https?:\/\/(localhost|127\.|10\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.|169\.254\.|0\.0\.0\.0|\[::1\])/i;
+    if (blocked.test(webhookUrl)) {
+      console.error("Webhook rejected: internal URL");
+      return;
+    }
+
     // Build Discord/Slack compatible embed
     const isDiscord = webhookUrl.includes("discord.com/api/webhooks");
     const isSlack = webhookUrl.includes("hooks.slack.com");

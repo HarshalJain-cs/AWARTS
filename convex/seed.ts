@@ -9,7 +9,7 @@ export const seedCountries = mutation({
     if (!me) throw new Error("Not authenticated");
     // Admin-only guard
     const adminIds = (process.env.ADMIN_CLERK_IDS ?? "").split(",").map((id) => id.trim()).filter(Boolean);
-    if (adminIds.length > 0 && !adminIds.includes(me.clerkId)) {
+    if (adminIds.length === 0 || !adminIds.includes(me.clerkId)) {
       throw new Error("Forbidden: admin access required");
     }
     // Check if already seeded
