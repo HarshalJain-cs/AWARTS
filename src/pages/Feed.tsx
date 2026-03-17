@@ -29,7 +29,7 @@ export default function Feed() {
   const feedType = activeTab === 'Following' ? 'following' : 'global';
   const providerParam = providerFilter === 'all' ? undefined : providerFilter;
 
-  const weeklyStats = useWeeklyStats();
+  const weeklyStats = useWeeklyStats(!user);
 
   const feedResult = useFeed(
     isMySessionsTab ? 'global' : feedType,
