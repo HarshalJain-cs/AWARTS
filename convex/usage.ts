@@ -78,7 +78,14 @@ export const submitUsage = mutation({
     const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
     const today = new Date().toISOString().split("T")[0];
 
+    // Deduplicate: keep last entry for each date+provider pair
+    const dedupMap = new Map<string, typeof entries[number]>();
     for (const entry of entries) {
+      dedupMap.set(`${entry.date}:${entry.provider}`, entry);
+    }
+    const dedupedEntries = [...dedupMap.values()];
+
+    for (const entry of dedupedEntries) {
       if (!validProviders.includes(entry.provider)) {
         errors.push({ date: entry.date, provider: entry.provider, error: "Invalid provider" });
         continue;

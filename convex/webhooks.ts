@@ -104,14 +104,19 @@ export const sendWebhook = action({
     }
 
     try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 10_000); // 10s timeout
       await fetch(webhookUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
+        signal: controller.signal,
       });
+      clearTimeout(timeout);
     } catch {
-      // Webhook delivery failures are non-critical
-      console.error("Webhook delivery failed for", webhookUrl);
+      // Webhook delivery failures are non-critical — mask URL in logs
+      const masked = webhookUrl.replace(/(https:\/\/[^/]+\/)[^\s]*/i, "$1***");
+      console.error("Webhook delivery failed for", masked);
     }
   },
 });

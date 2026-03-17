@@ -30,6 +30,8 @@ ${stats.models?.length ? `- Models: ${stats.models.join(", ")}` : ""}
 Return JSON: {"title": "short catchy title (max 60 chars)", "description": "2-3 sentence description"}`;
 
     try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 15_000); // 15s timeout
       const res = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
         headers: {
@@ -42,7 +44,9 @@ Return JSON: {"title": "short catchy title (max 60 chars)", "description": "2-3 
           response_format: { type: "json_object" },
           max_tokens: 200,
         }),
+        signal: controller.signal,
       });
+      clearTimeout(timeout);
 
       if (!res.ok) {
         return generateTemplateCation(stats);

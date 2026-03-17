@@ -2,26 +2,28 @@ import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
 import { getCurrentUser } from "./users";
 
-function generateCode(length: number): string {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  const array = new Uint8Array(length);
-  crypto.getRandomValues(array);
+// Rejection sampling: eliminates modulo bias in random character selection
+function randomChars(chars: string, length: number): string {
+  const maxValid = 256 - (256 % chars.length);
   let result = "";
-  for (let i = 0; i < length; i++) {
-    result += chars[array[i] % chars.length];
+  while (result.length < length) {
+    const array = new Uint8Array(length * 2);
+    crypto.getRandomValues(array);
+    for (let i = 0; i < array.length && result.length < length; i++) {
+      if (array[i] < maxValid) {
+        result += chars[array[i] % chars.length];
+      }
+    }
   }
   return result;
 }
 
+function generateCode(length: number): string {
+  return randomChars("ABCDEFGHJKLMNPQRSTUVWXYZ23456789", length);
+}
+
 function generateToken(length: number): string {
-  const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-  const array = new Uint8Array(length);
-  crypto.getRandomValues(array);
-  let result = "";
-  for (let i = 0; i < length; i++) {
-    result += chars[array[i] % chars.length];
-  }
-  return result;
+  return randomChars("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789", length);
 }
 
 // POST /auth/cli/init — create a device auth code

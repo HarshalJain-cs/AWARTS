@@ -247,11 +247,11 @@ export function useUpdateProfile() {
 
 // ─── Weekly Stats ─────────────────────────────────────────────────────
 
-export function useWeeklyStats() {
-  const result = useQuery(api.digest.getMyWeeklyStats);
+export function useWeeklyStats(skip = false) {
+  const result = useQuery(api.digest.getMyWeeklyStats, skip ? "skip" : {});
   return {
-    data: result,
-    isLoading: result === undefined,
+    data: result ?? null,
+    isLoading: result === undefined && !skip,
   };
 }
 

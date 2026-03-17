@@ -33,6 +33,13 @@ const preflightHandler = httpAction(async (_ctx, request) => {
   return new Response(null, { status: 204, headers: getCorsHeaders(request) });
 });
 
+// CSRF protection: reject browser requests from unknown origins
+function validateOrigin(request: Request): boolean {
+  const origin = request.headers.get("Origin");
+  if (!origin) return true; // CLI requests don't send Origin
+  return ALLOWED_ORIGINS.includes(origin);
+}
+
 function jsonResponse(data: unknown, request?: Request, status = 200) {
   return new Response(JSON.stringify(data), { status, headers: getCorsHeaders(request) });
 }
@@ -46,6 +53,9 @@ http.route({
   path: "/api/auth/cli/init",
   method: "POST",
   handler: httpAction(async (ctx, request) => {
+    if (!validateOrigin(request)) {
+      return errorResponse("Forbidden", request, 403);
+    }
     try {
       const result = await ctx.runMutation(api.cliAuth.initCLIAuth);
       return jsonResponse(result, request);
@@ -60,6 +70,9 @@ http.route({
   path: "/api/auth/cli/poll",
   method: "POST",
   handler: httpAction(async (ctx, request) => {
+    if (!validateOrigin(request)) {
+      return errorResponse("Forbidden", request, 403);
+    }
     let body: any;
     try {
       body = await request.json();
@@ -86,6 +99,9 @@ http.route({
   path: "/api/usage/submit",
   method: "POST",
   handler: httpAction(async (ctx, request) => {
+    if (!validateOrigin(request)) {
+      return errorResponse("Forbidden", request, 403);
+    }
     // Validate Authorization header
     const authHeader = request.headers.get("Authorization");
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -138,6 +154,9 @@ http.route({
   path: "/api/usage/cleanup",
   method: "POST",
   handler: httpAction(async (ctx, request) => {
+    if (!validateOrigin(request)) {
+      return errorResponse("Forbidden", request, 403);
+    }
     const authHeader = request.headers.get("Authorization");
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return errorResponse("Missing or invalid Authorization header", request, 401);

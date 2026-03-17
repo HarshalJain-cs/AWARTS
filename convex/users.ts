@@ -158,9 +158,9 @@ export const updateMe = mutation({
     // Validate and sanitize fields
     const updates: Record<string, any> = {};
 
-    if (args.username !== undefined) updates.username = args.username;
-    if (args.displayName !== undefined) updates.displayName = args.displayName.slice(0, 50);
-    if (args.bio !== undefined) updates.bio = args.bio.slice(0, 160);
+    if (args.username !== undefined) updates.username = args.username.trim();
+    if (args.displayName !== undefined) updates.displayName = args.displayName.trim().slice(0, 50);
+    if (args.bio !== undefined) updates.bio = args.bio.trim().slice(0, 160);
     if (args.avatarUrl !== undefined) {
       // Only allow HTTPS URLs for avatars (Convex storage URLs or legitimate CDNs)
       if (args.avatarUrl && /^https:\/\//i.test(args.avatarUrl)) {
@@ -174,9 +174,9 @@ export const updateMe = mutation({
     if (args.externalLink !== undefined) {
       updates.externalLink = sanitizeUrl(args.externalLink);
     }
-    if (args.country !== undefined) updates.country = args.country.slice(0, 10);
-    if (args.region !== undefined) updates.region = args.region.slice(0, 50);
-    if (args.timezone !== undefined) updates.timezone = args.timezone.slice(0, 50);
+    if (args.country !== undefined) updates.country = args.country.trim().slice(0, 10);
+    if (args.region !== undefined) updates.region = args.region.trim().slice(0, 50);
+    if (args.timezone !== undefined) updates.timezone = args.timezone.trim().slice(0, 50);
     if (args.isPublic !== undefined) updates.isPublic = args.isPublic;
     if (args.defaultAiProvider !== undefined) {
       const validProviders = ["claude", "codex", "gemini", "antigravity"];
@@ -185,7 +185,7 @@ export const updateMe = mutation({
       }
     }
     if (args.emailNotificationsEnabled !== undefined) updates.emailNotificationsEnabled = args.emailNotificationsEnabled;
-    if (args.referralSource !== undefined) updates.referralSource = args.referralSource.slice(0, 500);
+    if (args.referralSource !== undefined) updates.referralSource = args.referralSource.trim().slice(0, 500);
     if (args.walletAddress !== undefined) {
       // Validate Ethereum address format (0x + 40 hex chars)
       if (args.walletAddress && /^0x[a-fA-F0-9]{40}$/.test(args.walletAddress)) {
@@ -238,16 +238,33 @@ export const getByUsername = query({
     const me = await getCurrentUser(ctx);
 
     // If profile is private and viewer is not the owner, return limited info
+    // without loading any heavy data (usage entries, posts, follows)
     if (!user.isPublic && (!me || me._id !== user._id)) {
+      const followerCount = (await ctx.db
+        .query("follows")
+        .withIndex("by_following", (q) => q.eq("followingId", user._id))
+        .collect()).length;
+
+      let isFollowing = false;
+      if (me) {
+        const followRow = await ctx.db
+          .query("follows")
+          .withIndex("by_pair", (q) =>
+            q.eq("followerId", me._id).eq("followingId", user._id)
+          )
+          .unique();
+        isFollowing = !!followRow;
+      }
+
       return {
         _id: user._id,
         username: user.username,
         displayName: user.displayName,
         avatarUrl: user.avatarUrl,
         isPublic: false,
-        stats: { followers: 0, following: 0, posts: 0 },
+        stats: { followers: followerCount, following: 0, posts: 0 },
         achievements: [],
-        isFollowing: false,
+        isFollowing,
         isOwnProfile: false,
       };
     }

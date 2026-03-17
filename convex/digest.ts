@@ -77,45 +77,50 @@ function getPreviousDate(dateStr: string): string {
 export const getMyWeeklyStats = query({
   args: {},
   handler: async (ctx) => {
-    const me = await getCurrentUser(ctx);
-    if (!me) return null;
+    try {
+      const me = await getCurrentUser(ctx);
+      if (!me) return null;
 
-    const now = new Date();
-    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-    const weekAgoStr = weekAgo.toISOString().split("T")[0];
+      const now = new Date();
+      const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      const weekAgoStr = weekAgo.toISOString().split("T")[0];
 
-    const usage = await ctx.db
-      .query("daily_usage")
-      .withIndex("by_user", (q) => q.eq("userId", me._id))
-      .collect();
+      const usage = await ctx.db
+        .query("daily_usage")
+        .withIndex("by_user", (q) => q.eq("userId", me._id))
+        .collect();
 
-    const weekUsage = usage.filter((u) => u.date >= weekAgoStr);
-    if (weekUsage.length === 0) return null;
+      const weekUsage = usage.filter((u) => u.date >= weekAgoStr);
+      if (weekUsage.length === 0) return null;
 
-    const totalCost = weekUsage.reduce((s, u) => s + u.costUsd, 0);
-    const totalTokens = weekUsage.reduce((s, u) => s + u.inputTokens + u.outputTokens, 0);
-    const activeDays = new Set(weekUsage.map((u) => u.date)).size;
+      const totalCost = weekUsage.reduce((s, u) => s + (u.costUsd ?? 0), 0);
+      const totalTokens = weekUsage.reduce((s, u) => s + (u.inputTokens ?? 0) + (u.outputTokens ?? 0), 0);
+      const activeDays = new Set(weekUsage.map((u) => u.date)).size;
 
-    const providerCosts: Record<string, number> = {};
-    for (const u of weekUsage) {
-      providerCosts[u.provider] = (providerCosts[u.provider] ?? 0) + u.costUsd;
+      const providerCosts: Record<string, number> = {};
+      for (const u of weekUsage) {
+        providerCosts[u.provider] = (providerCosts[u.provider] ?? 0) + (u.costUsd ?? 0);
+      }
+      const topProvider = Object.entries(providerCosts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? "unknown";
+
+      // Streak
+      const allDates = new Set(usage.map((u) => u.date));
+      const sortedDates = [...allDates].sort().reverse();
+      let streak = 0;
+      const today = now.toISOString().split("T")[0];
+      let checkDate = today;
+      for (const date of sortedDates) {
+        if (date === checkDate || date === getPreviousDate(checkDate)) {
+          streak++;
+          checkDate = date;
+        } else break;
+      }
+
+      return { totalCost, totalTokens, activeDays, streak, topProvider };
+    } catch {
+      // Graceful degradation — return null instead of crashing
+      return null;
     }
-    const topProvider = Object.entries(providerCosts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? "unknown";
-
-    // Streak
-    const allDates = new Set(usage.map((u) => u.date));
-    const sortedDates = [...allDates].sort().reverse();
-    let streak = 0;
-    const today = now.toISOString().split("T")[0];
-    let checkDate = today;
-    for (const date of sortedDates) {
-      if (date === checkDate || date === getPreviousDate(checkDate)) {
-        streak++;
-        checkDate = date;
-      } else break;
-    }
-
-    return { totalCost, totalTokens, activeDays, streak, topProvider };
   },
 });
 
@@ -204,6 +209,8 @@ export const sendWeeklyDigests = internalAction({
       `;
 
       try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 15_000); // 15s timeout
         const res = await fetch("https://api.resend.com/emails", {
           method: "POST",
           headers: {
@@ -216,7 +223,9 @@ export const sendWeeklyDigests = internalAction({
             subject: `Your week: ${formatUsd(stats.totalCost)} spent, ${stats.activeDays} active days`,
             html,
           }),
+          signal: controller.signal,
         });
+        clearTimeout(timeout);
 
         if (!res.ok) {
           const text = await res.text();

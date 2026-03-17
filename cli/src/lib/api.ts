@@ -2,14 +2,26 @@
  * HTTP client for the AWARTS backend API.
  *
  * Reads the JWT from the local auth store and injects it into every request.
- * The base URL defaults to http://localhost:3001 and can be overridden via
+ * The base URL defaults to the production Convex site and can be overridden via
  * the AWARTS_API_URL env var or ~/.awarts/config.json.
  */
 
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
+import { fileURLToPath } from 'node:url';
 import { getToken } from './auth-store.js';
+
+// Read version from package.json at startup
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+let _cliVersion = '0.0.0';
+try {
+  const pkgPath = path.resolve(__dirname, '..', 'package.json');
+  const pkg = JSON.parse(await fs.readFile(pkgPath, 'utf-8'));
+  _cliVersion = pkg.version ?? '0.0.0';
+} catch {
+  // Fallback — version unknown
+}
 
 // ── Resolve the API base URL ────────────────────────────────────────────
 const DEFAULT_API_URL = 'https://honorable-bee-242.convex.site';
@@ -68,7 +80,7 @@ export async function apiRequest<T = unknown>(
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
-    'User-Agent': 'awarts-cli/0.1.0',
+    'User-Agent': `awarts-cli/${_cliVersion}`,
   };
 
   if (token) {
@@ -111,7 +123,7 @@ export async function postUnauthenticated<T = unknown>(
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'User-Agent': 'awarts-cli/0.1.0',
+      'User-Agent': `awarts-cli/${_cliVersion}`,
     },
     body: body != null ? JSON.stringify(body) : undefined,
   });
