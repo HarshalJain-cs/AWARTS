@@ -2,11 +2,12 @@ import { useRef, useState } from 'react';
 import { AppShell } from '@/components/layout/AppShell';
 import { AuthGate } from '@/components/AuthGate';
 import { useAuth } from '@/context/AuthContext';
-import { useProfile } from '@/hooks/use-api';
+import { useProfile, useWeeklyStats } from '@/hooks/use-api';
 import { ShareCard } from '@/components/ShareCard';
 import { ShareActions } from '@/components/ShareActions';
 import { BarChart3 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { formatCost, formatTokens } from '@/lib/format';
 import { transformHeatmap } from '@/lib/transformers';
 import { cn } from '@/lib/utils';
 import type { Provider } from '@/lib/types';
@@ -34,9 +35,17 @@ export const GRADIENTS = [
   { id: 'midnight', label: 'Midnight', style: 'linear-gradient(135deg, #0f1219, #1a1f2e)', dark: true },
 ];
 
+const PROVIDER_NAMES: Record<string, string> = {
+  claude: 'Claude',
+  codex: 'Codex',
+  gemini: 'Gemini',
+  antigravity: 'Antigravity',
+};
+
 function RecapContent() {
   const { user } = useAuth();
   const { data: profile, isLoading } = useProfile(user?.username ?? '');
+  const weeklyStats = useWeeklyStats();
   const [period, setPeriod] = useState('week');
   const [gradientId, setGradientId] = useState('amber');
   const cardRef = useRef<HTMLDivElement>(null);
@@ -78,6 +87,23 @@ function RecapContent() {
         <div className="flex items-center justify-between flex-wrap gap-3">
           <h1 className="text-2xl font-bold text-foreground">Recap</h1>
         </div>
+
+        {/* Weekly stats summary */}
+        {weeklyStats.data && (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {[
+              { label: 'Cost', value: formatCost(weeklyStats.data.totalCost) },
+              { label: 'Tokens', value: formatTokens(weeklyStats.data.totalTokens) },
+              { label: 'Active Days', value: `${weeklyStats.data.activeDays}/7` },
+              { label: 'Streak', value: `${weeklyStats.data.streak}d` },
+            ].map((stat) => (
+              <div key={stat.label} className="rounded-lg border border-border bg-card p-3 text-center">
+                <p className="text-xs text-muted-foreground">{stat.label}</p>
+                <p className="text-lg font-bold text-foreground mt-0.5">{stat.value}</p>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Period toggle pills */}
         <div className="flex gap-2">

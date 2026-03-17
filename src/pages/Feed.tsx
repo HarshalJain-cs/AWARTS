@@ -3,12 +3,13 @@ import { AppShell } from '@/components/layout/AppShell';
 import { ActivityCard } from '@/components/ActivityCard';
 import { SkeletonCard } from '@/components/SkeletonCard';
 import { ErrorState } from '@/components/ErrorState';
-import { useFeed, useUserPosts } from '@/hooks/use-api';
+import { useFeed, useUserPosts, useWeeklyStats } from '@/hooks/use-api';
 import { transformFeedPost } from '@/lib/transformers';
 import { useAuth } from '@/context/AuthContext';
 import { Provider } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { ArrowUp, Terminal, Upload, X, Rocket } from 'lucide-react';
+import { formatCost, formatTokens } from '@/lib/format';
+import { ArrowUp, Terminal, Upload, X, Rocket, TrendingUp } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { SEO } from '@/components/SEO';
 
@@ -27,6 +28,8 @@ export default function Feed() {
   const isMySessionsTab = activeTab === 'My Sessions';
   const feedType = activeTab === 'Following' ? 'following' : 'global';
   const providerParam = providerFilter === 'all' ? undefined : providerFilter;
+
+  const weeklyStats = useWeeklyStats();
 
   const feedResult = useFeed(
     isMySessionsTab ? 'global' : feedType,
@@ -128,6 +131,27 @@ export default function Feed() {
             </button>
           ))}
         </div>
+
+        {/* Weekly stats banner */}
+        {user && weeklyStats.data && (
+          <Link
+            to="/recap"
+            className="block rounded-xl border border-primary/20 bg-gradient-to-r from-primary/5 to-primary/10 p-4 hover:border-primary/40 transition-colors"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <TrendingUp className="h-5 w-5 text-primary" />
+                <div>
+                  <p className="text-sm font-semibold text-foreground">Your Week</p>
+                  <p className="text-xs text-muted-foreground">
+                    {formatCost(weeklyStats.data.totalCost)} spent &middot; {weeklyStats.data.activeDays} active day{weeklyStats.data.activeDays !== 1 ? 's' : ''} &middot; {weeklyStats.data.streak} day streak
+                  </p>
+                </div>
+              </div>
+              <span className="text-xs text-primary font-medium">View Recap &rarr;</span>
+            </div>
+          </Link>
+        )}
 
         {/* Getting Started banner for new users */}
         {showGettingStarted && (

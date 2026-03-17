@@ -48,6 +48,7 @@ export interface SubmitRequest {
   entries: UsageEntry[];
   source: 'cli' | 'web';
   hash?: string;
+  note?: string;
 }
 
 export interface SubmitResponse {

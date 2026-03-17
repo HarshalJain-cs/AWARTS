@@ -42,8 +42,9 @@ export const submitUsage = mutation({
     source: v.string(),
     hash: v.optional(v.string()),
     authToken: v.optional(v.string()),
+    note: v.optional(v.string()),
   },
-  handler: async (ctx, { entries, source, hash, authToken }) => {
+  handler: async (ctx, { entries, source, hash, authToken, note }) => {
     // Try Clerk auth first (browser), then fall back to CLI token auth
     let me = await getCurrentUser(ctx);
 
@@ -183,7 +184,12 @@ export const submitUsage = mutation({
       const providers = [...new Set(usageEntries.map((e) => e.provider))];
 
       if (existingPost) {
-        await ctx.db.patch(existingPost._id, { providers });
+        const patch: Record<string, any> = { providers };
+        // Only set description from CLI note if post doesn't already have one
+        if (note && !existingPost.description) {
+          patch.description = note.slice(0, 2000);
+        }
+        await ctx.db.patch(existingPost._id, patch);
         // Re-link
         const oldLinks = await ctx.db
           .query("post_daily_usage")
@@ -203,6 +209,7 @@ export const submitUsage = mutation({
           images: [],
           providers,
           isPublished: true,
+          ...(note && { description: note.slice(0, 2000) }),
         });
         for (const ue of usageEntries) {
           await ctx.db.insert("post_daily_usage", {

@@ -40,7 +40,7 @@ const program = new Command();
 program
   .name('awarts')
   .description('Track your AI coding spend across Claude, Codex, Gemini & Antigravity')
-  .version('0.2.9')
+  .version('0.3.0')
   .hook('preAction', () => checkForUpdates());
 
 // ─── login ──────────────────────────────────────────────────────────────
@@ -67,7 +67,8 @@ program
   .description('Read local usage data and submit to AWARTS')
   .option('-p, --provider <name>', 'Only push data from a specific provider (claude, codex, gemini, antigravity)')
   .option('-n, --dry-run', 'Show what would be pushed without submitting')
-  .action(async (opts: { provider?: string; dryRun?: boolean }) => {
+  .option('--note <text>', 'Attach a note/description to today\'s post')
+  .action(async (opts: { provider?: string; dryRun?: boolean; note?: string }) => {
     try {
       await pushCommand(opts);
     } catch (err) {
@@ -80,9 +81,10 @@ program
 program
   .command('sync')
   .description('Auto-detect all providers and push usage data')
-  .action(async () => {
+  .option('--note <text>', 'Attach a note/description to today\'s post')
+  .action(async (opts: { note?: string }) => {
     try {
-      await syncCommand();
+      await syncCommand(opts);
     } catch (err) {
       out.error(err instanceof Error ? err.message : String(err));
       process.exit(1);

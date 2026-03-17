@@ -25,6 +25,7 @@ export default defineSchema({
     notifyFollows: v.optional(v.boolean()),
     notifyMentions: v.optional(v.boolean()),
     webhookUrl: v.optional(v.string()),
+    lastDigestSentAt: v.optional(v.number()),
   })
     .index("by_clerkId", ["clerkId"])
     .index("by_username", ["username"])

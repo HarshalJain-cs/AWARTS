@@ -17,6 +17,7 @@ import type { UsageEntry, SubmitResponse, ProviderKey } from '../types.js';
 export interface PushOptions {
   provider?: string;
   dryRun?: boolean;
+  note?: string;
 }
 
 const VALID_PROVIDERS = new Set<string>(['claude', 'codex', 'gemini', 'antigravity']);
@@ -140,6 +141,7 @@ export async function pushCommand(opts: PushOptions): Promise<void> {
       entries: cleanEntries,
       source: 'cli',
       hash,
+      ...(opts.note && { note: opts.note }),
     });
 
     if (!res.ok) {

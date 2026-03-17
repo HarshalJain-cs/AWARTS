@@ -245,6 +245,16 @@ export function useUpdateProfile() {
   return useMutationWithPending<Record<string, unknown>, any>(api.users.updateMe);
 }
 
+// ─── Weekly Stats ─────────────────────────────────────────────────────
+
+export function useWeeklyStats() {
+  const result = useQuery(api.digest.getMyWeeklyStats);
+  return {
+    data: result,
+    isLoading: result === undefined,
+  };
+}
+
 // ─── AI Caption ───────────────────────────────────────────────────────
 
 export function useGenerateCaption() {

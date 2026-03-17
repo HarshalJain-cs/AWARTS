@@ -121,6 +121,7 @@ http.route({
         source,
         hash: body.hash,
         authToken: token,
+        note: typeof body.note === "string" ? body.note.slice(0, 2000) : undefined,
       });
       return jsonResponse(result, request);
     } catch (err: any) {

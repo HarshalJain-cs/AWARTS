@@ -127,6 +127,7 @@ export function ActivityCard({ post, index = 0, showInlineComments = false }: Ac
   const providerPercentages = post.providerBreakdown.map((pb) => ({
     provider: pb.provider,
     percentage: Math.round((pb.cost / totalCost) * 100),
+    cost: pb.cost,
   }));
 
   return (
@@ -172,16 +173,20 @@ export function ActivityCard({ post, index = 0, showInlineComments = false }: Ac
           </div>
         </div>
 
-        {/* Title */}
-        {post.title && (
-          <Link to={`/post/${post.id}`}>
-            <h3 className="font-semibold text-foreground hover:text-primary transition-colors">{post.title}</h3>
-          </Link>
-        )}
+        {/* Title — auto-generated from providers if none set */}
+        <Link to={`/post/${post.id}`}>
+          <h3 className="font-semibold text-foreground hover:text-primary transition-colors">
+            {post.title || (post.providers.length > 0
+              ? `${post.providers.map(p => PROVIDERS[p]?.name ?? p).join(' + ')} session`
+              : 'Coding session')}
+          </h3>
+        </Link>
 
-        {/* Description */}
+        {/* Description — truncated to 2 lines, click to expand on detail page */}
         {post.description && (
-          <p className="text-sm text-muted-foreground leading-relaxed">{post.description}</p>
+          <Link to={`/post/${post.id}`} className="block">
+            <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2">{post.description}</p>
+          </Link>
         )}
 
         {/* Images */}
@@ -193,15 +198,19 @@ export function ActivityCard({ post, index = 0, showInlineComments = false }: Ac
         {providerPercentages.length > 0 && (
           <div className="space-y-1.5">
             <div className="flex h-2.5 w-full rounded-full overflow-hidden bg-muted/50">
-              {providerPercentages.map((pp) => (
+              {providerPercentages.map((pp, i) => (
                 <div
                   key={pp.provider}
-                  className="h-full transition-all duration-300"
+                  className={cn(
+                    'h-full transition-all duration-300',
+                    i === 0 && 'rounded-l-full',
+                    i === providerPercentages.length - 1 && 'rounded-r-full',
+                  )}
                   style={{
-                    width: `${Math.max(pp.percentage, 2)}%`,
+                    width: `${Math.max(pp.percentage, 4)}%`,
                     backgroundColor: PROVIDERS[pp.provider]?.color ?? '#888',
                   }}
-                  title={`${PROVIDERS[pp.provider]?.name}: ${pp.percentage}%`}
+                  title={`${PROVIDERS[pp.provider]?.name}: ${pp.percentage}% (${formatCost(pp.cost)})`}
                 />
               ))}
             </div>

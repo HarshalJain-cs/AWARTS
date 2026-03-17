@@ -17,7 +17,7 @@ import type { UsageEntry, SubmitResponse } from '../types.js';
 import { readPid, isProcessRunning, DEFAULT_INTERVAL_MS } from '../lib/daemon.js';
 import { spawnDaemon } from '../lib/daemon.js';
 
-export async function syncCommand(): Promise<void> {
+export async function syncCommand(opts: { note?: string } = {}): Promise<void> {
   out.banner();
 
   // ── Auth check ────────────────────────────────────────────────────────
@@ -123,6 +123,7 @@ export async function syncCommand(): Promise<void> {
       entries: cleanEntries,
       source: 'cli',
       hash,
+      ...(opts.note && { note: opts.note }),
     });
 
     if (!res.ok) {
