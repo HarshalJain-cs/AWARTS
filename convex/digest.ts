@@ -78,7 +78,13 @@ export const getMyWeeklyStats = query({
   args: {},
   handler: async (ctx) => {
     try {
-      const me = await getCurrentUser(ctx);
+      const identity = await ctx.auth.getUserIdentity();
+      if (!identity) return null;
+
+      const me = await ctx.db
+        .query("users")
+        .withIndex("by_clerkId", (q) => q.eq("clerkId", identity.subject))
+        .unique();
       if (!me) return null;
 
       const now = new Date();
@@ -88,7 +94,7 @@ export const getMyWeeklyStats = query({
       const usage = await ctx.db
         .query("daily_usage")
         .withIndex("by_user", (q) => q.eq("userId", me._id))
-        .collect();
+        .take(1000);
 
       const weekUsage = usage.filter((u) => u.date >= weekAgoStr);
       if (weekUsage.length === 0) return null;
@@ -117,8 +123,8 @@ export const getMyWeeklyStats = query({
       }
 
       return { totalCost, totalTokens, activeDays, streak, topProvider };
-    } catch {
-      // Graceful degradation — return null instead of crashing
+    } catch (_e) {
+      console.error("getMyWeeklyStats failed:", _e);
       return null;
     }
   },
