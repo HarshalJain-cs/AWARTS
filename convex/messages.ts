@@ -128,6 +128,11 @@ export const sendMessage = mutation({
   },
 });
 
+/** Build a canonical participant key for O(1) pair lookups. */
+function makeParticipantKey(a: Id<"users">, b: Id<"users">): string {
+  return a < b ? `${a}_${b}` : `${b}_${a}`;
+}
+
 // Start or find an existing conversation
 export const startConversation = mutation({
   args: { userId: v.id("users") },
@@ -136,23 +141,20 @@ export const startConversation = mutation({
     if (!me) throw new Error("Not authenticated");
     if (me._id === userId) throw new Error("Cannot message yourself");
 
-    // Check if conversation already exists
-    const allConversations = await ctx.db
-      .query("conversations")
-      .take(1000);
+    const key = makeParticipantKey(me._id, userId);
 
-    const existing = allConversations.find(
-      (c) =>
-        c.participantIds.length === 2 &&
-        c.participantIds.includes(me._id) &&
-        c.participantIds.includes(userId)
-    );
+    // O(1) indexed lookup instead of table scan
+    const existing = await ctx.db
+      .query("conversations")
+      .withIndex("by_participantKey", (q) => q.eq("participantKey", key))
+      .unique();
 
     if (existing) return existing._id;
 
-    // Create new conversation
+    // Create new conversation with participantKey for future lookups
     const convId = await ctx.db.insert("conversations", {
       participantIds: [me._id, userId],
+      participantKey: key,
       lastMessageAt: Date.now(),
     });
 

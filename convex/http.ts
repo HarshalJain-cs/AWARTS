@@ -40,6 +40,12 @@ function validateOrigin(request: Request): boolean {
   return ALLOWED_ORIGINS.includes(origin);
 }
 
+function getClientIp(request: Request): string {
+  const forwarded = request.headers.get("X-Forwarded-For");
+  if (forwarded) return forwarded.split(",")[0].trim();
+  return "unknown";
+}
+
 function jsonResponse(data: unknown, request?: Request, status = 200) {
   return new Response(JSON.stringify(data), { status, headers: getCorsHeaders(request) });
 }
@@ -48,7 +54,7 @@ function errorResponse(message: string, request?: Request, status = 400) {
   return new Response(JSON.stringify({ error: message }), { status, headers: getCorsHeaders(request) });
 }
 
-// ─── CLI Auth: Init ─────────────────────────────────────────────────
+// ─── CLI Auth: Init (rate-limited) ──────────────────────────────────
 http.route({
   path: "/api/auth/cli/init",
   method: "POST",
@@ -56,6 +62,22 @@ http.route({
     if (!validateOrigin(request)) {
       return errorResponse("Forbidden", request, 403);
     }
+
+    // Rate limit: 10 requests per minute per IP
+    const ip = getClientIp(request);
+    const rateCheck = await ctx.runMutation(api.rateLimit.checkRateLimit, {
+      key: `cli_init:${ip}`,
+      maxRequests: 10,
+      windowMs: 60_000,
+    });
+    if (!rateCheck.allowed) {
+      const headers = {
+        ...getCorsHeaders(request),
+        "Retry-After": String(Math.ceil(rateCheck.retryAfterMs / 1000)),
+      };
+      return new Response(JSON.stringify({ error: "Too many requests" }), { status: 429, headers });
+    }
+
     try {
       const result = await ctx.runMutation(api.cliAuth.initCLIAuth);
       return jsonResponse(result, request);

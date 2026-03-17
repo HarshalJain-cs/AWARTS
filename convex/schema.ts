@@ -147,10 +147,12 @@ export default defineSchema({
 
   conversations: defineTable({
     participantIds: v.array(v.id("users")),
+    participantKey: v.optional(v.string()), // "userId1_userId2" sorted for O(1) pair lookup
     lastMessageAt: v.optional(v.number()),
     lastMessagePreview: v.optional(v.string()),
   })
-    .index("by_lastMessage", ["lastMessageAt"]),
+    .index("by_lastMessage", ["lastMessageAt"])
+    .index("by_participantKey", ["participantKey"]),
 
   reports: defineTable({
     reporterId: v.id("users"),
@@ -189,4 +191,10 @@ export default defineSchema({
   })
     .index("by_conversation", ["conversationId", "createdAt"])
     .index("by_unread", ["conversationId", "isRead"]),
+
+  rate_limits: defineTable({
+    key: v.string(),
+    timestamp: v.number(),
+  })
+    .index("by_key", ["key", "timestamp"]),
 });

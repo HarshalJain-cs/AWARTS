@@ -58,6 +58,10 @@
     { "source": "/sitemap.xml", "destination": "/sitemap.xml" },
     { "source": "/robots.txt", "destination": "/robots.txt" },
     { "source": "/sw.js", "destination": "/sw.js" },
+    { "source": "/docs", "destination": "/docs.html" },
+    { "source": "/leaderboard", "destination": "/leaderboard.html" },
+    { "source": "/feed", "destination": "/feed.html" },
+    { "source": "/search", "destination": "/search.html" },
     { "source": "/((?!assets|favicon|og-image|apple-touch|manifest|sitemap|robots|google|sw\\.).*)", "destination": "/index.html" }
   ]
 }

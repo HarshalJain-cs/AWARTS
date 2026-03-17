@@ -7,7 +7,7 @@
     "dev": "npx convex dev --once && vite",
     "dev:frontend": "vite",
     "dev:convex": "npx convex dev",
-    "build": "npx convex deploy --preview-create awarts --cmd 'vite build'",
+    "build": "npx convex deploy --preview-create awarts --cmd 'vite build' && node scripts/prerender.mjs",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview",
