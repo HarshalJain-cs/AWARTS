@@ -12,7 +12,11 @@ export const generateCaption = action({
     }),
     preferredProvider: v.optional(v.string()),
   },
-  handler: async (_ctx, { stats }) => {
+  handler: async (ctx, { stats }) => {
+    // Require authentication to prevent unauthorized API usage
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Not authenticated");
+
     const apiKey = process.env.OPENAI_API_KEY;
 
     // If no API key, generate a template-based caption

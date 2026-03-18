@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
 import { getCurrentUser } from "./users";
+import { inlineRateLimit } from "./rateLimit";
 
 // ─── FOLLOW / UNFOLLOW ──────────────────────────────────────────────
 
@@ -10,6 +11,10 @@ export const follow = mutation({
     const me = await getCurrentUser(ctx);
     if (!me) throw new Error("Not authenticated");
     if (me._id === followingId) throw new Error("Cannot follow yourself");
+
+    if (!(await inlineRateLimit(ctx, `follow:${me._id}`, 30, 60_000))) {
+      throw new Error("Too many requests. Please slow down.");
+    }
 
     const existing = await ctx.db
       .query("follows")
@@ -42,6 +47,10 @@ export const unfollow = mutation({
     const me = await getCurrentUser(ctx);
     if (!me) throw new Error("Not authenticated");
 
+    if (!(await inlineRateLimit(ctx, `follow:${me._id}`, 30, 60_000))) {
+      throw new Error("Too many requests. Please slow down.");
+    }
+
     const existing = await ctx.db
       .query("follows")
       .withIndex("by_pair", (q) =>
@@ -62,6 +71,10 @@ export const giveKudos = mutation({
   handler: async (ctx, { postId }) => {
     const me = await getCurrentUser(ctx);
     if (!me) throw new Error("Not authenticated");
+
+    if (!(await inlineRateLimit(ctx, `kudos:${me._id}`, 60, 60_000))) {
+      throw new Error("Too many requests. Please slow down.");
+    }
 
     const existing = await ctx.db
       .query("kudos")
@@ -96,6 +109,10 @@ export const removeKudos = mutation({
   handler: async (ctx, { postId }) => {
     const me = await getCurrentUser(ctx);
     if (!me) throw new Error("Not authenticated");
+
+    if (!(await inlineRateLimit(ctx, `kudos:${me._id}`, 60, 60_000))) {
+      throw new Error("Too many requests. Please slow down.");
+    }
 
     const existing = await ctx.db
       .query("kudos")
@@ -149,6 +166,11 @@ export const addComment = mutation({
   handler: async (ctx, { postId, content }) => {
     const me = await getCurrentUser(ctx);
     if (!me) throw new Error("Not authenticated");
+
+    if (!(await inlineRateLimit(ctx, `comment:${me._id}`, 20, 60_000))) {
+      throw new Error("Too many requests. Please slow down.");
+    }
+
     if (content.length < 1 || content.length > 1000) {
       throw new Error("Comment must be 1-1000 characters");
     }
@@ -197,6 +219,11 @@ export const editComment = mutation({
   handler: async (ctx, { commentId, content }) => {
     const me = await getCurrentUser(ctx);
     if (!me) throw new Error("Not authenticated");
+
+    if (!(await inlineRateLimit(ctx, `comment:${me._id}`, 20, 60_000))) {
+      throw new Error("Too many requests. Please slow down.");
+    }
+
     if (content.length < 1 || content.length > 1000) {
       throw new Error("Comment must be 1-1000 characters");
     }
@@ -215,6 +242,10 @@ export const deleteComment = mutation({
   handler: async (ctx, { commentId }) => {
     const me = await getCurrentUser(ctx);
     if (!me) throw new Error("Not authenticated");
+
+    if (!(await inlineRateLimit(ctx, `comment:${me._id}`, 30, 60_000))) {
+      throw new Error("Too many requests. Please slow down.");
+    }
 
     const comment = await ctx.db.get(commentId);
     if (!comment || comment.userId !== me._id) {
@@ -264,6 +295,10 @@ export const markNotificationsRead = mutation({
   handler: async (ctx) => {
     const me = await getCurrentUser(ctx);
     if (!me) throw new Error("Not authenticated");
+
+    if (!(await inlineRateLimit(ctx, `notif_read:${me._id}`, 30, 60_000))) {
+      throw new Error("Too many requests. Please slow down.");
+    }
 
     const unread = await ctx.db
       .query("notifications")

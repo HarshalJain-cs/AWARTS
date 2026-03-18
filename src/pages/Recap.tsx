@@ -45,7 +45,7 @@ const PROVIDER_NAMES: Record<string, string> = {
 function RecapContent() {
   const { user } = useAuth();
   const { data: profile, isLoading } = useProfile(user?.username ?? '');
-  const weeklyStats = useWeeklyStats();
+  const weeklyStats = useWeeklyStats(!user);
   const [period, setPeriod] = useState('week');
   const [gradientId, setGradientId] = useState('amber');
   const cardRef = useRef<HTMLDivElement>(null);
@@ -89,7 +89,7 @@ function RecapContent() {
         </div>
 
         {/* Weekly stats summary */}
-        {weeklyStats.data && (
+        {weeklyStats.data && !weeklyStats.isLoading && (
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
               { label: 'Cost', value: formatCost(weeklyStats.data.totalCost) },

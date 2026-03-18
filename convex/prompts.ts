@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
 import { getCurrentUser } from "./users";
+import { inlineRateLimit } from "./rateLimit";
 
 // Submit a new community prompt
 export const submitPrompt = mutation({
@@ -11,6 +12,10 @@ export const submitPrompt = mutation({
   handler: async (ctx, { content, isAnonymous }) => {
     const me = await getCurrentUser(ctx);
     if (!me) throw new Error("Not authenticated");
+
+    if (!(await inlineRateLimit(ctx, `prompt:${me._id}`, 5, 60_000))) {
+      throw new Error("Too many requests. Please slow down.");
+    }
 
     const trimmed = content.trim();
     if (trimmed.length === 0) throw new Error("Content cannot be empty");
@@ -111,6 +116,10 @@ export const toggleVote = mutation({
   handler: async (ctx, { promptId }) => {
     const me = await getCurrentUser(ctx);
     if (!me) throw new Error("Not authenticated");
+
+    if (!(await inlineRateLimit(ctx, `vote:${me._id}`, 60, 60_000))) {
+      throw new Error("Too many requests. Please slow down.");
+    }
 
     const prompt = await ctx.db.get(promptId);
     if (!prompt) throw new Error("Prompt not found");

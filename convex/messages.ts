@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
 import { getCurrentUser } from "./users";
+import { inlineRateLimit } from "./rateLimit";
 import type { Id } from "./_generated/dataModel";
 
 // Get all conversations for the current user
@@ -89,6 +90,11 @@ export const sendMessage = mutation({
   handler: async (ctx, { conversationId, content }) => {
     const me = await getCurrentUser(ctx);
     if (!me) throw new Error("Not authenticated");
+
+    if (!(await inlineRateLimit(ctx, `msg:${me._id}`, 30, 60_000))) {
+      throw new Error("Too many requests. Please slow down.");
+    }
+
     if (content.length < 1 || content.length > 2000) {
       throw new Error("Message must be 1-2000 characters");
     }
@@ -141,6 +147,10 @@ export const startConversation = mutation({
     if (!me) throw new Error("Not authenticated");
     if (me._id === userId) throw new Error("Cannot message yourself");
 
+    if (!(await inlineRateLimit(ctx, `newconv:${me._id}`, 10, 60_000))) {
+      throw new Error("Too many requests. Please slow down.");
+    }
+
     const key = makeParticipantKey(me._id, userId);
 
     // O(1) indexed lookup instead of table scan
@@ -168,6 +178,10 @@ export const markConversationRead = mutation({
   handler: async (ctx, { conversationId }) => {
     const me = await getCurrentUser(ctx);
     if (!me) throw new Error("Not authenticated");
+
+    if (!(await inlineRateLimit(ctx, `mark_read:${me._id}`, 30, 60_000))) {
+      throw new Error("Too many requests. Please slow down.");
+    }
 
     const conv = await ctx.db.get(conversationId);
     if (!conv || !conv.participantIds.includes(me._id)) return;

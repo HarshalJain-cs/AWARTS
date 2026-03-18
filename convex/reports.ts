@@ -1,6 +1,7 @@
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { mutation } from "./_generated/server";
 import { getCurrentUser } from "./users";
+import { inlineRateLimit } from "./rateLimit";
 
 export const submitReport = mutation({
   args: {
@@ -13,6 +14,10 @@ export const submitReport = mutation({
   handler: async (ctx, { targetType, targetPostId, targetUserId, reason, details }) => {
     const me = await getCurrentUser(ctx);
     if (!me) throw new Error("Not authenticated");
+
+    if (!(await inlineRateLimit(ctx, `report:${me._id}`, 5, 60_000))) {
+      throw new Error("Too many requests. Please slow down.");
+    }
 
     if (targetType !== "post" && targetType !== "user") {
       throw new Error("Invalid target type");

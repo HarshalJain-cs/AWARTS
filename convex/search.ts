@@ -31,26 +31,18 @@ export const searchUsers = query({
 
     const results = matched.slice(0, safeLimit);
 
-    // If provider filter, we need to check usage data
+    // If provider filter, check usage data (single indexed query per user)
     if (provider) {
       const validProviders = ["claude", "codex", "gemini", "antigravity"];
       if (validProviders.includes(provider)) {
         const filtered = [];
         for (const user of results) {
-          const usage = await ctx.db
+          const hasProvider = await ctx.db
             .query("daily_usage")
             .withIndex("by_user", (q) => q.eq("userId", user._id))
+            .filter((q) => q.eq(q.field("provider"), provider))
             .first();
-          if (usage) {
-            const allUsage = await ctx.db
-              .query("daily_usage")
-              .withIndex("by_user", (q) => q.eq("userId", user._id))
-              .collect();
-            const providers = new Set(allUsage.map((u) => u.provider));
-            if (providers.has(provider)) {
-              filtered.push(user);
-            }
-          }
+          if (hasProvider) filtered.push(user);
         }
         return filtered.map((u) => ({
           _id: u._id,

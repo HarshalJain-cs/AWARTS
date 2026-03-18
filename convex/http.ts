@@ -1,6 +1,6 @@
 import { httpRouter } from "convex/server";
 import { httpAction } from "./_generated/server";
-import { api } from "./_generated/api";
+import { api, internal } from "./_generated/api";
 
 const http = httpRouter();
 
@@ -65,7 +65,7 @@ http.route({
 
     // Rate limit: 10 requests per minute per IP
     const ip = getClientIp(request);
-    const rateCheck = await ctx.runMutation(api.rateLimit.checkRateLimit, {
+    const rateCheck = await ctx.runMutation(internal.rateLimit.checkRateLimit, {
       key: `cli_init:${ip}`,
       maxRequests: 10,
       windowMs: 60_000,
@@ -95,6 +95,22 @@ http.route({
     if (!validateOrigin(request)) {
       return errorResponse("Forbidden", request, 403);
     }
+
+    // Rate limit: 30 requests per minute per IP
+    const pollIp = getClientIp(request);
+    const pollRateCheck = await ctx.runMutation(internal.rateLimit.checkRateLimit, {
+      key: `cli_poll:${pollIp}`,
+      maxRequests: 30,
+      windowMs: 60_000,
+    });
+    if (!pollRateCheck.allowed) {
+      const headers = {
+        ...getCorsHeaders(request),
+        "Retry-After": String(Math.ceil(pollRateCheck.retryAfterMs / 1000)),
+      };
+      return new Response(JSON.stringify({ error: "Too many requests" }), { status: 429, headers });
+    }
+
     let body: any;
     try {
       body = await request.json();
@@ -124,6 +140,22 @@ http.route({
     if (!validateOrigin(request)) {
       return errorResponse("Forbidden", request, 403);
     }
+
+    // Rate limit: 30 requests per minute per IP
+    const ip = getClientIp(request);
+    const rateCheck = await ctx.runMutation(internal.rateLimit.checkRateLimit, {
+      key: `usage_submit:${ip}`,
+      maxRequests: 30,
+      windowMs: 60_000,
+    });
+    if (!rateCheck.allowed) {
+      const headers = {
+        ...getCorsHeaders(request),
+        "Retry-After": String(Math.ceil(rateCheck.retryAfterMs / 1000)),
+      };
+      return new Response(JSON.stringify({ error: "Too many requests" }), { status: 429, headers });
+    }
+
     // Validate Authorization header
     const authHeader = request.headers.get("Authorization");
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -179,6 +211,22 @@ http.route({
     if (!validateOrigin(request)) {
       return errorResponse("Forbidden", request, 403);
     }
+
+    // Rate limit: 10 requests per minute per IP
+    const cleanupIp = getClientIp(request);
+    const cleanupRateCheck = await ctx.runMutation(internal.rateLimit.checkRateLimit, {
+      key: `usage_cleanup:${cleanupIp}`,
+      maxRequests: 10,
+      windowMs: 60_000,
+    });
+    if (!cleanupRateCheck.allowed) {
+      const headers = {
+        ...getCorsHeaders(request),
+        "Retry-After": String(Math.ceil(cleanupRateCheck.retryAfterMs / 1000)),
+      };
+      return new Response(JSON.stringify({ error: "Too many requests" }), { status: 429, headers });
+    }
+
     const authHeader = request.headers.get("Authorization");
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return errorResponse("Missing or invalid Authorization header", request, 401);

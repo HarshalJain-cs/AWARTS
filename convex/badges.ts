@@ -51,17 +51,21 @@ export const checkBadges = mutation({
 
     const awarded: string[] = [];
 
+    // Fetch all existing badges once (avoid repeated queries)
+    const existingBadges = await ctx.db
+      .query("user_badges")
+      .withIndex("by_user", (q) => q.eq("userId", me._id))
+      .collect();
+    const ownedBadges = new Set(existingBadges.map((b) => b.badge));
+
     const awardBadge = async (badge: string) => {
-      const existing = await ctx.db
-        .query("user_badges")
-        .withIndex("by_user", (q) => q.eq("userId", me._id))
-        .collect();
-      if (existing.some((b) => b.badge === badge)) return;
+      if (ownedBadges.has(badge)) return;
       await ctx.db.insert("user_badges", {
         userId: me._id,
         badge,
         awardedAt: Date.now(),
       });
+      ownedBadges.add(badge);
       awarded.push(badge);
     };
 
@@ -131,9 +135,11 @@ export const checkBadges = mutation({
       await awardBadge("social_butterfly");
     }
 
-    // Commentator: check comment count
-    const comments = await ctx.db.query("comments").collect();
-    const myComments = comments.filter((c) => c.userId === me._id);
+    // Commentator: check comment count (using by_user index)
+    const myComments = await ctx.db
+      .query("comments")
+      .withIndex("by_user", (q) => q.eq("userId", me._id))
+      .take(50);
     if (myComments.length >= 50) {
       await awardBadge("commentator");
     }

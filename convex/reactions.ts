@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { getCurrentUser } from "./users";
+import { inlineRateLimit } from "./rateLimit";
 
 const VALID_REACTIONS = ["fire", "mind_blown", "rocket", "heart", "clap"] as const;
 
@@ -12,6 +13,10 @@ export const toggleReaction = mutation({
   handler: async (ctx, { postId, type }) => {
     const me = await getCurrentUser(ctx);
     if (!me) throw new Error("Not authenticated");
+
+    if (!(await inlineRateLimit(ctx, `reaction:${me._id}`, 60, 60_000))) {
+      throw new Error("Too many requests. Please slow down.");
+    }
 
     if (!VALID_REACTIONS.includes(type as any)) {
       throw new Error("Invalid reaction type");

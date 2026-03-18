@@ -133,7 +133,7 @@ export default function Feed() {
         </div>
 
         {/* Weekly stats banner */}
-        {user && weeklyStats.data && (
+        {user && weeklyStats.data && !weeklyStats.isLoading && (
           <Link
             to="/recap"
             className="block rounded-xl border border-primary/20 bg-gradient-to-r from-primary/5 to-primary/10 p-4 hover:border-primary/40 transition-colors"

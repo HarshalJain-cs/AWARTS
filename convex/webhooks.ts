@@ -23,10 +23,28 @@ export const sendWebhook = action({
       console.error("Webhook rejected: non-HTTPS URL");
       return;
     }
-    // Block internal/private IPs and metadata endpoints
-    const blocked = /^https?:\/\/(localhost|127\.|10\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.|169\.254\.|0\.0\.0\.0|\[::1\])/i;
+    // Block internal/private IPs, metadata endpoints, and cloud provider metadata
+    const blocked = /^https?:\/\/(localhost|127\.|10\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.|169\.254\.|0\.0\.0\.0|\[::1\]|metadata\.google|100\.100\.100\.200)/i;
     if (blocked.test(webhookUrl)) {
       console.error("Webhook rejected: internal URL");
+      return;
+    }
+    // Allowlist: only send to known webhook platforms
+    const allowedHosts = [
+      "discord.com",
+      "discordapp.com",
+      "hooks.slack.com",
+      "hooks.zapier.com",
+      "maker.ifttt.com",
+    ];
+    try {
+      const parsed = new URL(webhookUrl);
+      if (!allowedHosts.some((h) => parsed.hostname === h || parsed.hostname.endsWith(`.${h}`))) {
+        console.error("Webhook rejected: host not in allowlist");
+        return;
+      }
+    } catch {
+      console.error("Webhook rejected: invalid URL");
       return;
     }
 

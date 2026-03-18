@@ -194,13 +194,33 @@ export const updateMe = mutation({
         updates.walletAddress = undefined;
       }
     }
-    if (args.walletChainId !== undefined) updates.walletChainId = args.walletChainId;
+    if (args.walletChainId !== undefined) {
+      if (Number.isInteger(args.walletChainId) && args.walletChainId > 0 && args.walletChainId < 1_000_000) {
+        updates.walletChainId = args.walletChainId;
+      }
+    }
     if (args.notifyKudos !== undefined) updates.notifyKudos = args.notifyKudos;
     if (args.notifyComments !== undefined) updates.notifyComments = args.notifyComments;
     if (args.notifyFollows !== undefined) updates.notifyFollows = args.notifyFollows;
     if (args.notifyMentions !== undefined) updates.notifyMentions = args.notifyMentions;
     if (args.webhookUrl !== undefined) {
-      updates.webhookUrl = args.webhookUrl ? sanitizeUrl(args.webhookUrl) : undefined;
+      if (args.webhookUrl) {
+        const sanitized = sanitizeUrl(args.webhookUrl);
+        // Only allow known webhook platforms
+        if (sanitized) {
+          try {
+            const parsed = new URL(sanitized);
+            const allowedWebhookHosts = ["discord.com", "discordapp.com", "hooks.slack.com", "hooks.zapier.com", "maker.ifttt.com"];
+            if (allowedWebhookHosts.some((h) => parsed.hostname === h || parsed.hostname.endsWith(`.${h}`))) {
+              updates.webhookUrl = sanitized;
+            }
+          } catch {
+            // Invalid URL, skip
+          }
+        }
+      } else {
+        updates.webhookUrl = undefined;
+      }
     }
 
     if (Object.keys(updates).length > 0) {
@@ -424,11 +444,12 @@ export const deleteAccount = mutation({
     const achievements = await ctx.db.query("user_achievements").withIndex("by_user", (q) => q.eq("userId", user._id)).collect();
     for (const a of achievements) await ctx.db.delete(a._id);
 
-    // Delete CLI auth tokens
-    const authCodes = await ctx.db.query("cli_auth_codes").collect();
-    for (const code of authCodes) {
-      if (code.userId === user._id) await ctx.db.delete(code._id);
-    }
+    // Delete CLI auth tokens (use by_user index)
+    const authCodes = await ctx.db
+      .query("cli_auth_codes")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect();
+    for (const code of authCodes) await ctx.db.delete(code._id);
 
     // Finally delete the user
     await ctx.db.delete(user._id);

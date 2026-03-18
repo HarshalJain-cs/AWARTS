@@ -75,7 +75,9 @@ export default defineSchema({
     postId: v.id("posts"),
     userId: v.id("users"),
     content: v.string(),
-  }).index("by_post", ["postId"]),
+  })
+    .index("by_post", ["postId"])
+    .index("by_user", ["userId"]),
 
   follows: defineTable({
     followerId: v.id("users"),

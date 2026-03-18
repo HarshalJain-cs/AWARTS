@@ -1,11 +1,32 @@
 import { v } from "convex/values";
-import { mutation, internalMutation } from "./_generated/server";
+import { internalMutation, MutationCtx } from "./_generated/server";
+
+/**
+ * Inline rate limiter for use inside mutation handlers.
+ * Returns true if allowed, false if rate limited.
+ */
+export async function inlineRateLimit(
+  ctx: MutationCtx,
+  key: string,
+  maxRequests: number,
+  windowMs: number,
+): Promise<boolean> {
+  const now = Date.now();
+  const windowStart = now - windowMs;
+  const recent = await ctx.db
+    .query("rate_limits")
+    .withIndex("by_key", (q) => q.eq("key", key).gte("timestamp", windowStart))
+    .collect();
+  if (recent.length >= maxRequests) return false;
+  await ctx.db.insert("rate_limits", { key, timestamp: now });
+  return true;
+}
 
 /**
  * Check and record a rate-limited request.
  * Returns { allowed: true } or { allowed: false, retryAfterMs }.
  */
-export const checkRateLimit = mutation({
+export const checkRateLimit = internalMutation({
   args: {
     key: v.string(),
     maxRequests: v.number(),

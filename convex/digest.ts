@@ -1,14 +1,13 @@
 import { v } from "convex/values";
 import { query, internalQuery, internalMutation, internalAction } from "./_generated/server";
 import { internal } from "./_generated/api";
-import { getCurrentUser } from "./users";
 
 // Get users who should receive weekly digests (skip if sent within last 6 days)
 export const getDigestRecipients = internalQuery({
   args: {},
   handler: async (ctx) => {
     const sixDaysAgo = Date.now() - 6 * 24 * 60 * 60 * 1000;
-    const allUsers = await ctx.db.query("users").collect();
+    const allUsers = await ctx.db.query("users").take(2000);
     return allUsers
       .filter(
         (u) =>
@@ -79,17 +78,16 @@ export const getMyWeeklyStats = query({
   handler: async (ctx) => {
     try {
       const identity = await ctx.auth.getUserIdentity();
-      if (!identity) return null;
+      if (!identity?.subject) return null;
 
       const me = await ctx.db
         .query("users")
         .withIndex("by_clerkId", (q) => q.eq("clerkId", identity.subject))
-        .unique();
+        .first();
       if (!me) return null;
 
-      const now = new Date();
-      const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-      const weekAgoStr = weekAgo.toISOString().split("T")[0];
+      const now = Date.now();
+      const weekAgoStr = new Date(now - 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
 
       const usage = await ctx.db
         .query("daily_usage")
@@ -113,7 +111,7 @@ export const getMyWeeklyStats = query({
       const allDates = new Set(usage.map((u) => u.date));
       const sortedDates = [...allDates].sort().reverse();
       let streak = 0;
-      const today = now.toISOString().split("T")[0];
+      const today = new Date(now).toISOString().split("T")[0];
       let checkDate = today;
       for (const date of sortedDates) {
         if (date === checkDate || date === getPreviousDate(checkDate)) {
@@ -123,8 +121,7 @@ export const getMyWeeklyStats = query({
       }
 
       return { totalCost, totalTokens, activeDays, streak, topProvider };
-    } catch (_e) {
-      console.error("getMyWeeklyStats failed:", _e);
+    } catch {
       return null;
     }
   },
@@ -157,6 +154,10 @@ const PROVIDER_NAMES: Record<string, string> = {
   antigravity: "Antigravity",
 };
 
+function escapeHtml(str: string): string {
+  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
 // Send weekly digest emails
 export const sendWeeklyDigests = internalAction({
   args: {},
@@ -180,7 +181,7 @@ export const sendWeeklyDigests = internalAction({
       const html = `
         <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 560px; margin: 0 auto; color: #1a1a1a;">
           <h2 style="margin-bottom: 4px;">Your AWARTS Weekly Recap</h2>
-          <p style="color: #666; font-size: 14px; margin-top: 0;">Hey @${user.username}, here's your AI coding stats for the past week.</p>
+          <p style="color: #666; font-size: 14px; margin-top: 0;">Hey @${escapeHtml(user.username)}, here's your AI coding stats for the past week.</p>
 
           <table style="width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 14px;">
             <tr style="border-bottom: 1px solid #eee;">
