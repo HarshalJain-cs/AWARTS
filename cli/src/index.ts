@@ -8,6 +8,7 @@
  *   npx awarts push             Push local usage data to AWARTS
  *   npx awarts sync             Auto-detect providers and push everything
  *   npx awarts status           Show auth status and detected providers
+ *   npx awarts doctor           Check requirements and get setup guide
  *   npx awarts logout           Clear stored credentials
  *   npx awarts daemon start     Start background auto-sync
  *   npx awarts daemon stop      Stop the daemon
@@ -29,6 +30,7 @@ import {
   daemonLogsCommand,
   daemonRunLoop,
 } from './commands/daemon.js';
+import { doctorCommand } from './commands/doctor.js';
 import { clearAuth } from './lib/auth-store.js';
 import { DEFAULT_INTERVAL_MS } from './lib/daemon.js';
 import { setKey, removeKey, listKeys, type ProviderKeyName } from './lib/keys.js';
@@ -140,6 +142,20 @@ program
   .action(async () => {
     try {
       await statusCommand();
+    } catch (err) {
+      out.error(err instanceof Error ? err.message : String(err));
+      process.exit(1);
+    }
+  });
+
+// ─── doctor ─────────────────────────────────────────────────────────────
+program
+  .command('doctor')
+  .alias('setup')
+  .description('Check system requirements and get setup guidance')
+  .action(async () => {
+    try {
+      await doctorCommand();
     } catch (err) {
       out.error(err instanceof Error ? err.message : String(err));
       process.exit(1);
