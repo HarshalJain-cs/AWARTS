@@ -73,6 +73,7 @@ export async function apiRequest<T = unknown>(
   method: string,
   endpoint: string,
   body?: unknown,
+  timeoutMs = 30_000,
 ): Promise<ApiResult<T>> {
   const base = await getBaseUrl();
   const url = `${base}${endpoint}`;
@@ -87,11 +88,16 @@ export async function apiRequest<T = unknown>(
     headers['Authorization'] = `Bearer ${token}`;
   }
 
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
   const res = await fetch(url, {
     method,
     headers,
     body: body != null ? JSON.stringify(body) : undefined,
+    signal: controller.signal,
   });
+  clearTimeout(timer);
 
   const data = (await res.json().catch(() => ({}))) as T;
 

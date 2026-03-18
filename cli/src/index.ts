@@ -41,7 +41,11 @@ program
   .name('awarts')
   .description('Track your AI coding spend across Claude, Codex, Gemini & Antigravity')
   .version('0.3.1')
-  .hook('preAction', () => checkForUpdates());
+  .hook('preAction', () => {
+    // Skip version check for daemon __run (background process — no TTY, no need)
+    if (process.argv.includes('__run')) return;
+    return checkForUpdates();
+  });
 
 // ─── login ──────────────────────────────────────────────────────────────
 program

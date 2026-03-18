@@ -17,18 +17,25 @@ import type { UsageEntry, SubmitResponse } from '../types.js';
 import { readPid, isProcessRunning, DEFAULT_INTERVAL_MS } from '../lib/daemon.js';
 import { spawnDaemon } from '../lib/daemon.js';
 
-export async function syncCommand(opts: { note?: string } = {}): Promise<void> {
-  out.banner();
+export async function syncCommand(opts: { note?: string; silent?: boolean } = {}): Promise<void> {
+  const silent = opts.silent ?? false;
+
+  // In silent mode (daemon), use no-op spinner and skip banner
+  const noopSpin = { start() {}, succeed(_m?: string) {}, fail(_m?: string) {}, warn(_m?: string) {}, info(_m?: string) {} };
+  const makeSpin = (text: string) => silent ? noopSpin : out.spinner(text);
+  const log = (...args: unknown[]) => { if (!silent) console.log(...args); };
+
+  if (!silent) out.banner();
 
   // ── Auth check ────────────────────────────────────────────────────────
   const auth = await loadAuth();
   if (!auth) {
-    out.error('Not logged in. Run  awarts login  first.');
+    if (!silent) out.error('Not logged in. Run  awarts login  first.');
     return;
   }
 
   // ── Detect providers ──────────────────────────────────────────────────
-  const detectSpin = out.spinner('Detecting installed providers...');
+  const detectSpin = makeSpin('Detecting installed providers...');
   detectSpin.start();
 
   const results = await detectAll();
@@ -36,37 +43,39 @@ export async function syncCommand(opts: { note?: string } = {}): Promise<void> {
 
   if (detected.length === 0) {
     detectSpin.warn('No AI coding tools detected.');
-    console.log();
-    out.dim('Looked for: Claude, Codex, Gemini, Antigravity');
-    out.dim('Make sure you have used one of these tools on this machine.');
-    console.log();
+    log();
+    if (!silent) out.dim('Looked for: Claude, Codex, Gemini, Antigravity');
+    if (!silent) out.dim('Make sure you have used one of these tools on this machine.');
+    log();
     return;
   }
 
   const names = detected.map((r) => out.providerLabel(r.adapter.name)).join(', ');
   detectSpin.succeed(`Detected: ${names}`);
-  console.log();
+  log();
 
   // ── Read from all detected adapters ──────────────────────────────────
   const allEntries: UsageEntry[] = [];
 
   for (const { adapter } of detected) {
-    const spin = out.spinner(`Reading ${adapter.displayName} data...`);
+    const spin = makeSpin(`Reading ${adapter.displayName} data...`);
     spin.start();
 
     try {
       const entries = await adapter.read();
       if (entries.length === 0) {
         spin.info(chalk.dim(`${adapter.displayName} -- no usage data found`));
-        if (adapter.name === 'codex') {
-          out.dim(`    Set your OpenAI API key:  ${chalk.cyan('awarts keys set openai <your-key>')}`);
-          out.dim(`    Or create usage files manually — see ${chalk.cyan('awarts.com/docs')}`);
-        } else if (adapter.name === 'gemini') {
-          out.dim(`    Set your Google API key:  ${chalk.cyan('awarts keys set google <your-key>')}`);
-          out.dim(`    Or create usage files manually — see ${chalk.cyan('awarts.com/docs')}`);
-        } else if (adapter.name === 'antigravity') {
-          out.dim(`    Set your API key:  ${chalk.cyan('awarts keys set antigravity <your-key>')}`);
-          out.dim(`    Or create usage files manually — see ${chalk.cyan('awarts.com/docs')}`);
+        if (!silent) {
+          if (adapter.name === 'codex') {
+            out.dim(`    Set your OpenAI API key:  ${chalk.cyan('awarts keys set openai <your-key>')}`);
+            out.dim(`    Or create usage files manually — see ${chalk.cyan('awarts.com/docs')}`);
+          } else if (adapter.name === 'gemini') {
+            out.dim(`    Set your Google API key:  ${chalk.cyan('awarts keys set google <your-key>')}`);
+            out.dim(`    Or create usage files manually — see ${chalk.cyan('awarts.com/docs')}`);
+          } else if (adapter.name === 'antigravity') {
+            out.dim(`    Set your API key:  ${chalk.cyan('awarts keys set antigravity <your-key>')}`);
+            out.dim(`    Or create usage files manually — see ${chalk.cyan('awarts.com/docs')}`);
+          }
         }
       } else {
         allEntries.push(...entries);
@@ -79,21 +88,23 @@ export async function syncCommand(opts: { note?: string } = {}): Promise<void> {
       }
     } catch (err) {
       spin.fail(`${adapter.displayName} -- error reading data`);
-      out.error(err instanceof Error ? err.message : String(err));
+      if (!silent) out.error(err instanceof Error ? err.message : String(err));
     }
   }
 
-  console.log();
+  log();
 
   if (allEntries.length === 0) {
-    out.warn('No usage data found across any provider.');
-    console.log();
-    out.info(`Set API keys to fetch real billing data:`);
-    out.dim(`  ${chalk.cyan('awarts keys set openai <key>')}      — for Codex / OpenAI`);
-    out.dim(`  ${chalk.cyan('awarts keys set google <key>')}      — for Gemini`);
-    out.dim(`  ${chalk.cyan('awarts keys set antigravity <key>')} — for Antigravity`);
-    out.dim(`Or visit ${chalk.cyan('awarts.com/docs')} for manual import instructions.`);
-    console.log();
+    if (!silent) {
+      out.warn('No usage data found across any provider.');
+      console.log();
+      out.info(`Set API keys to fetch real billing data:`);
+      out.dim(`  ${chalk.cyan('awarts keys set openai <key>')}      — for Codex / OpenAI`);
+      out.dim(`  ${chalk.cyan('awarts keys set google <key>')}      — for Gemini`);
+      out.dim(`  ${chalk.cyan('awarts keys set antigravity <key>')} — for Antigravity`);
+      out.dim(`Or visit ${chalk.cyan('awarts.com/docs')} for manual import instructions.`);
+      console.log();
+    }
     return;
   }
 
@@ -102,17 +113,19 @@ export async function syncCommand(opts: { note?: string } = {}): Promise<void> {
   const totalTokens = allEntries.reduce((s, e) => s + e.input_tokens + e.output_tokens, 0);
   const uniqueDates = new Set(allEntries.map((e) => e.date));
 
-  out.divider();
-  out.kv('Total entries', allEntries.length);
-  out.kv('Unique days', uniqueDates.size);
-  out.kv('Total cost', out.usd(totalCost));
-  out.kv('Total tokens', out.tokens(totalTokens));
-  out.divider();
-  console.log();
+  if (!silent) {
+    out.divider();
+    out.kv('Total entries', allEntries.length);
+    out.kv('Unique days', uniqueDates.size);
+    out.kv('Total cost', out.usd(totalCost));
+    out.kv('Total tokens', out.tokens(totalTokens));
+    out.divider();
+  }
+  log();
 
   // ── Submit ───────────────────────────────────────────────────────────
   const hash = hashEntries(allEntries);
-  const submitSpin = out.spinner('Syncing with AWARTS...');
+  const submitSpin = makeSpin('Syncing with AWARTS...');
   submitSpin.start();
 
   // Strip fields the backend may not accept yet
@@ -129,11 +142,13 @@ export async function syncCommand(opts: { note?: string } = {}): Promise<void> {
     if (!res.ok) {
       submitSpin.fail('Sync failed.');
       if (res.status === 401) {
-        out.error('Authentication expired. Run  awarts login  to re-authenticate.');
+        if (!silent) out.error('Authentication expired. Run  awarts login  to re-authenticate.');
       } else {
-        out.error(`Server returned status ${res.status}`);
-        const errorData = res.data as unknown as Record<string, unknown>;
-        if (errorData?.error) out.error(String(errorData.error));
+        if (!silent) {
+          out.error(`Server returned status ${res.status}`);
+          const errorData = res.data as unknown as Record<string, unknown>;
+          if (errorData?.error) out.error(String(errorData.error));
+        }
       }
       return;
     }
@@ -142,36 +157,44 @@ export async function syncCommand(opts: { note?: string } = {}): Promise<void> {
 
     if (errors && errors.length > 0) {
       submitSpin.warn(chalk.yellow(`Synced with ${errors.length} error(s).`));
-      for (const e of errors) {
-        out.error(`  ${e.date} / ${e.provider}: ${e.error}`);
+      if (!silent) {
+        for (const e of errors) {
+          out.error(`  ${e.date} / ${e.provider}: ${e.error}`);
+        }
       }
     } else {
       submitSpin.succeed(chalk.green('Sync complete!'));
     }
 
-    console.log();
-    out.kv('Entries processed', processed);
-    out.kv('Posts created', posts_created);
-    console.log();
-    out.success('Your usage data is now live on AWARTS.');
-    console.log();
+    if (!silent) {
+      console.log();
+      out.kv('Entries processed', processed);
+      out.kv('Posts created', posts_created);
+      console.log();
+      out.success('Your usage data is now live on AWARTS.');
+      console.log();
+    }
 
-    // ── Auto-start daemon if not already running ────────────────────────
-    try {
-      const existingPid = await readPid();
-      const isRunning = existingPid ? isProcessRunning(existingPid) : false;
-      if (!isRunning) {
-        const pid = await spawnDaemon(DEFAULT_INTERVAL_MS);
-        out.dim(`Auto-sync daemon started (PID ${pid}, every 5 min)`);
-        out.dim('Manage with:  awarts daemon status | stop | logs');
-        console.log();
+    // ── Auto-start daemon if not already running (skip when called from daemon) ──
+    if (!silent) {
+      try {
+        const existingPid = await readPid();
+        const isRunning = existingPid ? isProcessRunning(existingPid) : false;
+        if (!isRunning) {
+          const pid = await spawnDaemon(DEFAULT_INTERVAL_MS);
+          out.dim(`Auto-sync daemon started (PID ${pid}, every 5 min)`);
+          out.dim('Manage with:  awarts daemon status | stop | logs');
+          console.log();
+        }
+      } catch {
+        // Non-critical -- don't fail the sync over daemon issues
       }
-    } catch {
-      // Non-critical -- don't fail the sync over daemon issues
     }
   } catch (err) {
     submitSpin.fail('Could not reach the AWARTS server.');
-    out.error(err instanceof Error ? err.message : String(err));
-    out.dim('Is the backend running? Check AWARTS_API_URL or ~/.awarts/config.json');
+    if (!silent) {
+      out.error(err instanceof Error ? err.message : String(err));
+      out.dim('Is the backend running? Check AWARTS_API_URL or ~/.awarts/config.json');
+    }
   }
 }

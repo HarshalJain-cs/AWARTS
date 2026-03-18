@@ -138,23 +138,45 @@ export async function daemonLogsCommand(lines: number): Promise<void> {
 export async function daemonRunLoop(intervalMs: number): Promise<void> {
   await appendLog(`Daemon started. Interval: ${intervalMs}ms (${Math.round(intervalMs / 60000)} min)`);
 
-  const runSync = async () => {
+  let consecutiveFailures = 0;
+
+  const runSync = async (): Promise<boolean> => {
+    // Check auth before each sync -- exit if user logged out
+    const auth = await loadAuth();
+    if (!auth) {
+      await appendLog('Auth revoked (user logged out). Daemon exiting.');
+      await removePid();
+      return false;
+    }
+
     await appendLog('Starting sync...');
     try {
-      await syncCommand();
+      await syncCommand({ silent: true });
       await appendLog('Sync completed successfully.');
+      consecutiveFailures = 0;
     } catch (err) {
+      consecutiveFailures++;
       const msg = err instanceof Error ? err.message : String(err);
-      await appendLog(`Sync failed: ${msg}`);
+      await appendLog(`Sync failed (attempt ${consecutiveFailures}): ${msg}`);
+
+      // After 10 consecutive failures, exit to avoid spinning forever
+      if (consecutiveFailures >= 10) {
+        await appendLog('Too many consecutive failures. Daemon exiting.');
+        await removePid();
+        return false;
+      }
     }
+    return true;
   };
 
   // Run immediately on start
-  await runSync();
+  const ok = await runSync();
+  if (!ok) return;
 
   // Then loop
   while (true) {
     await new Promise((resolve) => setTimeout(resolve, intervalMs));
-    await runSync();
+    const keepRunning = await runSync();
+    if (!keepRunning) return;
   }
 }
