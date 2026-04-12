@@ -225,8 +225,8 @@ awarts/
 
 ### Prerequisites
 
-- Node.js 18+
-- npm or bun
+- **Node.js 18+** — [Download here](https://nodejs.org)
+- **npm** (comes with Node.js) or [Bun](https://bun.sh)
 
 ### Setup
 

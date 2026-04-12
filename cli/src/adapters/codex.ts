@@ -52,8 +52,10 @@ const CONFIG_DIRS = [
 // ── OpenAI Pricing (per million tokens, USD) ────────────────────────────
 // Updated: March 2026 — https://openai.com/api/pricing/
 const CODEX_PRICING: Record<string, { input: number; output: number }> = {
-  // GPT-5.x series
+  // GPT-5.x series (latest models - 2026)
   'gpt-5.4':          { input: 2.50,  output: 15.00 },
+  'gpt-5.4-mini':     { input: 0.50,  output: 3.00 },
+  'gpt-5.4-nano':     { input: 0.10,  output: 0.40 },
   'gpt-5.4-pro':      { input: 30.00, output: 180.00 },
   'gpt-5.3':          { input: 1.75,  output: 14.00 },
   'gpt-5.3-codex':    { input: 1.75,  output: 14.00 },
@@ -75,15 +77,20 @@ const CODEX_PRICING: Record<string, { input: number; output: number }> = {
   'gpt-4.1-nano':     { input: 0.10,  output: 0.40 },
   'gpt-4o':           { input: 2.50,  output: 10.00 },
   'gpt-4o-mini':      { input: 0.15,  output: 0.60 },
-  // o-series (reasoning)
+  'gpt-4':            { input: 30.00, output: 60.00 },
+  'gpt-4-turbo':      { input: 10.00, output: 30.00 },
+  'gpt-3.5-turbo':    { input: 0.50,  output: 1.50 },
+  // o-series (reasoning models)
   'o3':               { input: 2.00,  output: 8.00 },
   'o3-pro':           { input: 20.00, output: 80.00 },
   'o3-mini':          { input: 0.55,  output: 2.20 },
+  'o4':               { input: 2.20,  output: 8.80 },
   'o4-mini':          { input: 1.10,  output: 4.40 },
   'o1':               { input: 15.00, output: 60.00 },
   'o1-mini':          { input: 0.55,  output: 2.20 },
   'o1-pro':           { input: 150.00, output: 600.00 },
   // Codex-specific models
+  'codex':            { input: 1.10,  output: 4.40 },
   'codex-mini':       { input: 0.75,  output: 3.00 },
 };
 // Default: o4-mini tier — the standard model for Codex CLI

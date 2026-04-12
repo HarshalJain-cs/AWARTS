@@ -16,7 +16,10 @@ Or install globally:
 npm i -g awarts
 ```
 
-Requires **Node.js 18+**.
+### Requirements
+
+- **Node.js 18+** — [Download here](https://nodejs.org)
+- **npm** (bundled with Node.js) or [Bun](https://bun.sh)
 
 ## Quick Start
 

@@ -49,7 +49,7 @@ interface StatsCache {
 }
 
 // ── Pricing per million tokens (USD) ─────────────────────────────────────
-// Updated: March 2026 — https://platform.claude.com/docs/en/about-claude/pricing
+// Updated: April 2026 — https://platform.claude.com/docs/en/about-claude/pricing
 
 interface ModelPricing {
   input: number;
@@ -59,25 +59,31 @@ interface ModelPricing {
 }
 
 const MODEL_PRICING: Record<string, ModelPricing> = {
-  // Opus 4.6 / 4.5 — $5 input, $25 output
+  // Opus 4.6 / 4.5 — $5 input, $25 output (recommended flagship as of Feb 2026)
   'claude-opus-4-6':    { input: 5,   output: 25,  cacheRead: 0.50,  cacheWrite: 6.25  },
   'claude-opus-4-5':    { input: 5,   output: 25,  cacheRead: 0.50,  cacheWrite: 6.25  },
-  // Opus 4.1 / 4 / 3 — $15 input, $75 output
+  // Opus 4.1 / 4 / 3 — $15 input, $75 output (legacy)
   'claude-opus-4-1':    { input: 15,  output: 75,  cacheRead: 1.50,  cacheWrite: 18.75 },
   'claude-opus-4':      { input: 15,  output: 75,  cacheRead: 1.50,  cacheWrite: 18.75 },
+  'claude-opus-3-5':    { input: 15,  output: 75,  cacheRead: 1.50,  cacheWrite: 18.75 },
   'claude-opus-3':      { input: 15,  output: 75,  cacheRead: 1.50,  cacheWrite: 18.75 },
-  // Sonnet 4.6 / 4.5 / 4 / 3.7 — $3 input, $15 output
+  // Sonnet 4.6 / 4.5 / 4 / 3.7 — $3 input, $15 output (recommended workhorse)
   'claude-sonnet-4-6':  { input: 3,   output: 15,  cacheRead: 0.30,  cacheWrite: 3.75  },
   'claude-sonnet-4-5':  { input: 3,   output: 15,  cacheRead: 0.30,  cacheWrite: 3.75  },
   'claude-sonnet-4':    { input: 3,   output: 15,  cacheRead: 0.30,  cacheWrite: 3.75  },
   'claude-sonnet-3-7':  { input: 3,   output: 15,  cacheRead: 0.30,  cacheWrite: 3.75  },
   'claude-sonnet-3-5':  { input: 3,   output: 15,  cacheRead: 0.30,  cacheWrite: 3.75  },
-  // Haiku 4.5 — $1 input, $5 output
+  'claude-sonnet-3-5-v2': { input: 3, output: 15,  cacheRead: 0.30,  cacheWrite: 3.75  },
+  // Haiku 4.5 — $1 input, $5 output (recommended fast model)
   'claude-haiku-4-5':   { input: 1,   output: 5,   cacheRead: 0.10,  cacheWrite: 1.25  },
   // Haiku 3.5 — $0.80 input, $4 output
   'claude-haiku-3-5':   { input: 0.80, output: 4,  cacheRead: 0.08,  cacheWrite: 1.0   },
-  // Haiku 3 — $0.25 input, $1.25 output
+  // Haiku 3 — $0.25 input, $1.25 output (legacy, retiring April 19, 2026)
   'claude-haiku-3':     { input: 0.25, output: 1.25, cacheRead: 0.03, cacheWrite: 0.30 },
+  'claude-haiku-3-0':   { input: 0.25, output: 1.25, cacheRead: 0.03, cacheWrite: 0.30 },
+  // Claude 2 series (legacy)
+  'claude-2.1':         { input: 8,   output: 24,  cacheRead: 0.80,  cacheWrite: 10.0  },
+  'claude-2.0':         { input: 8,   output: 24,  cacheRead: 0.80,  cacheWrite: 10.0  },
 };
 
 // Fallback: Sonnet-tier pricing

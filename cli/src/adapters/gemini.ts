@@ -38,25 +38,37 @@ const DETECT_DIRS = [
 ];
 
 // ── Gemini Pricing (per million tokens, USD) ────────────────────────────
-// Updated: March 2026 — https://ai.google.dev/gemini-api/docs/pricing
+// Updated: April 2026 — https://ai.google.dev/gemini-api/docs/pricing
 const GEMINI_PRICING: Record<string, { input: number; output: number }> = {
-  // Latest production models
-  'gemini-2.5-pro':          { input: 1.25,  output: 10.00 },
-  'gemini-2.5-flash':        { input: 0.30,  output: 2.50 },
-  'gemini-2.5-flash-lite':   { input: 0.10,  output: 0.40 },
-  // Preview / newer models
+  // Latest models - Gemini 3.1 series (2026)
   'gemini-3.1-pro':              { input: 2.00,  output: 12.00 },
+  'gemini-3.1-pro-preview':      { input: 2.00,  output: 12.00 },
+  'gemini-3.1-flash':            { input: 0.50,  output: 3.00 },
   'gemini-3.1-flash-lite':       { input: 0.25,  output: 1.50 },
+  'gemini-3.1-flash-image':      { input: 0.50,  output: 3.00 },
+  // Gemini 3 series
+  'gemini-3-pro':                { input: 2.00,  output: 12.00 },
   'gemini-3-flash':              { input: 0.50,  output: 3.00 },
   'gemini-3-flash-preview':      { input: 0.50,  output: 3.00 },
-  // Older models
-  'gemini-2.0-flash':        { input: 0.10,  output: 0.40 },
-  'gemini-2.0-flash-lite':   { input: 0.075, output: 0.30 },
-  'gemini-1.5-pro':          { input: 1.25,  output: 5.00 },
-  'gemini-1.5-flash':        { input: 0.075, output: 0.30 },
-  'gemini-1.5-flash-8b':     { input: 0.0375, output: 0.15 },
+  'gemini-3-pro-image':          { input: 2.50,  output: 15.00 },
+  // Gemini 2.5 series
+  'gemini-2.5-pro':              { input: 1.25,  output: 10.00 },
+  'gemini-2.5-flash':            { input: 0.30,  output: 2.50 },
+  'gemini-2.5-flash-lite':       { input: 0.10,  output: 0.40 },
+  // Gemini 2.0 series
+  'gemini-2.0-flash':            { input: 0.10,  output: 0.40 },
+  'gemini-2.0-flash-lite':       { input: 0.075, output: 0.30 },
+  // Gemini 1.5 series (legacy)
+  'gemini-1.5-pro':              { input: 1.25,  output: 5.00 },
+  'gemini-1.5-pro-002':          { input: 1.25,  output: 5.00 },
+  'gemini-1.5-flash':            { input: 0.075, output: 0.30 },
+  'gemini-1.5-flash-002':        { input: 0.075, output: 0.30 },
+  'gemini-1.5-flash-8b':         { input: 0.0375, output: 0.15 },
+  // Experimental/Beta
+  'gemini-exp-1206':             { input: 0.00,  output: 0.00 }, // Free tier
+  'gemini-2.0-flash-thinking':   { input: 0.10,  output: 0.40 },
 };
-const DEFAULT_PRICING = { input: 0.30, output: 2.50 }; // 2.5 Flash as default
+const DEFAULT_PRICING = { input: 0.50, output: 3.00 }; // Gemini 3 Flash as default
 
 function calculateCost(
   inputTokens: number,

@@ -132,7 +132,13 @@ const sections: DocSection[] = [
         </div>
 
         <Heading3>System Requirements</Heading3>
-        <Para>Node.js 18+ and a terminal. Works on macOS, Linux, and Windows (via WSL or PowerShell). Supports Bun and pnpm as well.</Para>
+        <Para>
+          <strong>Node.js 18+</strong> — <a href="https://nodejs.org" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Download from nodejs.org</a>
+          <br />
+          <strong>npm</strong> (bundled with Node.js)
+          <br />
+          Works on macOS, Linux, and Windows (via WSL or PowerShell). Also supports Bun and pnpm.
+        </Para>
       </>
     ),
   },
@@ -400,10 +406,10 @@ EOF`}</CodeBlock>
         <TableWrapper
           headers={['Provider', 'Input (per 1M)', 'Output (per 1M)', 'Example Session']}
           rows={[
-            ['Claude 4 Sonnet', '$3.00', '$15.00', '~$0.45 for 10K in / 25K out'],
-            ['Codex', '$2.00', '$8.00', '~$0.28 for 15K in / 30K out'],
-            ['Gemini 2.5 Pro', '$1.25', '$10.00', '~$0.35 for 20K in / 30K out'],
-            ['Antigravity', '$2.50', '$12.00', '~$0.40 for 15K in / 25K out'],
+            ['Claude Sonnet 4.5', '$3.00', '$15.00', '~$0.41 for 10K in / 25K out'],
+            ['GPT-4.1', '$2.00', '$8.00', '~$0.27 for 15K in / 30K out'],
+            ['Gemini 2.5 Pro', '$1.25', '$10.00', '~$0.33 for 20K in / 30K out'],
+            ['Antigravity', '$2.50', '$12.00', '~$0.34 for 15K in / 25K out'],
           ]}
         />
 
