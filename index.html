@@ -70,6 +70,15 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
 
+    <!-- Microsoft Clarity -->
+    <script type="text/javascript">
+        (function(c,l,a,r,i,t,y){
+            c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+            t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+            y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+        })(window, document, "clarity", "script", "wi8fh1il9s");
+    </script>
+
     <!-- Structured Data (JSON-LD) -->
     <script type="application/ld+json">
     {
@@ -284,7 +293,7 @@
     </script>
 
     <!-- Security -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com https://*.clerk.accounts.dev https://*.clerk.com https://*.vercel-scripts.com https://accounts.google.com; connect-src 'self' ws: wss: https://*.convex.cloud wss://*.convex.cloud https://*.clerk.accounts.dev https://*.clerk.com https://*.clerk.dev https://clerk-telemetry.com https://*.vercel-scripts.com https://*.vercel-insights.com https://accounts.google.com https://*.googleapis.com; img-src 'self' https://*.convex.cloud https://img.clerk.com https://framerusercontent.com https://ui-avatars.com https://*.googleusercontent.com data: blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com; font-src 'self' https://fonts.gstatic.com data:; frame-src https://*.clerk.accounts.dev https://*.clerk.com https://challenges.cloudflare.com https://accounts.google.com; worker-src 'self' blob:; media-src 'self'" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com https://*.clerk.accounts.dev https://*.clerk.com https://*.vercel-scripts.com https://accounts.google.com https://www.clarity.ms; connect-src 'self' ws: wss: https://*.convex.cloud wss://*.convex.cloud https://*.clerk.accounts.dev https://*.clerk.com https://*.clerk.dev https://clerk-telemetry.com https://*.vercel-scripts.com https://*.vercel-insights.com https://accounts.google.com https://*.googleapis.com https://*.clarity.ms; img-src 'self' https://*.convex.cloud https://img.clerk.com https://framerusercontent.com https://ui-avatars.com https://*.googleusercontent.com https://*.clarity.ms data: blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com; font-src 'self' https://fonts.gstatic.com data:; frame-src https://*.clerk.accounts.dev https://*.clerk.com https://challenges.cloudflare.com https://accounts.google.com; worker-src 'self' blob:; media-src 'self'" />
     <meta name="referrer" content="strict-origin-when-cross-origin" />
     <!-- Additional security headers (X-Frame-Options, HSTS, etc.) are set via HTTP headers in vercel.json -->
   </head>
