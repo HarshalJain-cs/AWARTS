@@ -1,0 +1,115 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # Test Web App
+  web-test:
+    name: Web App - Test & Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run linter
+        run: npm run lint
+
+      - name: Run type check
+        run: npx tsc --noEmit
+
+      - name: Run tests
+        run: npm test
+
+      - name: Build web app
+        run: npm run build:dev
+        env:
+          VITE_CONVEX_URL: ${{ secrets.VITE_CONVEX_URL }}
+
+      - name: Check bundle size
+        run: |
+          if [ -d "dist" ]; then
+            echo "Bundle size:"
+            du -sh dist/
+          fi
+
+  # Test CLI
+  cli-test:
+    name: CLI - Test & Build
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        node-version: ['18', '20']
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+          cache-dependency-path: cli/package-lock.json
+
+      - name: Install CLI dependencies
+        working-directory: ./cli
+        run: npm ci
+
+      - name: Run CLI type check
+        working-directory: ./cli
+        run: npx tsc --noEmit
+
+      - name: Run CLI tests
+        working-directory: ./cli
+        run: npm test
+
+      - name: Build CLI
+        working-directory: ./cli
+        run: npm run build
+
+      - name: Test CLI installation
+        working-directory: ./cli
+        run: |
+          npm link
+          awarts --version
+          npm unlink awarts
+
+  # Security checks
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run npm audit (Web)
+        run: npm audit --audit-level=high
+        continue-on-error: true
+
+      - name: Run npm audit (CLI)
+        working-directory: ./cli
+        run: npm audit --audit-level=high
+        continue-on-error: true
+
+      - name: Check for secrets
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD

@@ -1,0 +1,107 @@
+name: Greetings
+
+on:
+  pull_request_target:
+    types: [opened]
+  issues:
+    types: [opened]
+
+jobs:
+  greeting:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
+
+    steps:
+      - name: Welcome first-time contributors
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const isFirstTime = async (type) => {
+              const { data } = type === 'issue'
+                ? await github.rest.issues.listForRepo({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    creator: context.payload.sender.login,
+                    state: 'all'
+                  })
+                : await github.rest.pulls.list({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    creator: context.payload.sender.login,
+                    state: 'all'
+                  });
+
+              return data.length === 1;
+            };
+
+            const createWelcomeMessage = (type) => {
+              if (type === 'issue') {
+                return `👋 **Welcome to AWARTS!**
+
+                Thanks for opening your first issue! We're excited to have you as part of our community.
+
+                **What happens next?**
+                - A maintainer will review your issue and add appropriate labels
+                - If it's a bug, we'll try to reproduce it
+                - If it's a feature request, we'll discuss the implementation approach
+
+                **While you wait:**
+                - Check out our [Contributing Guide](https://github.com/HarshalJain-cs/AWARTS/blob/main/cli/CONTRIBUTING.md)
+                - Join discussions in other issues
+                - Star the repo if you find it useful! ⭐
+
+                We aim to respond within 48 hours. Thanks for helping make AWARTS better! 🚀`;
+              } else {
+                return `🎉 **Congratulations on your first Pull Request!**
+
+                Thank you for contributing to AWARTS! Here's what happens next:
+
+                **Automated Checks:**
+                - 🤖 CI will run tests, linting, and type checking
+                - 📊 You'll see check results below (usually takes 2-5 minutes)
+
+                **Review Process:**
+                1. Automated checks must pass ✅
+                2. A maintainer will review your code
+                3. We may request changes or ask questions
+                4. Once approved, we'll merge your PR! 🎊
+
+                **Tips for faster review:**
+                - Ensure all CI checks pass
+                - Keep the PR focused on a single change
+                - Respond to review comments promptly
+                - Update your branch if requested
+
+                **Need help?** Feel free to ask questions in the comments!
+
+                Thank you for making AWARTS better! 💙`;
+              }
+            };
+
+            const type = context.payload.issue ? 'issue' : 'pr';
+            const number = context.payload.issue?.number || context.payload.pull_request?.number;
+
+            const firstTime = await isFirstTime(type);
+
+            if (firstTime) {
+              const message = createWelcomeMessage(type);
+
+              if (type === 'issue') {
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: number,
+                  body: message
+                });
+              } else {
+                await github.rest.pulls.createReview({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  pull_number: number,
+                  event: 'COMMENT',
+                  body: message
+                });
+              }
+            }
