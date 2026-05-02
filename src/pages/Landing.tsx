@@ -5,6 +5,8 @@ import { ArrowRight, Terminal, Share2, Trophy, Copy, Menu, X, ShieldCheck, Activ
 import { Sun, Moon } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { SEO } from '@/components/SEO';
+import { Waves } from '@/components/ui/wave-background';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 import { TerminalDemo } from '@/components/TerminalDemo';
 const ActivityCard = lazy(() => import('@/components/ActivityCard').then(m => ({ default: m.ActivityCard })));
@@ -44,6 +46,8 @@ export default function Landing() {
     return document.documentElement.classList.contains('dark');
   });
 
+  const isMobile = useIsMobile();
+
 
   const statsReveal = useScrollReveal(0.3);
   const sessionsReveal = useScrollReveal(0.15);
@@ -74,14 +78,25 @@ export default function Landing() {
         keywords="Strava for coding, Strava for AI coding, Strava for AI, Strava for developers, Strava for programmers, Strava but for coding, code tracker, AI code tracker, AI coding tracker, coding tracker app, coding activity tracker, coding session tracker, developer activity tracker, developer leaderboard, coding streak tracker, coding competition app, Claude tracker, Claude Code tracker, Claude usage tracker, track Claude usage, Codex tracker, OpenAI Codex tracker, Gemini tracker, Google Gemini tracker, Antigravity tracker, AI usage tracker, AI cost tracker, AI token tracker, AI spend tracker, track AI spending, AI coding leaderboard, vibe coding tracker, LLM usage tracker, cursor usage tracker, copilot usage tracker, developer stats, coding analytics, AI productivity tracker, open source coding tracker, free coding tracker, npx awarts"
       />
 
-      {/* Lightweight CSS gradient background — replaces heavy Waves SVG animation */}
-      <div
-        className="fixed inset-0 z-0 pointer-events-none"
-        aria-hidden="true"
-        style={{
-          background: 'radial-gradient(ellipse 80% 60% at 50% -10%, hsl(18 82% 50% / 0.08) 0%, transparent 70%)',
-        }}
-      />
+      {/* Background — Waves animation on desktop, static gradient on mobile */}
+      {!isMobile ? (
+        <div className="fixed inset-0 z-0 pointer-events-none opacity-40">
+          <Waves
+            className="w-full h-full"
+            strokeColor={isDark ? "hsl(var(--primary) / 0.3)" : "hsl(var(--primary) / 0.5)"}
+            backgroundColor="transparent"
+            pointerSize={0.5}
+          />
+        </div>
+      ) : (
+        <div
+          className="fixed inset-0 z-0 pointer-events-none"
+          aria-hidden="true"
+          style={{
+            background: 'radial-gradient(ellipse 80% 60% at 50% -10%, hsl(18 82% 50% / 0.08) 0%, transparent 70%)',
+          }}
+        />
+      )}
 
       {/* Nav */}
       <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur">
