@@ -11,7 +11,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
-// removed unused import
+import { execFileSync } from 'node:child_process';
 import type { Adapter, UsageEntry } from '../types.js';
 import { getKey } from '../lib/keys.js';
 

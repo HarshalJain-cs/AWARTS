@@ -24,9 +24,10 @@ export function providerLabel(provider: string): string {
 // ── Banners ────────────────────────────────────────────────────────────
 export function banner(): void {
   const logo = chalk.bold.hex('#E87A35')('AWARTS');
+  const v = chalk.dim('v0.3.3');
   const tagline = chalk.dim('Track your AI coding spend');
   console.log();
-  console.log(`  ${logo}  ${tagline}`);
+  console.log(`  ${logo} ${v}  ${tagline}`);
   console.log();
 }
 

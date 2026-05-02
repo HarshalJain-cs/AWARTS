@@ -17,8 +17,22 @@ import path from 'node:path';
 import os from 'node:os';
 import type { Adapter, UsageEntry } from '../types.js';
 
-const CLAUDE_DIR = path.join(os.homedir(), '.claude');
-const STATS_CACHE = path.join(CLAUDE_DIR, 'stats-cache.json');
+const CLAUDE_HOME_DIR = path.join(os.homedir(), '.claude');
+const CLAUDE_CONFIG_DIR = path.join(os.homedir(), '.config', 'claude');
+const CLAUDE_MAC_DIR = path.join(os.homedir(), 'Library', 'Application Support', 'claude');
+
+const STATS_CACHE_PATHS = [
+  path.join(CLAUDE_HOME_DIR, 'stats-cache.json'),
+  path.join(CLAUDE_CONFIG_DIR, 'stats-cache.json'),
+  path.join(CLAUDE_MAC_DIR, 'stats-cache.json'),
+];
+
+async function findStatsCache(): Promise<string | null> {
+  for (const p of STATS_CACHE_PATHS) {
+    if (await fileExists(p)) return p;
+  }
+  return null;
+}
 
 // ── stats-cache.json shape ──────────────────────────────────────────────
 
@@ -145,7 +159,10 @@ async function dirExists(dir: string): Promise<boolean> {
  * based on each day's share of total output tokens.
  */
 async function readStatsCache(): Promise<UsageEntry[]> {
-  const raw = await fs.readFile(STATS_CACHE, 'utf-8');
+  const statsPath = await findStatsCache();
+  if (!statsPath) return [];
+
+  const raw = await fs.readFile(statsPath, 'utf-8');
   const cache: StatsCache = JSON.parse(raw);
 
   const dailyTokens = cache.dailyModelTokens;
@@ -227,10 +244,12 @@ export const claudeAdapter: Adapter = {
   displayName: 'Claude',
 
   async detect(): Promise<boolean> {
-    // Primary check: stats-cache.json exists
-    if (await fileExists(STATS_CACHE)) return true;
-    // Fallback: the .claude directory itself exists (user has Claude installed)
-    if (await dirExists(CLAUDE_DIR)) return true;
+    // Primary check: any of the stats-cache.json paths exist
+    if (await findStatsCache() !== null) return true;
+    // Fallback: any of the known claude directories exist
+    if (await dirExists(CLAUDE_HOME_DIR)) return true;
+    if (await dirExists(CLAUDE_CONFIG_DIR)) return true;
+    if (await dirExists(CLAUDE_MAC_DIR)) return true;
     return false;
   },
 

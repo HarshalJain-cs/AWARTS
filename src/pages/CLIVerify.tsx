@@ -10,7 +10,7 @@ import { SEO } from '@/components/SEO';
 export default function CLIVerify() {
   const [searchParams] = useSearchParams();
   const code = searchParams.get('code') ?? '';
-// removed unused import
+  const { isSignedIn } = useAuth();
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const verifyCLI = useMutation(api.cliAuth.verifyCLIAuth);
 
