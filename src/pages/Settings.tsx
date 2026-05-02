@@ -17,6 +17,17 @@ import { SEO } from '@/components/SEO';
 import { COUNTRIES } from '@/lib/constants';
 import { useDebounce } from '@/hooks/use-debounce';
 import { motion } from 'framer-motion';
+import { 
+  Loader2, 
+  CheckCircle2, 
+  XCircle, 
+  FileUp, 
+  X, 
+  AlertCircle, 
+  Target, 
+  Check, 
+  Copy 
+} from 'lucide-react';
 
 export default function Settings() {
   return (
@@ -277,6 +288,7 @@ function SettingsContent() {
             <TabsTrigger value="privacy">Privacy</TabsTrigger>
             <TabsTrigger value="notifications">Notifications</TabsTrigger>
             <TabsTrigger value="import">Import</TabsTrigger>
+            <TabsTrigger value="extension">Extension</TabsTrigger>
             <TabsTrigger value="account">Account</TabsTrigger>
           </TabsList>
 
@@ -630,6 +642,64 @@ function SettingsContent() {
                 >
                   {copiedDaemon ? <Check className="h-4 w-4 text-primary" /> : <Copy className="h-4 w-4" />}
                 </button>
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="extension" className="space-y-6 mt-6">
+            <div className="space-y-2">
+              <h3 className="text-lg font-bold text-foreground">AWARTS Claude Counter</h3>
+              <p className="text-sm text-muted-foreground">
+                Track your Claude.ai sessions automatically without running any CLI commands.
+              </p>
+            </div>
+
+            <div className="rounded-xl border-2 border-primary bg-primary/5 p-6 space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-lg bg-primary flex items-center justify-center text-primary-foreground">
+                  <Target className="h-6 w-6" />
+                </div>
+                <div>
+                  <p className="font-bold text-foreground">Chrome Extension v1.0.4</p>
+                  <p className="text-xs text-muted-foreground">Local tracking manifest included</p>
+                </div>
+              </div>
+
+              <div className="bg-background/80 rounded-lg border border-primary/20 p-4 space-y-3">
+                <p className="text-sm font-medium text-foreground">1. Download Package</p>
+                <a 
+                  href="https://awarts.club/awarts-claude-counter.zip"
+                  className="inline-flex items-center justify-center w-full py-3 rounded-md bg-primary text-primary-foreground font-bold hover:bg-primary/90 transition-all shadow-md"
+                >
+                  Download .zip Archive
+                </a>
+              </div>
+
+              <div className="space-y-4">
+                <p className="text-sm font-medium text-foreground">2. Installation Guide</p>
+                <div className="grid grid-cols-1 gap-4 text-sm text-muted-foreground">
+                  <div className="flex gap-3">
+                    <span className="flex-shrink-0 h-6 w-6 rounded-full bg-muted flex items-center justify-center text-xs font-bold text-foreground">1</span>
+                    <p>Extract the <code className="bg-muted px-1.5 py-0.5 rounded text-foreground font-mono">.zip</code> to a permanent folder on your machine.</p>
+                  </div>
+                  <div className="flex gap-3">
+                    <span className="flex-shrink-0 h-6 w-6 rounded-full bg-muted flex items-center justify-center text-xs font-bold text-foreground">2</span>
+                    <p>Open <code className="bg-muted px-1.5 py-0.5 rounded text-foreground font-mono">chrome://extensions/</code> and toggle <strong>Developer mode</strong> (top right).</p>
+                  </div>
+                  <div className="flex gap-3">
+                    <span className="flex-shrink-0 h-6 w-6 rounded-full bg-muted flex items-center justify-center text-xs font-bold text-foreground">3</span>
+                    <p>Click <strong>Load unpacked</strong> and select the folder you just extracted.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-primary/10">
+                <div className="flex items-center gap-2 text-xs font-semibold text-primary uppercase tracking-widest">
+                  <CheckCircle2 className="h-4 w-4" /> Ready to Track
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Once installed, simply refresh Claude.ai and look for the AWARTS counter in the sidebar.
+                </p>
               </div>
             </div>
           </TabsContent>

@@ -77,6 +77,33 @@ export function RightSidebar() {
         </div>
       )}
 
+      {/* Extension Card */}
+      <div className="rounded-lg border-2 border-primary/30 bg-primary/5 p-4 space-y-3 relative overflow-hidden group animate-fade-in-up">
+        <div className="absolute top-0 right-0 p-1 opacity-10 group-hover:opacity-20 transition-opacity rotate-12">
+           <Flame className="h-16 w-16 -mr-4 -mt-4" />
+        </div>
+        <div className="relative z-10 space-y-2">
+          <div className="flex items-center gap-2">
+            <div className="h-7 w-7 rounded bg-primary flex items-center justify-center text-primary-foreground">
+              <Target className="h-4 w-4" />
+            </div>
+            <span className="text-xs font-bold text-foreground uppercase tracking-wider">Claude Counter</span>
+          </div>
+          <p className="text-[11px] text-muted-foreground leading-relaxed">
+            Track Claude.ai usage automatically with our browser extension.
+          </p>
+          <a 
+            href="https://awarts.club/awarts-claude-counter.zip"
+            className="flex items-center justify-center w-full py-2 rounded-md bg-primary text-primary-foreground text-[11px] font-bold hover:bg-primary/90 transition-all shadow-sm active:scale-95"
+          >
+            Download Extension
+          </a>
+          <p className="text-[9px] text-muted-foreground text-center italic">
+            Developer mode required in Chrome
+          </p>
+        </div>
+      </div>
+
       {/* Suggested Friends */}
       {suggested && suggested.length > 0 && (
         <div

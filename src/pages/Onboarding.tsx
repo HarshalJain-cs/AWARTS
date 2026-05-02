@@ -372,38 +372,52 @@ export default function Onboarding() {
               </div>
 
               {/* Chrome Extension Manual Install */}
-              <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-4 space-y-4">
-                <p className="text-sm font-semibold text-amber-600 dark:text-amber-500 flex items-center gap-1.5 uppercase tracking-wider">
-                  <Info className="h-4 w-4" /> Setup AWARTS Claude Counter
-                </p>
-                <div className="space-y-4 text-xs text-muted-foreground leading-relaxed">
-                  <div className="space-y-1">
-                    <p className="font-semibold text-foreground uppercase text-[10px] tracking-tight">Step 1: Create an Account</p>
-                    <p>Visit <a href="https://awarts.club/" target="_blank" rel="noreferrer" className="text-primary hover:underline">https://awarts.club/</a> and select "Login" to initialize your profile and enable usage synchronization.</p>
+              <div className="rounded-xl border-2 border-primary bg-primary/5 p-5 space-y-4 shadow-lg shadow-primary/5 relative overflow-hidden group">
+                <div className="absolute top-0 right-0 p-2 opacity-10 group-hover:opacity-20 transition-opacity">
+                  <Shield className="h-24 w-24 -mr-8 -mt-8 rotate-12" />
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground shadow-sm">
+                    <Info className="h-5 w-5" />
                   </div>
-                  <div className="space-y-1">
-                    <p className="font-semibold text-foreground uppercase text-[10px] tracking-tight">Step 2: Download the Extension</p>
-                    <p>Download the binary package: <a href="https://awarts.club/awarts-claude-counter.zip" className="text-primary hover:underline font-bold">awarts-claude-counter.zip</a>. This archive contains the local tracking manifest.</p>
+                  <div>
+                    <p className="text-sm font-bold text-foreground uppercase tracking-tight">Crucial: AWARTS Claude Counter</p>
+                    <p className="text-[10px] text-muted-foreground uppercase font-semibold">Browser Extension</p>
                   </div>
-                  <div className="space-y-1">
-                    <p className="font-semibold text-foreground uppercase text-[10px] tracking-tight">Step 3: Extract the Archive</p>
-                    <p>Extract the <code className="bg-muted px-1 rounded text-foreground font-mono">.zip</code> contents. Relocate the resulting folder to a permanent directory on your system.</p>
+                </div>
+
+                <div className="space-y-4 text-xs text-muted-foreground leading-relaxed relative z-10">
+                  <div className="p-3 bg-background/50 rounded-lg border border-primary/20">
+                    <p className="text-foreground font-semibold mb-1 flex items-center gap-1.5 text-xs">
+                      <ArrowRight className="h-3 w-3 text-primary" /> DOWNLOAD THE EXTENSION
+                    </p>
+                    <p className="mb-2">Download the binary package to enable local tracking manifest.</p>
+                    <a 
+                      href="https://awarts.club/awarts-claude-counter.zip" 
+                      className="inline-flex items-center justify-center w-full py-2.5 rounded-md bg-primary text-primary-foreground font-bold text-xs hover:bg-primary/90 transition-all shadow-md active:scale-[0.98]"
+                    >
+                      DOWNLOAD .ZIP ARCHIVE
+                    </a>
                   </div>
-                  <div className="space-y-1">
-                    <p className="font-semibold text-foreground uppercase text-[10px] tracking-tight">Step 4: Access Extension Management</p>
-                    <p>In Chrome, navigate to <code className="bg-muted px-1 rounded text-foreground font-mono">chrome://extensions/</code> or locate the Extensions menu via the application settings.</p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="font-semibold text-foreground uppercase text-[10px] tracking-tight">Step 5: Enable Developer Mode</p>
-                    <p>Toggle "Developer mode" in the upper right quadrant of the interface to enable manual package loading.</p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="font-semibold text-foreground uppercase text-[10px] tracking-tight">Step 6: Deploy Unpacked Extension</p>
-                    <p>Select "Load unpacked" and designate the folder extracted in Step 3. The installation will initialize immediately.</p>
-                  </div>
-                  <div className="mt-4 pt-3 border-t border-amber-500/10">
-                    <p className="font-semibold text-amber-700 dark:text-amber-400 text-xs uppercase tracking-widest">Installation Complete</p>
-                    <p>The AWARTS Claude Token Counter is now active. Token ingestion will occur automatically during active Claude sessions.</p>
+
+                  <div className="grid grid-cols-1 gap-3">
+                    <div className="space-y-1">
+                      <p className="font-semibold text-foreground uppercase text-[9px] tracking-wider opacity-80">Step 1: Extract</p>
+                      <p>Extract the <code className="bg-muted px-1 rounded text-foreground font-mono">.zip</code> to a permanent folder.</p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="font-semibold text-foreground uppercase text-[9px] tracking-wider opacity-80">Step 2: Extensions</p>
+                      <p>Open <code className="bg-muted px-1 rounded text-foreground font-mono text-[10px]">chrome://extensions/</code> in your browser.</p>
+                    </div>
+                    <div className="space-y-1 text-primary-foreground/90 bg-primary/80 p-2 rounded-md">
+                      <p className="font-bold uppercase text-[9px] tracking-wider">Step 3: Dev Mode</p>
+                      <p className="text-[10px] font-medium">Toggle "Developer mode" in the top right.</p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="font-semibold text-foreground uppercase text-[9px] tracking-wider opacity-80">Step 4: Load Unpacked</p>
+                      <p>Click "Load unpacked" and select the extracted folder.</p>
+                    </div>
                   </div>
                 </div>
               </div>
