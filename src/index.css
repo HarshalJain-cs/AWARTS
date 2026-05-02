@@ -115,10 +115,31 @@
   html {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    /* Prevent horizontal scroll on mobile */
+    overflow-x: hidden;
   }
   body {
     @apply bg-background text-foreground font-sans antialiased;
     font-family: 'Inter', system-ui, sans-serif;
+    /* Prevent horizontal overflow on mobile */
+    overflow-x: hidden;
+    /* Better text rendering on mobile */
+    -webkit-text-size-adjust: 100%;
+  }
+  /* Ensure images don't overflow on mobile */
+  img {
+    max-width: 100%;
+    height: auto;
+  }
+  /* Minimum touch target size (accessibility + mobile usability) */
+  button, a, [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  /* Exception for inline/icon-only elements */
+  button.no-min, a.no-min {
+    min-height: unset;
+    min-width: unset;
   }
   /* Smooth border-color transitions on cards */
   .rounded-lg[class*="border"] {
