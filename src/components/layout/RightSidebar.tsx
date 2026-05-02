@@ -89,17 +89,16 @@ export function RightSidebar() {
             <span className="text-xs font-bold text-foreground uppercase tracking-wider">Claude Counter</span>
           </div>
           <p className="text-[11px] text-muted-foreground leading-relaxed">
-            Track Claude.ai usage automatically with our browser extension.
+            Auto-track Claude.ai sessions — now live on the Chrome Web Store.
           </p>
           <a
-            href="https://awarts.club/awarts-claude-counter.zip"
+            href="https://chromewebstore.google.com/detail/ocfdlilejljfjcnpjkadccegnaloeolk"
+            target="_blank"
+            rel="noopener noreferrer"
             className="flex items-center justify-center w-full py-2 rounded-md bg-primary text-primary-foreground text-[11px] font-bold hover:bg-primary/90 transition-all shadow-sm active:scale-95"
           >
-            Download Extension
+            Add to Chrome — Free
           </a>
-          <p className="text-[9px] text-muted-foreground text-center italic">
-            Developer mode required in Chrome
-          </p>
         </div>
       </div>
 

@@ -371,55 +371,31 @@ export default function Onboarding() {
                 </div>
               </div>
 
-              {/* Chrome Extension Manual Install */}
-              <div className="rounded-xl border-2 border-primary bg-primary/5 p-5 space-y-4 shadow-lg shadow-primary/5 relative overflow-hidden group">
+              {/* Chrome Extension — Chrome Web Store */}
+              <div className="rounded-xl border-2 border-primary bg-primary/5 p-5 space-y-3 shadow-lg shadow-primary/5 relative overflow-hidden group">
                 <div className="absolute top-0 right-0 p-2 opacity-10 group-hover:opacity-20 transition-opacity">
                   <Shield className="h-24 w-24 -mr-8 -mt-8 rotate-12" />
                 </div>
-                
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 relative z-10">
                   <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground shadow-sm">
                     <Info className="h-5 w-5" />
                   </div>
                   <div>
-                    <p className="text-sm font-bold text-foreground uppercase tracking-tight">Crucial: AWARTS Claude Counter</p>
-                    <p className="text-[10px] text-muted-foreground uppercase font-semibold">Browser Extension</p>
+                    <p className="text-sm font-bold text-foreground uppercase tracking-tight">AWARTS Claude Counter</p>
+                    <p className="text-[10px] text-muted-foreground uppercase font-semibold">Now live on Chrome Web Store</p>
                   </div>
                 </div>
-
-                <div className="space-y-4 text-xs text-muted-foreground leading-relaxed relative z-10">
-                  <div className="p-3 bg-background/50 rounded-lg border border-primary/20">
-                    <p className="text-foreground font-semibold mb-1 flex items-center gap-1.5 text-xs">
-                      <ArrowRight className="h-3 w-3 text-primary" /> DOWNLOAD THE EXTENSION
-                    </p>
-                    <p className="mb-2">Download the binary package to enable local tracking manifest.</p>
-                    <a 
-                      href="https://awarts.club/awarts-claude-counter.zip" 
-                      className="inline-flex items-center justify-center w-full py-2.5 rounded-md bg-primary text-primary-foreground font-bold text-xs hover:bg-primary/90 transition-all shadow-md active:scale-[0.98]"
-                    >
-                      DOWNLOAD .ZIP ARCHIVE
-                    </a>
-                  </div>
-
-                  <div className="grid grid-cols-1 gap-3">
-                    <div className="space-y-1">
-                      <p className="font-semibold text-foreground uppercase text-[9px] tracking-wider opacity-80">Step 1: Extract</p>
-                      <p>Extract the <code className="bg-muted px-1 rounded text-foreground font-mono">.zip</code> to a permanent folder.</p>
-                    </div>
-                    <div className="space-y-1">
-                      <p className="font-semibold text-foreground uppercase text-[9px] tracking-wider opacity-80">Step 2: Extensions</p>
-                      <p>Open <code className="bg-muted px-1 rounded text-foreground font-mono text-[10px]">chrome://extensions/</code> in your browser.</p>
-                    </div>
-                    <div className="space-y-1 text-primary-foreground/90 bg-primary/80 p-2 rounded-md">
-                      <p className="font-bold uppercase text-[9px] tracking-wider">Step 3: Dev Mode</p>
-                      <p className="text-[10px] font-medium">Toggle "Developer mode" in the top right.</p>
-                    </div>
-                    <div className="space-y-1">
-                      <p className="font-semibold text-foreground uppercase text-[9px] tracking-wider opacity-80">Step 4: Load Unpacked</p>
-                      <p>Click "Load unpacked" and select the extracted folder.</p>
-                    </div>
-                  </div>
-                </div>
+                <p className="text-xs text-muted-foreground relative z-10">
+                  Install our browser extension to automatically track every Claude.ai session — no setup required.
+                </p>
+                <a
+                  href="https://chromewebstore.google.com/detail/ocfdlilejljfjcnpjkadccegnaloeolk"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center w-full py-2.5 rounded-md bg-primary text-primary-foreground font-bold text-xs hover:bg-primary/90 transition-all shadow-md active:scale-[0.98] relative z-10"
+                >
+                  Add to Chrome — Free
+                </a>
               </div>
 
               {/* Pro subscription tips */}

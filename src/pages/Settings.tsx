@@ -650,7 +650,7 @@ function SettingsContent() {
             <div className="space-y-2">
               <h3 className="text-lg font-bold text-foreground">AWARTS Claude Counter</h3>
               <p className="text-sm text-muted-foreground">
-                Track your Claude.ai sessions automatically without running any CLI commands.
+                Automatically track every Claude.ai session — now live on the Chrome Web Store.
               </p>
             </div>
 
@@ -660,45 +660,30 @@ function SettingsContent() {
                   <Target className="h-6 w-6" />
                 </div>
                 <div>
-                  <p className="font-bold text-foreground">Chrome Extension v1.0.4</p>
-                  <p className="text-xs text-muted-foreground">Local tracking manifest included</p>
+                  <p className="font-bold text-foreground">Chrome Extension</p>
+                  <p className="text-xs text-muted-foreground">Official Chrome Web Store release</p>
                 </div>
               </div>
 
-              <div className="bg-background/80 rounded-lg border border-primary/20 p-4 space-y-3">
-                <p className="text-sm font-medium text-foreground">1. Download Package</p>
-                <a 
-                  href="https://awarts.club/awarts-claude-counter.zip"
-                  className="inline-flex items-center justify-center w-full py-3 rounded-md bg-primary text-primary-foreground font-bold hover:bg-primary/90 transition-all shadow-md"
-                >
-                  Download .zip Archive
-                </a>
-              </div>
+              <p className="text-sm text-muted-foreground">
+                Install directly from the Chrome Web Store — no developer mode, no zip files, no manual steps required.
+              </p>
 
-              <div className="space-y-4">
-                <p className="text-sm font-medium text-foreground">2. Installation Guide</p>
-                <div className="grid grid-cols-1 gap-4 text-sm text-muted-foreground">
-                  <div className="flex gap-3">
-                    <span className="flex-shrink-0 h-6 w-6 rounded-full bg-muted flex items-center justify-center text-xs font-bold text-foreground">1</span>
-                    <p>Extract the <code className="bg-muted px-1.5 py-0.5 rounded text-foreground font-mono">.zip</code> to a permanent folder on your machine.</p>
-                  </div>
-                  <div className="flex gap-3">
-                    <span className="flex-shrink-0 h-6 w-6 rounded-full bg-muted flex items-center justify-center text-xs font-bold text-foreground">2</span>
-                    <p>Open <code className="bg-muted px-1.5 py-0.5 rounded text-foreground font-mono">chrome://extensions/</code> and toggle <strong>Developer mode</strong> (top right).</p>
-                  </div>
-                  <div className="flex gap-3">
-                    <span className="flex-shrink-0 h-6 w-6 rounded-full bg-muted flex items-center justify-center text-xs font-bold text-foreground">3</span>
-                    <p>Click <strong>Load unpacked</strong> and select the folder you just extracted.</p>
-                  </div>
-                </div>
-              </div>
+              <a
+                href="https://chromewebstore.google.com/detail/ocfdlilejljfjcnpjkadccegnaloeolk"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center w-full py-3 rounded-md bg-primary text-primary-foreground font-bold hover:bg-primary/90 transition-all shadow-md"
+              >
+                Add to Chrome — Free
+              </a>
 
               <div className="pt-4 border-t border-primary/10">
                 <div className="flex items-center gap-2 text-xs font-semibold text-primary uppercase tracking-widest">
                   <CheckCircle2 className="h-4 w-4" /> Ready to Track
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Once installed, simply refresh Claude.ai and look for the AWARTS counter in the sidebar.
+                  Once installed, refresh Claude.ai and the AWARTS counter will appear automatically.
                 </p>
               </div>
             </div>
