@@ -69,7 +69,7 @@ export function AppShell({ children }: AppShellProps) {
       <Navbar />
       <div className="flex flex-1 min-h-0 w-full max-w-screen-2xl mx-auto overflow-hidden">
         <RecoverBoundary><LeftSidebar /></RecoverBoundary>
-        <main className={`flex-1 min-w-0 relative flex flex-col h-full pb-16 lg:pb-0 ${isDocsPage ? 'overflow-hidden' : 'overflow-y-auto overscroll-contain sidebar-scroll'}`}>
+        <main className={`flex-1 min-w-0 relative flex flex-col h-full pb-16 md:pb-0 ${isDocsPage ? 'overflow-hidden' : 'overflow-y-auto overscroll-contain sidebar-scroll'}`}>
           {children}
         </main>
         {!isDocsPage && <RecoverBoundary><RightSidebar /></RecoverBoundary>}

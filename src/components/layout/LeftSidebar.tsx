@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Trophy, Search, User, Settings, Upload, BarChart3, BookOpen, Bell, PlusCircle, Lightbulb, MessageSquare, Flame, Activity, Globe, Zap, Github, Linkedin } from 'lucide-react';
+import { Home, Trophy, Search, User, Settings, Upload, BarChart3, BookOpen, Bell, PlusCircle, Lightbulb, MessageSquare, Flame, Activity, Globe, Zap, Github, Linkedin, Target } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/AuthContext';
 import { useProfile, useUnreadMessageCount } from '@/hooks/use-api';
@@ -37,7 +37,7 @@ export function LeftSidebar() {
   const totalOutput = profileData?.stats?.total_output_tokens ?? 0;
 
   return (
-    <aside className="hidden lg:flex flex-col w-[220px] shrink-0 border-r border-border p-4 gap-1 h-full overflow-y-auto overscroll-contain sidebar-scroll">
+    <aside className="hidden md:flex flex-col w-[220px] shrink-0 border-r border-border p-4 gap-1 h-full overflow-y-auto overscroll-contain sidebar-scroll">
       {/* Profile mini-card */}
       {isSignedIn && user && (
         <div className="mb-3 pb-3 border-b border-border shrink-0">
@@ -128,6 +128,32 @@ export function LeftSidebar() {
           );
         })}
       </nav>
+
+      {/* Extension Card for MD screens (hidden on LG when RightSidebar is visible) */}
+      <div className="lg:hidden mt-4 shrink-0 rounded-lg border-2 border-primary/30 bg-primary/5 p-3 space-y-3 relative overflow-hidden group">
+        <div className="absolute top-0 right-0 p-1 opacity-10 group-hover:opacity-20 transition-opacity rotate-12">
+          <Flame className="h-12 w-12 -mr-3 -mt-3" />
+        </div>
+        <div className="relative z-10 space-y-2">
+          <div className="flex items-center gap-2">
+            <div className="h-6 w-6 rounded bg-primary flex items-center justify-center text-primary-foreground">
+              <Target className="h-3 w-3" />
+            </div>
+            <span className="text-[10px] font-bold text-foreground uppercase tracking-wider">Claude Counter</span>
+          </div>
+          <p className="text-[10px] text-muted-foreground leading-snug">
+            Auto-track Claude.ai sessions — now live.
+          </p>
+          <a
+            href="https://chromewebstore.google.com/detail/ocfdlilejljfjcnpjkadccegnaloeolk"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center w-full py-1.5 rounded-md bg-primary text-primary-foreground text-[10px] font-bold hover:bg-primary/90 transition-all shadow-sm active:scale-95"
+          >
+            Add to Chrome
+          </a>
+        </div>
+      </div>
 
       {/* Social Footer */}
       <div className="mt-4 pt-4 border-t border-border shrink-0 px-2 space-y-3">

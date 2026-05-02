@@ -109,13 +109,13 @@ export default function Landing() {
           <div className="hidden sm:flex items-center gap-3">
             <button
               onClick={toggleTheme}
-              className="rounded-md p-2 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+              className="rounded-md p-2 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors flex items-center justify-center"
               aria-label="Toggle theme"
             >
               {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
             </button>
-            <Link to="/docs" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Docs</Link>
-            <Link to="/login" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Log in</Link>
+            <Link to="/docs" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center h-9 px-2">Docs</Link>
+            <Link to="/login" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center h-9 px-2">Log in</Link>
             <Button asChild size="sm">
               <Link to="/onboarding">Get Started</Link>
             </Button>
