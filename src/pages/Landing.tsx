@@ -6,8 +6,7 @@ import { Sun, Moon } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { SEO } from '@/components/SEO';
 
-// Lazy-load heavy components — correctly handle named exports
-const TerminalDemo = lazy(() => import('@/components/TerminalDemo').then(m => ({ default: m.TerminalDemo })));
+import { TerminalDemo } from '@/components/TerminalDemo';
 const ActivityCard = lazy(() => import('@/components/ActivityCard').then(m => ({ default: m.ActivityCard })));
 const TestimonialCard = lazy(() => import('@/components/TestimonialCard').then(m => ({ default: m.TestimonialCard })));
 
@@ -45,7 +44,7 @@ export default function Landing() {
     return document.documentElement.classList.contains('dark');
   });
 
-  const terminalReveal = useScrollReveal(0.2);
+
   const statsReveal = useScrollReveal(0.3);
   const sessionsReveal = useScrollReveal(0.15);
   const featuresReveal = useScrollReveal(0.15);
@@ -164,16 +163,9 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Terminal Demo — lazy-loaded when scrolled into view */}
-      <section
-        ref={terminalReveal.ref}
-        className={`relative z-10 mx-auto max-w-2xl px-4 pb-20 scroll-reveal ${terminalReveal.visible ? 'visible' : ''}`}
-      >
-        {terminalReveal.visible ? (
-          <Suspense fallback={<Shimmer h="h-48" />}>
-            <TerminalDemo />
-          </Suspense>
-        ) : <Shimmer h="h-48" />}
+      {/* Terminal Demo — eager-loaded because it is part of the LCP (hero) */}
+      <section className="relative z-10 mx-auto max-w-2xl px-4 pb-20 animate-fade-in-up stagger-4">
+        <TerminalDemo />
       </section>
 
       {/* Platform stats */}
