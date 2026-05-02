@@ -6,10 +6,10 @@ import { Sun, Moon } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { SEO } from '@/components/SEO';
 
-// Lazy-load heavy components — only downloaded when visible
-const TerminalDemo = lazy(() => import('@/components/TerminalDemo'));
-const ActivityCard = lazy(() => import('@/components/ActivityCard'));
-const TestimonialCard = lazy(() => import('@/components/TestimonialCard'));
+// Lazy-load heavy components — correctly handle named exports
+const TerminalDemo = lazy(() => import('@/components/TerminalDemo').then(m => ({ default: m.TerminalDemo })));
+const ActivityCard = lazy(() => import('@/components/ActivityCard').then(m => ({ default: m.ActivityCard })));
+const TestimonialCard = lazy(() => import('@/components/TestimonialCard').then(m => ({ default: m.TestimonialCard })));
 
 // Lightweight spinner for Suspense fallbacks
 const Shimmer = ({ h = 'h-40' }: { h?: string }) => (
