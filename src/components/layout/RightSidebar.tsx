@@ -4,7 +4,6 @@ import { Link } from 'react-router-dom';
 import { Flame, DollarSign, Trophy, ChevronRight, Target, Github, Linkedin } from 'lucide-react';
 import { formatCost } from '@/lib/format';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
 import { transformLeaderboardEntry } from '@/lib/transformers';
 import { FollowButton } from '@/components/FollowButton';
 
@@ -14,13 +13,13 @@ export function RightSidebar() {
   const { data: suggested } = useSuggestedUsers();
   const { data: topWeeklyData } = useTopWeekly();
 
-
   const topEntries = topWeeklyData?.entries
     ?.slice(0, 5)
     .map((e: any, i: number) => transformLeaderboardEntry(e, i + 1)) ?? [];
 
   return (
     <aside className="hidden lg:flex flex-col w-[280px] shrink-0 border-l border-border p-4 gap-4 sticky top-14 h-[calc(100vh-3.5rem)] overflow-y-auto overscroll-contain sidebar-scroll">
+
       {/* Your Stats */}
       {user ? (
         <div className="rounded-lg border border-border bg-card p-4 space-y-3">
@@ -35,26 +34,26 @@ export function RightSidebar() {
               ))}
             </div>
           ) : (
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-sm">
-              <span className="flex items-center gap-1.5 text-muted-foreground">
-                <Flame className="h-3.5 w-3.5 text-primary" /> Streak
-              </span>
-              <span className="font-mono font-semibold text-foreground">{profileData?.stats?.current_streak ?? 0}d</span>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-sm">
+                <span className="flex items-center gap-1.5 text-muted-foreground">
+                  <Flame className="h-3.5 w-3.5 text-primary" /> Streak
+                </span>
+                <span className="font-mono font-semibold text-foreground">{profileData?.stats?.current_streak ?? 0}d</span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="flex items-center gap-1.5 text-muted-foreground">
+                  <DollarSign className="h-3.5 w-3.5 text-primary" /> Total
+                </span>
+                <span className="font-mono font-semibold text-foreground">{formatCost(profileData?.stats?.total_cost_usd ?? 0)}</span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="flex items-center gap-1.5 text-muted-foreground">
+                  <Trophy className="h-3.5 w-3.5 text-primary" /> Days
+                </span>
+                <span className="font-mono font-semibold text-foreground">{profileData?.stats?.total_days ?? 0}</span>
+              </div>
             </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="flex items-center gap-1.5 text-muted-foreground">
-                <DollarSign className="h-3.5 w-3.5 text-primary" /> Total
-              </span>
-              <span className="font-mono font-semibold text-foreground">{formatCost(profileData?.stats?.total_cost_usd ?? 0)}</span>
-            </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="flex items-center gap-1.5 text-muted-foreground">
-                <Trophy className="h-3.5 w-3.5 text-primary" /> Days
-              </span>
-              <span className="font-mono font-semibold text-foreground">{profileData?.stats?.total_days ?? 0}</span>
-            </div>
-          </div>
           )}
         </div>
       ) : (isSignedIn || isUserLoading) ? (
@@ -80,7 +79,7 @@ export function RightSidebar() {
       {/* Extension Card */}
       <div className="rounded-lg border-2 border-primary/30 bg-primary/5 p-4 space-y-3 relative overflow-hidden group animate-fade-in-up">
         <div className="absolute top-0 right-0 p-1 opacity-10 group-hover:opacity-20 transition-opacity rotate-12">
-           <Flame className="h-16 w-16 -mr-4 -mt-4" />
+          <Flame className="h-16 w-16 -mr-4 -mt-4" />
         </div>
         <div className="relative z-10 space-y-2">
           <div className="flex items-center gap-2">
@@ -92,7 +91,7 @@ export function RightSidebar() {
           <p className="text-[11px] text-muted-foreground leading-relaxed">
             Track Claude.ai usage automatically with our browser extension.
           </p>
-          <a 
+          <a
             href="https://awarts.club/awarts-claude-counter.zip"
             className="flex items-center justify-center w-full py-2 rounded-md bg-primary text-primary-foreground text-[11px] font-bold hover:bg-primary/90 transition-all shadow-sm active:scale-95"
           >
@@ -186,6 +185,8 @@ export function RightSidebar() {
             View Full Leaderboard <ChevronRight className="h-3 w-3" />
           </Link>
         </div>
+      )}
+
       {/* Social Footer */}
       <div className="mt-auto pt-4 border-t border-border flex flex-col gap-3 px-1">
         <div className="flex flex-col gap-1">
@@ -193,17 +194,17 @@ export function RightSidebar() {
           <p className="text-xs font-bold text-foreground">Harry</p>
         </div>
         <div className="flex items-center gap-3">
-          <a 
-            href="https://github.com/HarshalJain-cs" 
-            target="_blank" 
+          <a
+            href="https://github.com/HarshalJain-cs"
+            target="_blank"
             rel="noopener noreferrer"
             className="text-muted-foreground hover:text-foreground transition-colors"
           >
             <Github className="h-4 w-4" />
           </a>
-          <a 
-            href="https://www.linkedin.com/in/harshal--jain/" 
-            target="_blank" 
+          <a
+            href="https://www.linkedin.com/in/harshal--jain/"
+            target="_blank"
             rel="noopener noreferrer"
             className="text-muted-foreground hover:text-foreground transition-colors"
           >
@@ -211,10 +212,11 @@ export function RightSidebar() {
           </a>
         </div>
         <div className="text-[10px] text-muted-foreground/60 leading-relaxed">
-          © {new Date().getFullYear()} AWARTS.club <br/>
+          © {new Date().getFullYear()} AWARTS.club <br />
           Built for the vibe coding era.
         </div>
       </div>
+
     </aside>
   );
 }
