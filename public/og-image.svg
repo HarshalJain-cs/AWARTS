@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f0a1a;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#1a0d2e;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0f0a1a;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#6d28d9" />
+      <stop offset="100%" style="stop-color:#a855f7" />
+    </linearGradient>
+  </defs>
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bg)" />
+  <!-- Decorative parallelogram shapes (brand motif) -->
+  <polygon points="80,180 160,180 150,280 70,280" fill="#6d28d9" opacity="0.15" />
+  <polygon points="1040,350 1120,350 1110,450 1030,450" fill="#a855f7" opacity="0.12" />
+  <polygon points="200,400 260,400 254,460 194,460" fill="#6d28d9" opacity="0.1" />
+  <polygon points="900,120 980,120 970,220 890,220" fill="#a855f7" opacity="0.08" />
+  <!-- Logo mark (two overlapping parallelograms) -->
+  <polygon points="540,160 620,160 610,230 530,230" fill="#6d28d9" />
+  <polygon points="610,160 690,160 680,230 600,230" fill="#a855f7" opacity="0.8" />
+  <!-- Title -->
+  <text x="600" y="310" font-family="system-ui, -apple-system, sans-serif" font-size="72" font-weight="bold" fill="white" text-anchor="middle" letter-spacing="4">AWARTS</text>
+  <!-- Accent line -->
+  <rect x="450" y="340" width="300" height="3" rx="1.5" fill="url(#accent)" />
+  <!-- Tagline -->
+  <text x="600" y="400" font-family="system-ui, -apple-system, sans-serif" font-size="28" fill="#c4b5fd" text-anchor="middle" letter-spacing="1">Share Your Art. Climb the Ranks.</text>
+  <!-- Subtitle -->
+  <text x="600" y="450" font-family="system-ui, -apple-system, sans-serif" font-size="20" fill="#8b7fad" text-anchor="middle">The social platform for artists</text>
+  <!-- Bottom border accent -->
+  <rect x="0" y="620" width="1200" height="10" fill="url(#accent)" />
+</svg>

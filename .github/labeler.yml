@@ -1,0 +1,69 @@
+# Auto-labeling configuration for PRs based on changed files
+
+# CLI related changes
+cli:
+  - changed-files:
+    - any-glob-to-any-file: 'cli/**/*'
+
+# Web app related changes
+web:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'src/**/*'
+      - 'public/**/*'
+      - 'index.html'
+      - 'vite.config.ts'
+
+# Documentation changes
+documentation:
+  - changed-files:
+    - any-glob-to-any-file:
+      - '**/*.md'
+      - 'docs/**/*'
+
+# Configuration changes
+config:
+  - changed-files:
+    - any-glob-to-any-file:
+      - '*.json'
+      - '*.yaml'
+      - '*.yml'
+      - '.github/**/*'
+      - '*.config.*'
+
+# Dependencies
+dependencies:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'package.json'
+      - 'package-lock.json'
+      - 'pnpm-lock.yaml'
+      - 'cli/package.json'
+
+# Testing
+tests:
+  - changed-files:
+    - any-glob-to-any-file:
+      - '**/*.test.ts'
+      - '**/*.test.tsx'
+      - '**/*.spec.ts'
+      - '**/*.spec.tsx'
+
+# TypeScript/Types
+types:
+  - changed-files:
+    - any-glob-to-any-file:
+      - '**/*.d.ts'
+      - '**/types.ts'
+
+# GitHub Actions / CI
+ci:
+  - changed-files:
+    - any-glob-to-any-file:
+      - '.github/workflows/**/*'
+
+# Breaking changes (manual label, but can detect)
+breaking-change:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'BREAKING_CHANGES.md'

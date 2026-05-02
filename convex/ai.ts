@@ -1,0 +1,186 @@
+import { v } from "convex/values";
+import { action } from "./_generated/server";
+
+export const generateCaption = action({
+  args: {
+    stats: v.object({
+      totalCost: v.number(),
+      totalTokens: v.number(),
+      providers: v.array(v.string()),
+      models: v.optional(v.array(v.string())),
+      date: v.string(),
+    }),
+    preferredProvider: v.optional(v.string()),
+  },
+  handler: async (ctx, { stats }) => {
+    // Require authentication to prevent unauthorized API usage
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Not authenticated");
+
+    const apiKey = process.env.GROQ_API_KEY;
+
+    // If no API key, generate a template-based caption
+    if (!apiKey) {
+      return generateTemplateCation(stats);
+    }
+
+    const prompt = `Generate a short, fun social-media post caption for an AI developer's daily coding session. Stats:
+- Date: ${stats.date}
+- AI Providers used: ${stats.providers.join(", ")}
+- Total cost: $${stats.totalCost.toFixed(2)}
+- Total tokens: ${stats.totalTokens.toLocaleString()}
+${stats.models?.length ? `- Models: ${stats.models.join(", ")}` : ""}
+
+Return JSON: {"title": "short catchy title (max 60 chars)", "description": "2-3 sentence description"}`;
+
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 15_000); // 15s timeout
+      const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: "llama-3.3-70b-versatile",
+          messages: [{ role: "user", content: prompt }],
+          response_format: { type: "json_object" },
+          max_tokens: 200,
+        }),
+        signal: controller.signal,
+      });
+      clearTimeout(timeout);
+
+      if (!res.ok) {
+        return generateTemplateCation(stats);
+      }
+
+      const data = await res.json();
+      const parsed = JSON.parse(data.choices[0].message.content);
+      return {
+        title: parsed.title as string,
+        description: parsed.description as string,
+        generated_by: "llama-3.3-70b",
+      };
+    } catch {
+      return generateTemplateCation(stats);
+    }
+  },
+});
+
+function generateTemplateCation(stats: {
+  totalCost: number;
+  totalTokens: number;
+  providers: string[];
+  date: string;
+}) {
+  const cost = stats.totalCost;
+  const tokens = stats.totalTokens;
+  const providers = stats.providers;
+
+  const titles = [
+    cost > 5 ? "Heavy AI Day" : cost > 1 ? "Productive Session" : "Light Coding Day",
+    providers.length > 1 ? `Multi-Model Mashup` : `${providers[0] ?? "AI"} Session`,
+    tokens > 100000 ? "Token Marathon" : "Quick Sprint",
+  ];
+
+  const title = titles[Math.floor(Math.random() * titles.length)];
+
+  const desc = `Spent $${cost.toFixed(2)} across ${tokens.toLocaleString()} tokens using ${providers.join(" & ")} on ${stats.date}.`;
+
+  return {
+    title,
+    description: desc,
+    generated_by: "template",
+  };
+}
+
+// ─── Auto-caption for CLI posts ──────────────────────────────────────
+import { internalAction } from "./_generated/server";
+import { internal } from "./_generated/api";
+
+export const autoGeneratePostCaption = internalAction({
+  args: {
+    postId: v.id("posts"),
+    stats: v.object({
+      totalCost: v.number(),
+      totalTokens: v.number(),
+      providers: v.array(v.string()),
+      models: v.optional(v.array(v.string())),
+      date: v.string(),
+    }),
+  },
+  handler: async (ctx, { postId, stats }) => {
+    const apiKey = process.env.GROQ_API_KEY;
+
+    let caption;
+    if (!apiKey) {
+      caption = generateTemplateCation(stats);
+    } else {
+      const prompt = `Generate a short, fun social-media post caption for an AI developer's daily coding session. Stats:
+- Date: ${stats.date}
+- AI Providers used: ${stats.providers.join(", ")}
+- Total cost: $${stats.totalCost.toFixed(2)}
+- Total tokens: ${stats.totalTokens.toLocaleString()}
+${stats.models?.length ? `- Models: ${stats.models.join(", ")}` : ""}
+
+Return JSON: {"title": "short catchy title (max 60 chars)", "description": "2-3 sentence description"}`;
+
+      try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 15_000);
+        const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify({
+            model: "llama-3.3-70b-versatile",
+            messages: [{ role: "user", content: prompt }],
+            response_format: { type: "json_object" },
+            max_tokens: 200,
+          }),
+          signal: controller.signal,
+        });
+        clearTimeout(timeout);
+
+        if (!res.ok) {
+          caption = generateTemplateCation(stats);
+        } else {
+          const data = await res.json();
+          const parsed = JSON.parse(data.choices[0].message.content);
+          caption = {
+            title: parsed.title as string,
+            description: parsed.description as string,
+            generated_by: "llama-3.3-70b",
+          };
+        }
+      } catch {
+        caption = generateTemplateCation(stats);
+      }
+    }
+
+    // Patch the post with the generated caption
+    await ctx.runMutation(internal.ai.patchPostCaption, {
+      postId,
+      title: caption.title,
+      description: caption.description,
+    });
+  },
+});
+
+// Internal mutation to patch the post (used by autoGeneratePostCaption)
+import { internalMutation } from "./_generated/server";
+
+export const patchPostCaption = internalMutation({
+  args: {
+    postId: v.id("posts"),
+    title: v.string(),
+    description: v.string(),
+  },
+  handler: async (ctx, { postId, title, description }) => {
+    await ctx.db.patch(postId, { title, description });
+  },
+});

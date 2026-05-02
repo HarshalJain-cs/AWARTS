@@ -1,0 +1,126 @@
+name: PR Validation
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+jobs:
+  validate-pr:
+    name: Validate Pull Request
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Check PR title format
+      - name: Validate PR title
+        uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          types: |
+            feat
+            fix
+            docs
+            style
+            refactor
+            perf
+            test
+            build
+            ci
+            chore
+            revert
+          requireScope: false
+          subjectPattern: ^(?![A-Z]).+$
+          subjectPatternError: |
+            The subject "{subject}" found in the pull request title "{title}"
+            should start with a lowercase letter.
+
+      # Check file sizes
+      - name: Check for large files
+        run: |
+          echo "Checking for files larger than 1MB..."
+          large_files=$(find . -type f -size +1M -not -path "*/node_modules/*" -not -path "*/.git/*" -not -path "*/dist/*")
+          if [ -n "$large_files" ]; then
+            echo "❌ Large files detected:"
+            echo "$large_files"
+            exit 1
+          else
+            echo "✅ No large files detected"
+          fi
+
+      # Check for sensitive files
+      - name: Check for sensitive files
+        run: |
+          echo "Checking for potentially sensitive files..."
+          sensitive_patterns=".env .env.local .env.production .pem .key id_rsa credentials.json secrets.json"
+          found_sensitive=false
+
+          for pattern in $sensitive_patterns; do
+            files=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -E "$pattern" || true)
+            if [ -n "$files" ]; then
+              echo "⚠️ Warning: Found potentially sensitive file pattern: $pattern"
+              echo "$files"
+              found_sensitive=true
+            fi
+          done
+
+          if [ "$found_sensitive" = true ]; then
+            echo "❌ Please ensure no sensitive files are committed"
+            exit 1
+          else
+            echo "✅ No sensitive files detected"
+          fi
+
+      # Validate package.json changes
+      - name: Validate package.json
+        if: contains(github.event.pull_request.changed_files, 'package.json')
+        run: |
+          echo "Validating package.json changes..."
+          node -e "JSON.parse(require('fs').readFileSync('package.json'))"
+          echo "✅ package.json is valid JSON"
+
+      # Check for merge conflicts
+      - name: Check for merge conflicts
+        run: |
+          echo "Checking for merge conflict markers..."
+          conflicts=$(git diff --check || true)
+          if echo "$conflicts" | grep -q "conflict"; then
+            echo "❌ Merge conflict markers detected"
+            exit 1
+          else
+            echo "✅ No merge conflicts detected"
+          fi
+
+      # Add PR comment with checklist
+      - name: Comment PR checklist
+        uses: actions/github-script@v7
+        if: github.event.action == 'opened'
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## 🤖 Automated PR Checklist
+
+              Thanks for your contribution! Here's what will be checked:
+
+              - ✅ PR title follows conventional commits format
+              - ✅ No large files (>1MB) committed
+              - ✅ No sensitive files (.env, keys, etc.)
+              - ✅ Code passes linting
+              - ✅ Code passes type checking
+              - ✅ All tests pass
+              - ✅ Build succeeds
+
+              **Next steps:**
+              1. Wait for CI checks to complete
+              2. Address any failures
+              3. Request review from maintainers
+
+              Happy coding! 🚀`
+            })

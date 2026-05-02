@@ -1,0 +1,63 @@
+{
+  "name": "awarts",
+  "version": "0.3.2",
+  "description": "Track your AI coding across Claude, Codex, Gemini & Antigravity",
+  "type": "module",
+  "license": "MIT",
+  "author": "Harshal Jain <harshaljaincs@gmail.com> (https://github.com/HarshalJain-cs)",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/HarshalJain-cs/AWARTS.git",
+    "directory": "cli"
+  },
+  "homepage": "https://awarts.club",
+  "bugs": {
+    "url": "https://github.com/HarshalJain-cs/AWARTS/issues"
+  },
+  "keywords": [
+    "ai",
+    "coding",
+    "tracker",
+    "claude",
+    "codex",
+    "gemini",
+    "antigravity",
+    "developer-tools",
+    "cli",
+    "usage-tracking",
+    "ai-coding",
+    "strava-for-coding"
+  ],
+  "bin": {
+    "awarts": "dist/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "CONTRIBUTING.md",
+    "CODE_OF_CONDUCT.md",
+    "SECURITY.md"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "dev": "bun --watch src/index.ts",
+    "build": "bun build src/index.ts --outdir dist --target node",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "@types/node": "^22.16.0",
+    "chalk": "^5.4.0",
+    "commander": "^13.1.0",
+    "jose": "^5.10.0",
+    "nanoid": "^5.1.0",
+    "open": "^10.1.0",
+    "ora": "^8.2.0",
+    "typescript": "^5.8.0",
+    "vitest": "^3.2.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

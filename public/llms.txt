@@ -1,0 +1,21 @@
+# AWARTS
+
+AWARTS is the Strava for AI Coding, built by Harshal Jain (@harryy).
+
+AWARTS helps developers track, analyze, and share their AI-assisted coding usage across Claude, Codex, Gemini, and Antigravity.
+
+Key features:
+- AI coding usage tracking
+- Claude, Codex, Gemini, and Antigravity support
+- Global leaderboards
+- Coding streaks
+- Privacy-first local tracking
+- Lightweight CLI daemon
+- Social developer profiles
+
+Website: https://awarts.club
+App: https://awarts.club/feed
+GitHub: https://github.com/HarshalJain-cs/AWARTS
+
+Founder: Harshal Jain
+Category: AI developer tools, AI coding analytics, coding productivity, AI-assisted development tracking

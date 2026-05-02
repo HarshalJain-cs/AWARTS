@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AWARTS — Offline</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: ui-monospace, monospace; background: #0f1219; color: #fff; display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 2rem; }
+    .container { text-align: center; max-width: 400px; }
+    .logo { display: flex; align-items: center; justify-content: center; gap: 0.5rem; margin-bottom: 2rem; }
+    .logo-mark { width: 24px; height: 32px; background: #E87A35; clip-path: polygon(15% 0%, 100% 0%, 85% 100%, 0% 100%); }
+    .logo-text { font-size: 1.5rem; font-weight: 700; }
+    h1 { font-size: 1.25rem; margin-bottom: 0.5rem; }
+    p { color: #888; font-size: 0.875rem; margin-bottom: 1.5rem; }
+    button { background: #E87A35; color: #fff; border: none; padding: 0.75rem 2rem; border-radius: 8px; font-family: inherit; font-size: 0.875rem; cursor: pointer; }
+    button:hover { background: #d06a25; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo">
+      <div class="logo-mark"></div>
+      <span class="logo-text">AWARTS</span>
+    </div>
+    <h1>You're offline</h1>
+    <p>Check your internet connection and try again.</p>
+    <button onclick="window.location.reload()">Retry</button>
+  </div>
+</body>
+</html>

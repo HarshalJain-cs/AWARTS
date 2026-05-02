@@ -1,0 +1,79 @@
+name: Mark Stale Issues & PRs
+
+on:
+  schedule:
+    # Run every day at midnight
+    - cron: '0 0 * * *'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  stale:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
+
+    steps:
+      - name: Mark stale issues and PRs
+        uses: actions/stale@v9
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+          # Issues
+          stale-issue-message: |
+            👋 This issue has been automatically marked as stale because it has not had recent activity.
+
+            **It will be closed in 7 days if no further activity occurs.**
+
+            If this issue is still relevant, please:
+            - Add a comment explaining why it should stay open
+            - Provide any additional context or updates
+
+            Thank you for your contributions! 🙏
+
+          close-issue-message: |
+            🔒 This issue has been automatically closed due to inactivity.
+
+            **If you believe this issue should be reopened:**
+            - Add a comment with relevant updates
+            - We'll review and reopen if needed
+
+            Thank you for your understanding!
+
+          days-before-stale: 60
+          days-before-close: 7
+          stale-issue-label: 'stale'
+          exempt-issue-labels: 'pinned,security,good-first-issue,help-wanted,in-progress'
+
+          # Pull Requests
+          stale-pr-message: |
+            👋 This pull request has been automatically marked as stale because it has not had recent activity.
+
+            **It will be closed in 14 days if no further activity occurs.**
+
+            If you plan to continue working on this PR:
+            - Push new commits
+            - Respond to review comments
+            - Rebase on the latest main branch if needed
+
+            Thank you for your contribution! 🙏
+
+          close-pr-message: |
+            🔒 This pull request has been automatically closed due to inactivity.
+
+            **To reopen this PR:**
+            - Rebase on the latest main branch
+            - Push new commits
+            - Comment to request review
+
+            We appreciate your effort and hope to see future contributions!
+
+          days-before-pr-stale: 30
+          days-before-pr-close: 14
+          stale-pr-label: 'stale'
+          exempt-pr-labels: 'pinned,security,in-progress,waiting-for-review'
+
+          # General settings
+          operations-per-run: 100
+          remove-stale-when-updated: true
+          ascending: true
