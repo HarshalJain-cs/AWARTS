@@ -4,12 +4,13 @@ import React, { forwardRef } from 'react';
 
 interface SmoothScrollProps {
     children: React.ReactNode;
+    root?: boolean;
 }
 
-const SmoothScroll = forwardRef<HTMLDivElement, SmoothScrollProps>(({ children }, ref) => {
+const SmoothScroll = forwardRef<HTMLDivElement, SmoothScrollProps>(({ children, root = true }, ref) => {
     return (
-        <ReactLenis root options={{ lerp: 0.12, duration: 0.8, smoothWheel: true, touchMultiplier: 1.5 }}>
-            <div ref={ref}>{children}</div>
+        <ReactLenis root={root} options={{ lerp: 0.05, smoothWheel: true, smoothTouch: true, wheelMultiplier: 0.9, touchMultiplier: 1.2 }}>
+            <div ref={ref} className={!root ? 'h-full overflow-y-auto' : ''}>{children}</div>
         </ReactLenis>
     );
 });

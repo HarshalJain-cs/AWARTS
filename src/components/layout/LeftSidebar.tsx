@@ -7,6 +7,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { formatTokens } from '@/lib/format';
 import { PROVIDERS } from '@/lib/constants';
 import type { Provider } from '@/lib/types';
+import { SmoothScroll } from '@/components/ui/smooth-scroll';
 
 export function LeftSidebar() {
   const location = useLocation();
@@ -37,7 +38,9 @@ export function LeftSidebar() {
   const totalOutput = profileData?.stats?.total_output_tokens ?? 0;
 
   return (
-    <aside className="hidden md:flex flex-col w-[220px] shrink-0 border-r border-border p-4 gap-1 sticky top-14 h-[calc(100vh-3.5rem)] overflow-y-auto overscroll-contain sidebar-scroll">
+    <aside className="hidden md:flex flex-col w-[220px] shrink-0 border-r border-border sticky top-14 h-[calc(100vh-3.5rem)] sidebar-scroll">
+      <SmoothScroll root={false}>
+        <div className="p-4 gap-1 flex flex-col min-h-full">
       {/* Profile mini-card */}
       {isSignedIn && user && (
         <div className="mb-3 pb-3 border-b border-border shrink-0">
@@ -180,6 +183,8 @@ export function LeftSidebar() {
           </a>
         </div>
       </div>
+      </div>
+      </SmoothScroll>
     </aside>
   );
 }

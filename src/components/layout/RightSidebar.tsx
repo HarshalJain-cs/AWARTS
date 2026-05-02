@@ -6,6 +6,7 @@ import { formatCost } from '@/lib/format';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { transformLeaderboardEntry } from '@/lib/transformers';
 import { FollowButton } from '@/components/FollowButton';
+import { SmoothScroll } from '@/components/ui/smooth-scroll';
 
 export function RightSidebar() {
   const { user, isSignedIn, isUserLoading } = useAuth();
@@ -18,8 +19,9 @@ export function RightSidebar() {
     .map((e: any, i: number) => transformLeaderboardEntry(e, i + 1)) ?? [];
 
   return (
-    <aside className="hidden lg:flex flex-col w-[280px] shrink-0 border-l border-border p-4 gap-4 sticky top-14 h-[calc(100vh-3.5rem)] overflow-y-auto overscroll-contain sidebar-scroll">
-
+    <aside className="hidden lg:flex flex-col w-[280px] shrink-0 border-l border-border sticky top-14 h-[calc(100vh-3.5rem)] sidebar-scroll">
+      <SmoothScroll root={false}>
+        <div className="p-4 gap-4 flex flex-col min-h-full">
       {/* Your Stats */}
       {user ? (
         <div className="rounded-lg border border-border bg-card p-4 space-y-3">
@@ -215,7 +217,8 @@ export function RightSidebar() {
           Built for the vibe coding era.
         </div>
       </div>
-
+      </div>
+      </SmoothScroll>
     </aside>
   );
 }
