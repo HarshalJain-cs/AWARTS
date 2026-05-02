@@ -35,12 +35,7 @@ export const GRADIENTS = [
   { id: 'midnight', label: 'Midnight', style: 'linear-gradient(135deg, #0f1219, #1a1f2e)', dark: true },
 ];
 
-// removed unused import
-  claude: 'Claude',
-  codex: 'Codex',
-  gemini: 'Gemini',
-  antigravity: 'Antigravity',
-};
+
 
 function RecapContent() {
   const { user } = useAuth();
