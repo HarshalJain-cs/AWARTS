@@ -1,72 +1,40 @@
 import { Link } from 'react-router-dom';
-import { TerminalDemo } from '@/components/TerminalDemo';
-import { TestimonialCard } from '@/components/TestimonialCard';
-import { ActivityCard } from '@/components/ActivityCard';
-import { mockPosts, mockTestimonials } from '@/lib/mock-data';
+import { lazy, Suspense, useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { Waves } from '@/components/ui/wave-background';
 import { ArrowRight, Terminal, Share2, Trophy, Copy, Menu, X, ShieldCheck, Activity } from 'lucide-react';
-import { useState, useEffect, useRef, useCallback } from 'react';
 import { Sun, Moon } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { SEO } from '@/components/SEO';
-import { SmoothScroll } from "@/components/ui/smooth-scroll";
 
-// ── Scroll-reveal hook: adds .visible when element enters viewport ───
+// Lazy-load heavy components — only downloaded when visible
+const TerminalDemo = lazy(() => import('@/components/TerminalDemo'));
+const ActivityCard = lazy(() => import('@/components/ActivityCard'));
+const TestimonialCard = lazy(() => import('@/components/TestimonialCard'));
+
+// Lightweight spinner for Suspense fallbacks
+const Shimmer = ({ h = 'h-40' }: { h?: string }) => (
+  <div className={`${h} w-full rounded-xl bg-muted/50 animate-pulse`} />
+);
+
+// Scroll-reveal hook: adds .visible when element enters viewport
 function useScrollReveal<T extends HTMLElement = HTMLDivElement>(threshold = 0.15) {
   const ref = useRef<T>(null);
   const [visible, setVisible] = useState(false);
-
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
     const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setVisible(true);
-          observer.disconnect();
-        }
-      },
+      ([entry]) => { if (entry.isIntersecting) { setVisible(true); observer.disconnect(); } },
       { threshold }
     );
     observer.observe(el);
     return () => observer.disconnect();
   }, [threshold]);
-
   return { ref, visible };
 }
 
-// ── Animated counter that triggers on scroll ─────────────────────────
-function useCounter(target: number, duration = 1500) {
-  const [count, setCount] = useState(0);
-  const [started, setStarted] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting) { setStarted(true); observer.disconnect(); } },
-      { threshold: 0.5 }
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
-
-  useEffect(() => {
-    if (!started) return;
-    const start = performance.now();
-    const step = (now: number) => {
-      const progress = Math.min((now - start) / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3);
-      setCount(Math.floor(eased * target));
-      if (progress < 1) requestAnimationFrame(step);
-    };
-    requestAnimationFrame(step);
-  }, [started, target, duration]);
-
-  return { count, ref };
-}
+// Mock data inlined to avoid importing the whole mock-data module eagerly
+const MOCK_POSTS_IDS = ['1', '2'];
 
 export default function Landing() {
   const [copied, setCopied] = useState(false);
@@ -77,11 +45,6 @@ export default function Landing() {
     return document.documentElement.classList.contains('dark');
   });
 
-  const devs = useCounter(4);
-  const tokens = useCounter(100);
-  const countries = useCounter(195);
-
-  // Scroll-reveal refs for each section
   const terminalReveal = useScrollReveal(0.2);
   const statsReveal = useScrollReveal(0.3);
   const sessionsReveal = useScrollReveal(0.15);
@@ -105,22 +68,21 @@ export default function Landing() {
   }, []);
 
   return (
-    <SmoothScroll>
-      <div className="min-h-screen bg-background relative">
-        <SEO
+    <div className="min-h-screen bg-background relative">
+      <SEO
         canonical="/"
         description="AWARTS is the Strava for AI coding. Track your AI coding sessions across Claude, Codex, Gemini & Antigravity. Compete on leaderboards, share sessions, maintain streaks. Free, open source — no API keys needed."
         keywords="Strava for coding, Strava for AI coding, Strava for AI, Strava for developers, Strava for programmers, Strava but for coding, code tracker, AI code tracker, AI coding tracker, coding tracker app, coding activity tracker, coding session tracker, developer activity tracker, developer leaderboard, coding streak tracker, coding competition app, Claude tracker, Claude Code tracker, Claude usage tracker, track Claude usage, Codex tracker, OpenAI Codex tracker, Gemini tracker, Google Gemini tracker, Antigravity tracker, AI usage tracker, AI cost tracker, AI token tracker, AI spend tracker, track AI spending, AI coding leaderboard, vibe coding tracker, LLM usage tracker, cursor usage tracker, copilot usage tracker, developer stats, coding analytics, AI productivity tracker, open source coding tracker, free coding tracker, npx awarts"
       />
 
-      {/* Wave Background */}
-      <div className="fixed inset-0 z-0 pointer-events-none">
-        <Waves
-          strokeColor="rgba(232, 122, 53, 0.25)"
-          backgroundColor="transparent"
-          pointerSize={0}
-        />
-      </div>
+      {/* Lightweight CSS gradient background — replaces heavy Waves SVG animation */}
+      <div
+        className="fixed inset-0 z-0 pointer-events-none"
+        aria-hidden="true"
+        style={{
+          background: 'radial-gradient(ellipse 80% 60% at 50% -10%, hsl(18 82% 50% / 0.08) 0%, transparent 70%)',
+        }}
+      />
 
       {/* Nav */}
       <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur">
@@ -174,16 +136,16 @@ export default function Landing() {
         )}
       </header>
 
-      {/* Hero — plays on mount (above the fold, no scroll trigger needed) */}
+      {/* Hero */}
       <section className="relative z-10 mx-auto max-w-6xl px-4 pt-20 pb-16 text-center overflow-hidden">
         <p className="font-mono text-sm uppercase tracking-widest text-primary mb-4 animate-fade-in-up">
-          STRAVA FOR CLAUDE, CODEX, GEMINI & ANTIGRAVITY
+          STRAVA FOR CLAUDE, CODEX, GEMINI &amp; ANTIGRAVITY
         </p>
         <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold text-foreground leading-tight animate-fade-in-up stagger-1">
           Every AI coding session counts.
         </h1>
         <p className="mt-4 text-lg text-muted-foreground max-w-xl mx-auto animate-fade-in-up stagger-2">
-          The Strava for AI-assisted coding. Track sessions across Claude, Codex, Gemini & Antigravity. No API keys needed — reads from your local files. Compete on leaderboards worldwide.
+          The Strava for AI-assisted coding. Track sessions across Claude, Codex, Gemini &amp; Antigravity. No API keys needed — reads from your local files. Compete on leaderboards worldwide.
         </p>
         <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in-up stagger-3">
           <Button asChild size="lg" className="text-base px-8">
@@ -202,36 +164,40 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Terminal Demo — scroll-triggered */}
+      {/* Terminal Demo — lazy-loaded when scrolled into view */}
       <section
         ref={terminalReveal.ref}
         className={`relative z-10 mx-auto max-w-2xl px-4 pb-20 scroll-reveal ${terminalReveal.visible ? 'visible' : ''}`}
       >
-        <TerminalDemo />
+        {terminalReveal.visible ? (
+          <Suspense fallback={<Shimmer h="h-48" />}>
+            <TerminalDemo />
+          </Suspense>
+        ) : <Shimmer h="h-48" />}
       </section>
 
-      {/* Platform highlights — scroll-triggered */}
+      {/* Platform stats */}
       <section
         ref={statsReveal.ref}
         className={`relative z-10 border-y border-border bg-background/80 backdrop-blur-sm py-12 scroll-reveal ${statsReveal.visible ? 'visible' : ''}`}
       >
         <div className="mx-auto max-w-4xl grid grid-cols-3 gap-8 text-center">
-          <div ref={devs.ref}>
+          <div>
             <p className="font-mono text-3xl font-bold text-foreground">4</p>
             <p className="text-sm text-muted-foreground mt-1">AI providers supported</p>
           </div>
-          <div ref={tokens.ref}>
+          <div>
             <p className="font-mono text-3xl font-bold text-foreground">100%</p>
-            <p className="text-sm text-muted-foreground mt-1">free & open source</p>
+            <p className="text-sm text-muted-foreground mt-1">free &amp; open source</p>
           </div>
-          <div ref={countries.ref}>
-            <p className="font-mono text-3xl font-bold text-foreground">{countries.count}+</p>
+          <div>
+            <p className="font-mono text-3xl font-bold text-foreground">195+</p>
             <p className="text-sm text-muted-foreground mt-1">countries supported</p>
           </div>
         </div>
       </section>
 
-      {/* Sessions Visualized — scroll-triggered */}
+      {/* Sessions Visualized — lazy-loaded */}
       <section
         ref={sessionsReveal.ref}
         className="relative z-10 mx-auto max-w-6xl px-4 py-20"
@@ -242,16 +208,18 @@ export default function Landing() {
             See your AI coding activity come to life with detailed session cards and real-time leaderboards.
           </p>
         </div>
-        <div className="grid lg:grid-cols-2 gap-6 max-w-4xl mx-auto scroll-reveal-stagger">
-          {mockPosts.slice(0, 2).map((post, i) => (
-            <div key={post.id} className={`scroll-reveal ${sessionsReveal.visible ? 'visible' : ''}`} style={{ transitionDelay: `${200 + i * 150}ms` }}>
-              <ActivityCard post={post} index={0} />
-            </div>
-          ))}
+        <div className="grid lg:grid-cols-2 gap-6 max-w-4xl mx-auto">
+          {sessionsReveal.visible ? (
+            <Suspense fallback={<><Shimmer h="h-40" /><Shimmer h="h-40" /></>}>
+              <LazyActivityCards />
+            </Suspense>
+          ) : (
+            <><Shimmer h="h-40" /><Shimmer h="h-40" /></>
+          )}
         </div>
       </section>
 
-      {/* Features — scroll-triggered with stagger */}
+      {/* Features */}
       <section
         ref={featuresReveal.ref}
         className="relative z-10 mx-auto max-w-6xl px-4 py-16"
@@ -277,7 +245,7 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Wall of Love — scroll-triggered */}
+      {/* Wall of Love — lazy-loaded */}
       <section
         ref={wallReveal.ref}
         className="relative z-10 mx-auto max-w-6xl px-4 py-16"
@@ -285,20 +253,16 @@ export default function Landing() {
         <h2 className={`text-3xl font-bold text-foreground text-center mb-10 scroll-reveal ${wallReveal.visible ? 'visible' : ''}`}>
           Wall of Love
         </h2>
-        <div className="columns-1 sm:columns-2 lg:columns-3 gap-4 space-y-4">
-          {mockTestimonials.map((t, i) => (
-            <div
-              key={t.id}
-              className={`hover:-translate-y-0.5 transition-all duration-300 ease-out scroll-reveal ${wallReveal.visible ? 'visible' : ''}`}
-              style={{ transitionDelay: `${100 + i * 60}ms` }}
-            >
-              <TestimonialCard author={t.author} handle={t.handle} content={t.content} provider={t.provider} />
-            </div>
-          ))}
-        </div>
+        {wallReveal.visible ? (
+          <Suspense fallback={<div className="columns-1 sm:columns-2 lg:columns-3 gap-4 space-y-4"><Shimmer /><Shimmer /><Shimmer /></div>}>
+            <LazyTestimonials />
+          </Suspense>
+        ) : (
+          <div className="columns-1 sm:columns-2 lg:columns-3 gap-4 space-y-4"><Shimmer /><Shimmer /><Shimmer /></div>
+        )}
       </section>
 
-      {/* CTA — scroll-triggered */}
+      {/* CTA */}
       <section
         ref={ctaReveal.ref}
         className={`relative z-10 mx-auto max-w-6xl px-4 py-20 text-center scroll-reveal ${ctaReveal.visible ? 'visible' : ''}`}
@@ -311,7 +275,7 @@ export default function Landing() {
         </Button>
       </section>
 
-      {/* SEO content section — visible to crawlers and users */}
+      {/* SEO content */}
       <section className="relative z-10 mx-auto max-w-4xl px-4 py-16">
         <div className="rounded-xl border border-border bg-card/50 backdrop-blur-sm p-8 space-y-6">
           <h2 className="text-2xl font-bold text-foreground text-center">The Strava for AI-Assisted Development</h2>
@@ -325,7 +289,7 @@ export default function Landing() {
               <p>See where you rank among AI developers worldwide. Filter by country, provider, or time period. Maintain your daily coding streak and climb the global leaderboard — just like Strava segments for coding.</p>
             </div>
             <div className="space-y-3">
-              <h3 className="font-semibold text-foreground">AI Cost & Usage Analytics</h3>
+              <h3 className="font-semibold text-foreground">AI Cost &amp; Usage Analytics</h3>
               <p>Track your AI spending across all providers in one dashboard. See token usage trends, cost breakdowns by provider, and daily/weekly/monthly analytics. Know exactly how much your AI coding costs.</p>
             </div>
             <div className="space-y-3">
@@ -342,17 +306,17 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Footer — scroll-triggered */}
+      {/* Footer */}
       <footer
         ref={footerReveal.ref}
         className={`relative z-10 border-t border-border bg-background/80 backdrop-blur-sm py-8 scroll-reveal ${footerReveal.visible ? 'visible' : ''}`}
       >
-        <div className="mx-auto max-w-6xl px-4 flex items-center justify-between text-sm text-muted-foreground">
+        <div className="mx-auto max-w-6xl px-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
           <div className="flex items-center gap-2">
             <div className="h-5 w-3.5 bg-primary" style={{ clipPath: 'polygon(15% 0%, 100% 0%, 85% 100%, 0% 100%)' }} />
             <span className="font-mono font-bold">AWARTS</span>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center justify-center gap-4">
             <Link to="/privacy" className="hover:text-foreground transition-colors">Privacy</Link>
             <Link to="/terms" className="hover:text-foreground transition-colors">Terms</Link>
             <Link to="/docs" className="hover:text-foreground transition-colors">Docs</Link>
@@ -362,12 +326,53 @@ export default function Landing() {
             <a href="https://www.linkedin.com/in/harshal--jain/" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">LinkedIn</a>
           </div>
           <div className="flex flex-col items-end gap-1">
-             <p>&copy; {new Date().getFullYear()} AWARTS</p>
-             <p className="text-[10px] text-muted-foreground/60">Shipped by <a href="https://www.linkedin.com/in/harshal--jain/" target="_blank" rel="noopener noreferrer" className="font-bold hover:text-primary transition-colors">Harry</a></p>
+            <p>&copy; {new Date().getFullYear()} AWARTS</p>
+            <p className="text-[10px] text-muted-foreground/60">Shipped by <a href="https://www.linkedin.com/in/harshal--jain/" target="_blank" rel="noopener noreferrer" className="font-bold hover:text-primary transition-colors">Harry</a></p>
           </div>
         </div>
       </footer>
     </div>
-    </SmoothScroll>
+  );
+}
+
+// Separate async component so ActivityCard's import is truly lazy
+async function getActivityCards() {
+  const { mockPosts } = await import('@/lib/mock-data');
+  return mockPosts.slice(0, 2);
+}
+
+function LazyActivityCards() {
+  const [posts, setPosts] = useState<any[]>([]);
+  useEffect(() => { getActivityCards().then(setPosts); }, []);
+  if (!posts.length) return <><Shimmer h="h-40" /><Shimmer h="h-40" /></>;
+  return (
+    <>
+      {posts.map((post, i) => (
+        <div key={post.id} className={`scroll-reveal visible`} style={{ transitionDelay: `${200 + i * 150}ms` }}>
+          <Suspense fallback={<Shimmer h="h-40" />}>
+            <ActivityCard post={post} index={0} />
+          </Suspense>
+        </div>
+      ))}
+    </>
+  );
+}
+
+function LazyTestimonials() {
+  const [testimonials, setTestimonials] = useState<any[]>([]);
+  useEffect(() => {
+    import('@/lib/mock-data').then(m => setTestimonials(m.mockTestimonials));
+  }, []);
+  if (!testimonials.length) return <div className="columns-1 sm:columns-2 lg:columns-3 gap-4 space-y-4"><Shimmer /><Shimmer /><Shimmer /></div>;
+  return (
+    <div className="columns-1 sm:columns-2 lg:columns-3 gap-4 space-y-4">
+      {testimonials.map((t, i) => (
+        <div key={t.id} className="hover:-translate-y-0.5 transition-all duration-300 ease-out" style={{ transitionDelay: `${100 + i * 60}ms` }}>
+          <Suspense fallback={<Shimmer />}>
+            <TestimonialCard author={t.author} handle={t.handle} content={t.content} provider={t.provider} />
+          </Suspense>
+        </div>
+      ))}
+    </div>
   );
 }
