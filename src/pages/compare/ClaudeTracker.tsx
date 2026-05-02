@@ -1,10 +1,10 @@
 import { SEO } from "@/components/SEO";
-import { AppLayout } from "@/components/layout/AppLayout";
+import { AppShell } from "@/components/layout/AppShell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function ClaudeTrackerPage() {
   return (
-    <AppLayout>
+    <AppShell>
       <SEO 
         title="Best Claude Code Usage Tracker — AWARTS" 
         description="Monitor your Claude Code token usage, costs, and session frequency with AWARTS. The ultimate tracker for Anthropic's Claude Code and web-based Claude assistants."
@@ -56,6 +56,6 @@ export default function ClaudeTrackerPage() {
           </p>
         </div>
       </div>
-    </AppLayout>
+    </AppShell>
   );
 }

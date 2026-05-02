@@ -1,5 +1,5 @@
 import { SEO } from "@/components/SEO";
-import { AppLayout } from "@/components/layout/AppLayout";
+import { AppShell } from "@/components/layout/AppShell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Check, X } from "lucide-react";
 
@@ -17,7 +17,7 @@ const ComparisonRow = ({ feature, awarts, other }: { feature: string; awarts: bo
 
 export default function WakaTimeComparison() {
   return (
-    <AppLayout>
+    <AppShell>
       <SEO 
         title="AWARTS vs WakaTime — Best AI Coding Tracker" 
         description="Comparing AWARTS and WakaTime for AI-assisted coding tracking. Learn why AWARTS is the Strava for AI developers with native Claude, Codex, and Gemini support."
@@ -72,6 +72,6 @@ export default function WakaTimeComparison() {
           </p>
         </div>
       </div>
-    </AppLayout>
+    </AppShell>
   );
 }
