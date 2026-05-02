@@ -8,7 +8,7 @@ import { transformFeedPost } from '@/lib/transformers';
 import { useAuth } from '@/context/AuthContext';
 import { Provider } from '@/lib/types';
 import { cn } from '@/lib/utils';
-// removed unused import
+import { formatCost } from '@/lib/format';
 import { ArrowUp, Terminal, Upload, X, Rocket, TrendingUp } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { SEO } from '@/components/SEO';
