@@ -8,6 +8,7 @@ import { HelmetProvider } from "react-helmet-async";
 import { ConvexAuthProviderSafe } from "@/context/AuthContext";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
+import { SmoothScroll } from "@/components/ui/smooth-scroll";
 
 // Retry wrapper for lazy imports — handles stale chunk 404s after new deploys
 function lazyRetry<T extends { default: React.ComponentType<any> }>(
@@ -67,11 +68,12 @@ function PageTransition({ children }: { children: React.ReactNode }) {
 }
 
 const App = () => (
-  <HelmetProvider>
-    <ConvexAuthProviderSafe>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
+  <SmoothScroll>
+    <HelmetProvider>
+      <ConvexAuthProviderSafe>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
         <BrowserRouter>
           <ScrollToTop />
           <ErrorBoundary>
@@ -114,6 +116,7 @@ const App = () => (
       </TooltipProvider>
     </ConvexAuthProviderSafe>
   </HelmetProvider>
+  </SmoothScroll>
 );
 
 export default App;

@@ -37,7 +37,7 @@ export function LeftSidebar() {
   const totalOutput = profileData?.stats?.total_output_tokens ?? 0;
 
   return (
-    <aside className="hidden md:flex flex-col w-[220px] shrink-0 border-r border-border p-4 gap-1 h-full overflow-y-auto overscroll-contain sidebar-scroll">
+    <aside className="hidden md:flex flex-col w-[220px] shrink-0 border-r border-border p-4 gap-1 sticky top-14 h-[calc(100vh-3.5rem)] overflow-y-auto overscroll-contain sidebar-scroll">
       {/* Profile mini-card */}
       {isSignedIn && user && (
         <div className="mb-3 pb-3 border-b border-border shrink-0">
