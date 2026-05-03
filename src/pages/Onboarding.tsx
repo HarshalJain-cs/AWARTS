@@ -30,6 +30,13 @@ export default function Onboarding() {
   const [copiedDaemon, setCopiedDaemon] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  // If user is already set up, redirect to feed
+  useEffect(() => {
+    if (user?.country) {
+      navigate('/feed', { replace: true });
+    }
+  }, [user, navigate]);
+
   const { data: usernameCheck } = useCheckUsername(username);
   const usernameAvailable = username.length >= 3 && (usernameCheck?.available ?? false);
 

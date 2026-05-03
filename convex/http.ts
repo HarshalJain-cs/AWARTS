@@ -9,11 +9,15 @@ const ALLOWED_ORIGINS = [
   "https://awarts.com",
   "https://www.awarts.com",
   "https://awarts.club",
+  "chrome-extension://ocfdlilejljfjcnpjkadccegnaloeolk",
+  "http://localhost:5173",
+  "http://localhost:3000",
 ];
 
 function getCorsHeaders(request?: Request): Record<string, string> {
   const origin = request?.headers.get("Origin") ?? "";
-  const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  const isExtension = origin.startsWith("chrome-extension://");
+  const allowedOrigin = (ALLOWED_ORIGINS.includes(origin) || isExtension) ? origin : ALLOWED_ORIGINS[0];
   return {
     "Content-Type": "application/json",
     "Access-Control-Allow-Origin": allowedOrigin,
@@ -37,6 +41,8 @@ const preflightHandler = httpAction(async (_ctx, request) => {
 function validateOrigin(request: Request): boolean {
   const origin = request.headers.get("Origin");
   if (!origin) return true; // CLI requests don't send Origin
+  // Allow all Chrome Extensions (auth is handled via API Key/Token)
+  if (origin.startsWith("chrome-extension://")) return true;
   return ALLOWED_ORIGINS.includes(origin);
 }
 

@@ -7,12 +7,12 @@ const AUTH_TIMEOUT_MS = 15000;
 // With Clerk, auth callbacks are handled automatically.
 // This page just redirects signed-in users to /feed.
 export default function AuthCallback() {
-  const { isSignedIn, isLoaded, user } = useAuth();
+  const { isSignedIn, isLoaded, isUserLoading, user } = useAuth();
   const navigate = useNavigate();
   const [timedOut, setTimedOut] = useState(false);
 
   useEffect(() => {
-    if (!isLoaded) return;
+    if (!isLoaded || isUserLoading) return;
     if (isSignedIn) {
       // Redirect to onboarding if user doesn't have a country set (incomplete setup)
       const needsOnboarding = !user?.country;
@@ -20,7 +20,7 @@ export default function AuthCallback() {
     } else {
       navigate("/login", { replace: true });
     }
-  }, [isLoaded, isSignedIn, user, navigate]);
+  }, [isLoaded, isUserLoading, isSignedIn, user, navigate]);
 
   // Timeout fallback — if auth takes too long, show error
   useEffect(() => {
