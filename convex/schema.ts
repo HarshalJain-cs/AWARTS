@@ -47,7 +47,7 @@ export default defineSchema({
     rawData: v.optional(v.string()),
     costSource: v.optional(v.string()),
   })
-    .index("by_user_date_provider", ["userId", "date", "provider"])
+    .index("by_user_date_provider_source", ["userId", "date", "provider", "source"])
     .index("by_user", ["userId"])
     .index("by_date", ["date"]),
 

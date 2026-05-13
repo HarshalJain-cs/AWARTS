@@ -10,6 +10,7 @@
 import chalk from 'chalk';
 import { post } from '../lib/api.js';
 import { loadAuth } from '../lib/auth-store.js';
+import os from 'node:os';
 import { detectAll } from '../lib/detect.js';
 import { hashEntries } from '../lib/hash.js';
 import * as out from '../lib/output.js';
@@ -144,7 +145,7 @@ export async function syncCommand(opts: { note?: string; silent?: boolean; dryRu
   try {
     const res = await post<SubmitResponse>('/api/usage/submit', {
       entries: cleanEntries,
-      source: 'cli',
+      source: `cli:${os.hostname()}`,
       hash,
       ...(opts.note && { note: opts.note }),
     });

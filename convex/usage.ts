@@ -97,8 +97,9 @@ export const submitUsage = mutation({
         errors.push({ date: entry.date, provider: entry.provider, error: "Invalid date format (expected YYYY-MM-DD)" });
         continue;
       }
-      if (entry.date > today) {
-        errors.push({ date: entry.date, provider: entry.provider, error: "Date cannot be in the future" });
+      const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+      if (entry.date > tomorrow) {
+        errors.push({ date: entry.date, provider: entry.provider, error: `Date ${entry.date} is too far in the future (today is ${today})` });
         continue;
       }
 
@@ -132,8 +133,8 @@ export const submitUsage = mutation({
       // Check for existing entry (upsert logic)
       const existing = await ctx.db
         .query("daily_usage")
-        .withIndex("by_user_date_provider", (q) =>
-          q.eq("userId", me._id).eq("date", entry.date).eq("provider", entry.provider)
+        .withIndex("by_user_date_provider_source", (q) =>
+          q.eq("userId", me._id).eq("date", entry.date).eq("provider", entry.provider).eq("source", source)
         )
         .unique();
 
@@ -184,9 +185,10 @@ export const submitUsage = mutation({
 
       const usageEntries = await ctx.db
         .query("daily_usage")
-        .withIndex("by_user_date_provider", (q) =>
-          q.eq("userId", me._id).eq("date", date)
+        .withIndex("by_user", (q) =>
+          q.eq("userId", me._id)
         )
+        .filter((q) => q.eq(q.field("date"), date))
         .collect();
 
       const providers = [...new Set(usageEntries.map((e) => e.provider))];
@@ -439,7 +441,8 @@ export const importUsage = mutation({
         errors.push({ date: entry.date, provider: entry.provider, error: "Invalid date format" });
         continue;
       }
-      if (entry.date > today) {
+      const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+      if (entry.date > tomorrow) {
         errors.push({ date: entry.date, provider: entry.provider, error: "Future date" });
         continue;
       }
@@ -452,8 +455,8 @@ export const importUsage = mutation({
 
       const existing = await ctx.db
         .query("daily_usage")
-        .withIndex("by_user_date_provider", (q) =>
-          q.eq("userId", me._id).eq("date", entry.date).eq("provider", entry.provider)
+        .withIndex("by_user_date_provider_source", (q) =>
+          q.eq("userId", me._id).eq("date", entry.date).eq("provider", entry.provider).eq("source", "web-import")
         )
         .unique();
 
@@ -493,7 +496,8 @@ export const importUsage = mutation({
 
       const usageEntries = await ctx.db
         .query("daily_usage")
-        .withIndex("by_user_date_provider", (q) => q.eq("userId", me._id).eq("date", date))
+        .withIndex("by_user", (q) => q.eq("userId", me._id))
+        .filter((q) => q.eq(q.field("date"), date))
         .collect();
 
       const providers = [...new Set(usageEntries.map((e) => e.provider))];
