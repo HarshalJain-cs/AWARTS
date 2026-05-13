@@ -12,7 +12,7 @@ import { useAuth } from '@/context/AuthContext';
 import { transformFeedPost, transformComment } from '@/lib/transformers';
 import { formatCost, formatTokens } from '@/lib/format';
 import { PROVIDERS } from '@/lib/constants';
-// removed unused import
+import { ArrowLeft, Loader2, Sparkles, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';

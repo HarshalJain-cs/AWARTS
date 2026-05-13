@@ -6,7 +6,7 @@ import { useConversations, useMessages, useSendMessage, useStartConversation, us
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-// removed unused import
+import { MessageSquare, ArrowLeft, Send } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { SEO } from '@/components/SEO';

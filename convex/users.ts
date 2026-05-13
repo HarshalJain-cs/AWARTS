@@ -451,6 +451,40 @@ export const deleteAccount = mutation({
       .collect();
     for (const code of authCodes) await ctx.db.delete(code._id);
 
+    // Delete reactions by this user
+    const reactions = await ctx.db.query("reactions").withIndex("by_user_post", (q) => q.eq("userId", user._id)).collect();
+    for (const r of reactions) await ctx.db.delete(r._id);
+
+    // Delete user badges
+    const badges = await ctx.db.query("user_badges").withIndex("by_user", (q) => q.eq("userId", user._id)).collect();
+    for (const b of badges) await ctx.db.delete(b._id);
+
+    // Delete prompts by this user
+    const prompts = await ctx.db.query("prompts").withIndex("by_user", (q) => q.eq("userId", user._id)).collect();
+    for (const p of prompts) {
+      // Delete votes on user's prompts
+      const votes = await ctx.db.query("prompt_votes").withIndex("by_prompt", (q) => q.eq("promptId", p._id)).collect();
+      for (const v of votes) await ctx.db.delete(v._id);
+      await ctx.db.delete(p._id);
+    }
+
+    // Delete prompt votes by this user (on other people's prompts)
+    const myVotes = await ctx.db.query("prompt_votes").withIndex("by_user_prompt", (q) => q.eq("userId", user._id)).collect();
+    for (const v of myVotes) await ctx.db.delete(v._id);
+
+    // Delete reports submitted by this user
+    const reports = await ctx.db.query("reports").withIndex("by_reporter", (q) => q.eq("reporterId", user._id)).collect();
+    for (const r of reports) await ctx.db.delete(r._id);
+
+    // Delete messages and conversations involving this user
+    const allConversations = await ctx.db.query("conversations").collect();
+    const userConversations = allConversations.filter((c) => c.participantIds.includes(user._id));
+    for (const conv of userConversations) {
+      const msgs = await ctx.db.query("messages").withIndex("by_conversation", (q) => q.eq("conversationId", conv._id)).collect();
+      for (const m of msgs) await ctx.db.delete(m._id);
+      await ctx.db.delete(conv._id);
+    }
+
     // Finally delete the user
     await ctx.db.delete(user._id);
 

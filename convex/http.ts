@@ -268,21 +268,39 @@ http.route({
 });
 
 // ─── Embeddable SVG Scorecard ────────────────────────────────────────
+
+/** Escape XML special characters to prevent SVG injection */
+function escapeSvg(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 http.route({
   path: "/api/embed",
   method: "GET",
   handler: httpAction(async (ctx, request) => {
     const url = new URL(request.url);
-    const username = url.searchParams.get("username");
+    const rawUsername = url.searchParams.get("username");
     const theme = url.searchParams.get("theme") === "dark" ? "dark" : "light";
     const compact = url.searchParams.get("compact") === "1";
 
-    if (!username) {
+    if (!rawUsername) {
       return new Response("Missing username param", { status: 400 });
     }
 
+    // Validate username format to prevent injection (alphanumeric + underscore only)
+    if (!/^[a-z0-9_]{1,30}$/.test(rawUsername)) {
+      return new Response("Invalid username", { status: 400 });
+    }
+
+    const username = escapeSvg(rawUsername);
+
     // Fetch user stats
-    const stats = await ctx.runQuery(api.users.getByUsername, { username });
+    const stats = await ctx.runQuery(api.users.getByUsername, { username: rawUsername });
 
     const bg = theme === "dark" ? "#0d1117" : "#ffffff";
     const fg = theme === "dark" ? "#e6edf3" : "#1f2328";
@@ -293,7 +311,7 @@ http.route({
     const totalCost = stats?.stats?.total_cost_usd ?? 0;
     const streak = stats?.stats?.current_streak ?? 0;
     const totalDays = stats?.stats?.total_days ?? 0;
-    const displayName = stats?.displayName || stats?.username || username;
+    const displayName = escapeSvg(stats?.displayName || stats?.username || rawUsername);
 
     // Streak level
     let level = 1;

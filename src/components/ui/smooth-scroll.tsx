@@ -9,7 +9,7 @@ interface SmoothScrollProps {
 
 const SmoothScroll = forwardRef<HTMLDivElement, SmoothScrollProps>(({ children, root = true }, ref) => {
     return (
-        <ReactLenis root={root} options={{ lerp: 0.05, smoothWheel: true, smoothTouch: true, wheelMultiplier: 0.9, touchMultiplier: 1.2 }}>
+        <ReactLenis root={root} options={{ lerp: 0.05, smoothWheel: true, wheelMultiplier: 0.9, touchMultiplier: 1.2 }}>
             <div ref={ref} className={!root ? 'h-full overflow-y-auto' : ''}>{children}</div>
         </ReactLenis>
     );

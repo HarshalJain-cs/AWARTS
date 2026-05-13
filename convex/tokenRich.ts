@@ -96,10 +96,18 @@ export const deleteCompany = mutation({
   },
 });
 
-// ─── Seed initial companies (run from dashboard — no auth needed) ────
+// ─── Seed initial companies (admin only) ────
 export const seedCompanies = mutation({
   args: {},
   handler: async (ctx) => {
+    const me = await getCurrentUser(ctx);
+    if (!me) throw new Error("Not authenticated");
+
+    const adminIds = (process.env.ADMIN_CLERK_IDS ?? "").split(",").map((s) => s.trim()).filter(Boolean);
+    if (!adminIds.includes(me.clerkId)) {
+      throw new Error("Forbidden: admin access required");
+    }
+
     // Check if already seeded — prevents duplicate runs
     const existing = await ctx.db.query("token_rich_companies").take(1);
     if (existing.length > 0) {

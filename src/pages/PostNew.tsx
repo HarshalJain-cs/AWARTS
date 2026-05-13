@@ -10,9 +10,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
-// removed unused import
+import { Terminal, ChevronRight, Loader2, Sparkles, X, ImageIcon } from 'lucide-react';
 import { formatDate, formatCost } from '@/lib/format';
-// removed unused import
 import { SEO } from '@/components/SEO';
 
 export default function PostNew() {

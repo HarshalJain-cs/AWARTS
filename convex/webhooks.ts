@@ -17,7 +17,10 @@ export const sendWebhook = action({
       url: v.optional(v.string()),
     }),
   },
-  handler: async (_ctx, { webhookUrl, event, data }) => {
+  handler: async (ctx, { webhookUrl, event, data }) => {
+    // Require authentication to prevent abuse
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Not authenticated");
     // SSRF prevention: only allow HTTPS URLs to known webhook services
     if (!/^https:\/\//i.test(webhookUrl)) {
       console.error("Webhook rejected: non-HTTPS URL");
